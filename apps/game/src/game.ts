@@ -1,6 +1,7 @@
 import { OUTPOST_ALPHA } from '@void-frontier/content';
 import { FIXED_DT, FixedStepper, type Vec2 } from '@void-frontier/kernel';
-import { Simulation, hostilesNear, nearestObstacle, readTarget, readTelemetry } from '@void-frontier/simulation';
+import { getUpgrade } from '@void-frontier/content';
+import { Simulation, dockingStatus, installUpgrades, hostilesNear, nearestObstacle, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
 import { SpaceRenderer, type Quality } from '@void-frontier/view3d';
 import { InputController } from './input.ts';
 import { drawRadar } from './radar.ts';
@@ -23,6 +24,7 @@ export class Game {
   private hitFlash = 0;
   private jettisonArmedAt = -10;
   private gains = new Map<string, { units: number; at: number }>();
+  private dockRefused: { refusals: DockRefusal[]; at: number } | null = null;
   private frameHandle = 0;
   private lastTime = 0;
   private clock = 0;
@@ -79,6 +81,16 @@ export class Game {
         else this.target = hostiles[(hostiles.indexOf(this.target ?? -1) + 1) % hostiles.length];
         this.publish();
       },
+      dockOrUndock: () => {
+        const ship = this.sim.world.ships.get(this.sim.playerId);
+        if (!ship || ship.destroyed) return;
+        if (ship.docked !== null) this.undock();
+        else {
+          const result = this.sim.requestDock(this.sim.playerId);
+          this.dockRefused = result.ok ? null : { refusals: result.refusals, at: this.clock };
+        }
+        this.publish();
+      },
       scanOrRelaunch: () => {
         if (this.sim.world.ships.get(this.sim.playerId)?.destroyed) this.restart();
         else this.sim.scan(this.sim.playerId);
@@ -92,6 +104,27 @@ export class Game {
 
   attachRadar(canvas: HTMLCanvasElement | null): void {
     this.radar = canvas;
+  }
+
+  // Station actions, called from the docked station panel.
+  undock(): void {
+    this.sim.undock(this.sim.playerId);
+    this.publish();
+  }
+
+  trade(resource: string, units: number, side: 'buy' | 'sell'): void {
+    this.sim.trade(this.sim.playerId, resource, units, side);
+    this.publish();
+  }
+
+  service(kind: 'repair' | 'refuel'): void {
+    this.sim.service(this.sim.playerId, kind);
+    this.publish();
+  }
+
+  buyUpgrade(id: string): void {
+    this.sim.buyUpgrade(this.sim.playerId, id);
+    this.publish();
   }
 
   attachOverlay(canvas: HTMLCanvasElement | null): void {
@@ -111,14 +144,21 @@ export class Game {
   restart(): void {
     const zoom = this.renderer.rig.zoomLevel;
     const quality = this.renderer.currentQuality;
+    // Insurance: the hold is lost, upgrades are refitted, and 10% of credits pay the premium.
+    const oldShip = this.sim.world.ships.get(this.sim.playerId);
+    const upgrades = oldShip ? [...oldShip.upgrades] : [];
+    const credits = Math.floor(this.sim.world.credits * 0.9);
     this.renderer.dispose();
     this.sim = Simulation.fromSector(OUTPOST_ALPHA);
+    this.sim.world.credits = credits;
+    installUpgrades(this.sim.world, this.sim.playerId, upgrades);
     this.renderer = new SpaceRenderer(this.canvas, this.sim, OUTPOST_ALPHA.seed);
     this.renderer.rig.zoomBy(zoom);
     this.renderer.setQuality(quality);
     this.stepper.reset();
     this.target = null;
     this.gains.clear();
+    this.dockRefused = null;
     this.resize();
     this.publish();
   }
@@ -210,10 +250,42 @@ export class Game {
   private updateTarget(): void {
     const me = this.sim.world.ships.get(this.sim.playerId);
     if (!me) return;
+    if (me.docked !== null) {
+      this.target = null;
+      return;
+    }
     const range = me.definition.sensors.range;
     const hostiles = hostilesNear(this.sim.world, this.sim.playerId, range * 1.2);
     if (this.target !== null && !hostiles.includes(this.target)) this.target = null;
     if (this.target === null) this.target = hostilesNear(this.sim.world, this.sim.playerId, range)[0] ?? null;
+  }
+
+  private dockingView() {
+    const ship = this.sim.world.ships.get(this.sim.playerId);
+    if (!ship || ship.docked !== null || ship.destroyed) return null;
+    const status = dockingStatus(this.sim.world, this.sim.playerId, 400);
+    return status ? { distance: status.distance, speed: status.speed, angleError: status.angleError, refusals: status.refusals, limits: status.limits } : null;
+  }
+
+  private stationView() {
+    const world = this.sim.world;
+    const ship = world.ships.get(this.sim.playerId);
+    if (!ship || ship.docked === null) return null;
+    const station = world.stations.get(ship.docked)!;
+    return {
+      name: station.name,
+      credits: world.credits,
+      market: station.market.map((item) => ({
+        resource: item.resource,
+        stock: Math.floor(item.stock),
+        held: ship.cargo.get(item.resource) ?? 0,
+        buy: item.sells ? unitPrice(item, 'buy') : null,
+        sell: item.buys ? unitPrice(item, 'sell') : null,
+      })),
+      repairCost: serviceCost(world, this.sim.playerId, 'repair'),
+      refuelCost: serviceCost(world, this.sim.playerId, 'refuel'),
+      upgrades: station.definition.upgrades.map((id) => ({ id, cost: getUpgrade(id).cost, installed: ship.upgrades.includes(id) })),
+    };
   }
 
   private adaptQuality(measuring: boolean): void {
@@ -226,24 +298,18 @@ export class Game {
     }
   }
 
-  private publish(frameStats?: { fps: number; frameMs: number; stepsPerFrame: number; drawCalls: number; triangles: number }): void {
+  publish(frameStats?: { fps: number; frameMs: number; stepsPerFrame: number; drawCalls: number; triangles: number }): void {
     const telemetry = readTelemetry(this.sim.world, this.sim.playerId);
-    let station: { name: string; distance: number } | null = null;
-    if (telemetry) {
-      for (const [id, candidate] of this.sim.world.stations) {
-        const p = this.sim.world.bodies.get(id)!.position;
-        const distance = Math.hypot(p.x - telemetry.position.x, p.y - telemetry.position.y);
-        if (!station || distance < station.distance) station = { name: candidate.name, distance };
-      }
-    }
     const previous = this.store.getSnapshot().stats;
     this.store.update({
       telemetry,
-      station,
       proximity: nearestObstacle(this.sim.world, this.sim.playerId),
       target: readTarget(this.sim.world, this.sim.playerId, this.target),
       gains: [...this.gains.entries()].filter(([, g]) => this.clock - g.at < 2.5).map(([resource, g]) => ({ resource, units: g.units })),
       jettisonArmed: this.clock - this.jettisonArmedAt < 1,
+      docking: this.dockingView(),
+      dockRefused: this.dockRefused && this.clock - this.dockRefused.at < 3 ? this.dockRefused.refusals : null,
+      station: this.stationView(),
       holdFull: (() => {
         const t = readTelemetry(this.sim.world, this.sim.playerId);
         return !!t && t.holdMass >= t.holdMaxMass - 60;

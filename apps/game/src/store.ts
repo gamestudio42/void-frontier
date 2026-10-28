@@ -1,4 +1,4 @@
-import type { FlightTelemetry, Proximity, TargetInfo } from '@void-frontier/simulation';
+import type { DockRefusal, FlightTelemetry, Proximity, TargetInfo } from '@void-frontier/simulation';
 
 export interface DebugStats {
   fps: number;
@@ -14,6 +14,23 @@ export interface DebugStats {
   autoQuality: boolean;
 }
 
+export interface DockingView {
+  distance: number;
+  speed: number;
+  angleError: number;
+  refusals: DockRefusal[];
+  limits: { maxDistance: number; maxRelativeSpeed: number; maxAngle: number };
+}
+
+export interface StationView {
+  name: string;
+  credits: number;
+  market: { resource: string; stock: number; held: number; buy: number | null; sell: number | null }[];
+  repairCost: number;
+  refuelCost: number;
+  upgrades: { id: string; cost: number; installed: boolean }[];
+}
+
 export interface HudState {
   telemetry: FlightTelemetry | null;
   braking: boolean;
@@ -21,13 +38,16 @@ export interface HudState {
   paused: boolean;
   help: boolean;
   debug: boolean;
-  station: { name: string; distance: number } | null;
   proximity: Proximity | null;
   target: TargetInfo | null;
   /** Recent pickups, merged per resource, for the HUD feed. */
   gains: { resource: string; units: number }[];
   jettisonArmed: boolean;
   holdFull: boolean;
+  docking: DockingView | null;
+  /** Refusal reasons from the last docking request, shown for a few seconds. */
+  dockRefused: DockRefusal[] | null;
+  station: StationView | null;
   /** Increments on every damaging hit, so the HUD can flash. */
   hits: number;
   stats: DebugStats;
@@ -62,12 +82,14 @@ export const initialHudState = (): HudState => ({
   paused: false,
   help: true,
   debug: false,
-  station: null,
   proximity: null,
   target: null,
   gains: [],
   jettisonArmed: false,
   holdFull: false,
+  docking: null,
+  dockRefused: null,
+  station: null,
   hits: 0,
   stats: { fps: 0, frameMs: 0, tick: 0, stepsPerFrame: 0, droppedSeconds: 0, entities: 0, drawCalls: 0, triangles: 0, zoom: 1, quality: 'high', autoQuality: true },
 });

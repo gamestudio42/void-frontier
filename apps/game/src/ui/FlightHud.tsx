@@ -3,6 +3,7 @@ import type { FlightTelemetry } from '@void-frontier/simulation';
 import type { MessageKey, Translate } from '../i18n.ts';
 import type { HudState } from '../store.ts';
 import { Compass } from './Compass.tsx';
+import { DockingPanel } from './DockingPanel.tsx';
 import { formatBearing, formatDistance, formatNumber } from './format.ts';
 
 interface FlightHudProps {
@@ -93,6 +94,10 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
           <span className="label">{t('hud.mode')}</span>
           <strong>{t(modeKey)}</strong>
           <kbd>C</kbd>
+        </div>
+        <div className="credits-badge" data-testid="hud-credits" data-value={tel.credits}>
+          <span className="label">{t('hud.credits')}</span>
+          <strong>{formatNumber(locale, tel.credits)} cr</strong>
         </div>
         <div className="flags">
           {warning && (
@@ -218,6 +223,7 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
       </section>
 
       <TargetPanel hud={hud} t={t} locale={locale} />
+      {hud.docking && <DockingPanel docking={hud.docking} refused={hud.dockRefused} t={t} locale={locale} />}
 
       <section className="mining-status">
         <span>

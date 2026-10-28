@@ -1,5 +1,5 @@
 import { getResource } from '@void-frontier/content';
-import { hostilesNear, readTarget, type Simulation } from '@void-frontier/simulation';
+import { dockingStatus, hostilesNear, readTarget, type Simulation } from '@void-frontier/simulation';
 import type { SpaceRenderer } from '@void-frontier/view3d';
 
 /**
@@ -27,7 +27,36 @@ export function drawTargeting(
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
   ctx.clearRect(0, 0, width, height);
   const me = sim.world.ships.get(sim.playerId);
-  if (!me || me.destroyed) return;
+  if (!me || me.destroyed || me.docked !== null) return;
+
+  // Docking guide: approach corridor out of the bay and the target ring inside it.
+  const dock = dockingStatus(sim.world, sim.playerId, 400);
+  if (dock) {
+    const { bay } = dock;
+    const ready = dock.refusals.length === 0;
+    const colour = ready ? '#7dffb2' : '#6fd3ff';
+    const mouth = renderer.worldToScreen(bay.mouth, width, height);
+    const far = renderer.worldToScreen({ x: bay.mouth.x + bay.axis.x * 220, y: bay.mouth.y + bay.axis.y * 220 }, width, height);
+    const centre = renderer.worldToScreen(bay.centre, width, height);
+    ctx.strokeStyle = colour;
+    ctx.globalAlpha = 0.55;
+    ctx.setLineDash([6, 8]);
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(far.x, far.y);
+    ctx.lineTo(mouth.x, mouth.y);
+    ctx.lineTo(centre.x, centre.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+    // Ring sized to the allowed docking distance.
+    const edge = renderer.worldToScreen({ x: bay.centre.x + dock.limits.maxDistance, y: bay.centre.y }, width, height);
+    const radius = Math.max(6, Math.hypot(edge.x - centre.x, edge.y - centre.y));
+    ctx.lineWidth = ready ? 2.5 : 1.5;
+    ctx.beginPath();
+    ctx.arc(centre.x, centre.y, radius, 0, Math.PI * 2);
+    ctx.stroke();
+  }
 
   // Scanner readings: composition tags on revealed rocks that are on screen.
   ctx.font = '600 10.5px ui-monospace, Menlo, Consolas, monospace';

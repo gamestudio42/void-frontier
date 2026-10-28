@@ -822,3 +822,254 @@ button {
     opacity: 0;
   }
 }
+
+.credits-badge {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: 6px;
+}
+
+.credits-badge strong {
+  font-family: var(--mono);
+  color: #ffd27a;
+}
+
+.docking {
+  top: 186px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 290px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 2px solid var(--blue);
+}
+
+.docking.ready {
+  border-top-color: var(--green);
+  box-shadow: 0 0 24px rgba(125, 255, 178, 0.15);
+}
+
+.docking .check {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.docking .check strong {
+  font-family: var(--mono);
+  color: var(--text);
+}
+
+.docking .check.ok span,
+.docking .check.ok strong {
+  color: var(--green);
+}
+
+.docking .check.warn {
+  color: var(--red);
+}
+
+.dock-hint {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--blue);
+}
+
+.docking.ready .dock-hint {
+  color: var(--green);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.refused {
+  font-size: 11.5px;
+  color: var(--red);
+}
+
+.station-backdrop {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: linear-gradient(180deg, rgba(5, 7, 11, 0.35), rgba(5, 7, 11, 0.8));
+}
+
+.station {
+  width: min(760px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  padding: 20px 24px;
+  background: rgba(12, 16, 22, 0.94);
+  border: 1px solid var(--panel-edge);
+  border-top: 2px solid var(--blue);
+  border-radius: 10px;
+}
+
+.station header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.station h2 {
+  margin: 2px 0 0;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.station .credits {
+  font-family: var(--mono);
+  font-size: 22px;
+  color: #ffd27a;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin: 16px 0 12px;
+  border-bottom: 1px solid var(--panel-edge);
+}
+
+.tabs button {
+  padding: 8px 14px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 12px;
+}
+
+.tabs button.active {
+  color: var(--text);
+  border-bottom-color: var(--amber);
+}
+
+.station table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.station th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 6px 4px;
+}
+
+.station td {
+  padding: 7px 4px;
+  border-top: 1px solid rgba(138, 160, 180, 0.1);
+}
+
+.station td.price {
+  font-family: var(--mono);
+  color: #ffd27a;
+}
+
+.station td.actions {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.station button:not(.primary):not(.tabs button) {
+  padding: 4px 10px;
+  border: 1px solid var(--panel-edge);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-size: 12px;
+}
+
+.station button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.station button:not(:disabled):hover {
+  border-color: var(--amber);
+}
+
+.hold-line {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.services {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.service {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--panel-edge);
+  border-radius: 6px;
+}
+
+.service div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.service span,
+.note {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.upgrades {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.upgrades article {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--panel-edge);
+  border-radius: 6px;
+}
+
+.upgrades article.installed {
+  border-color: rgba(125, 255, 178, 0.4);
+}
+
+.upgrades p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.upgrades ul {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 12px;
+  font-family: var(--mono);
+  flex: 1;
+}
+
+.station footer {
+  margin-top: 16px;
+}

@@ -19,6 +19,7 @@ const BINDINGS: [string[], MessageKey][] = [
   [['MMB', 'X'], 'help.mine'],
   [['R'], 'help.scan'],
   [['K'], 'help.jettison'],
+  [['F'], 'help.dock'],
   [['Shift'], 'help.boost'],
   [['Space'], 'help.brake'],
   [['C'], 'help.mode'],

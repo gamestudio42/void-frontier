@@ -14,6 +14,8 @@ interface DevGame {
 test('scans a rock, mines it and fills the hold', async ({ page }) => {
   await page.goto('/?quality=low');
   await page.getByTestId('start').click();
+  // The game starts docked at Outpost Alpha.
+  await page.getByTestId('undock').click();
   await page.mouse.move(0, 0);
   await page.keyboard.press('v'); // keep the nose where we put it
   await page.evaluate(() => {

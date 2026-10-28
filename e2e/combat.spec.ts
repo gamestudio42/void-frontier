@@ -14,6 +14,8 @@ interface DevGame {
 test('locks the nearest pirate and wears its shield down with the guns', async ({ page }) => {
   await page.goto('/?quality=low');
   await page.getByTestId('start').click();
+  // The game starts docked at Outpost Alpha.
+  await page.getByTestId('undock').click();
   await page.mouse.move(0, 0);
   await page.keyboard.press('v'); // fly by keyboard: the nose stays where we put it
   await page.evaluate(() => {

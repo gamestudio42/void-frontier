@@ -8,6 +8,7 @@ export interface InputActions {
   toggleDebug(): void;
   togglePause(): void;
   scanOrRelaunch(): void;
+  dockOrUndock(): void;
   jettison(): void;
   cycleQuality(): void;
   cycleTarget(): void;
@@ -43,6 +44,7 @@ export class InputController {
       case 'KeyP': this.actions.togglePause(); break;
       case 'KeyR': this.actions.scanOrRelaunch(); break;
       case 'KeyK': this.actions.jettison(); break;
+      case 'KeyF': this.actions.dockOrUndock(); break;
       case 'KeyG': this.actions.cycleQuality(); break;
       case 'Tab': this.actions.cycleTarget(); break;
       case 'Equal':
