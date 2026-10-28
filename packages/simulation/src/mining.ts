@@ -56,7 +56,7 @@ export function extractOre(world: World, asteroidId: EntityId, units: number, po
   resizeRock(world, asteroidId);
 }
 
-function resizeRock(world: World, id: EntityId): void {
+export function resizeRock(world: World, id: EntityId): void {
   const rock = world.asteroids.get(id)!;
   const body = world.bodies.get(id)!;
   const collider = world.colliders.get(id)!;

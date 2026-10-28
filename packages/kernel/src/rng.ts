@@ -23,6 +23,15 @@ export class Rng {
     return t >>> 0;
   }
 
+  /** Internal state, for saves. */
+  getState(): [number, number, number, number] {
+    return [this.a, this.b, this.c, this.d];
+  }
+
+  setState(state: [number, number, number, number]): void {
+    [this.a, this.b, this.c, this.d] = state;
+  }
+
   /** Uniform float in [0, 1). */
   next(): number {
     return this.nextUint32() / 4294967296;

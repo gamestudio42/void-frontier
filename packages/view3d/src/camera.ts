@@ -55,8 +55,12 @@ export class CameraRig {
     this.zoom = Math.min(this.settings.maxZoom, Math.max(this.settings.minZoom, this.zoom * factor));
   }
 
+  /** Players can turn shake off in the settings. */
+  shakeEnabled = true;
+
   /** Add camera shake; 0..1, decays over about a second. */
   shake(amount: number): void {
+    if (!this.shakeEnabled) return;
     this.trauma = Math.min(1, this.trauma + amount);
   }
 
