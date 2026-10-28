@@ -30,8 +30,22 @@ Dependencies point down only: `game → view3d → simulation → content, kerne
 | 2 | `flightControlSystem` | command, flight mode, body state | thruster throttles |
 | 3 | `thrusterSystem` | throttles, fuel | body force and torque, fuel |
 | 4 | `integrationSystem` | force, torque, mass | velocity, position, angle |
+| 5 | `collisionSystem` | colliders, bodies | velocity, angular velocity, position (push-out), ship hull; collision and destruction events |
 
-Later systems (weapons, collisions, damage, mining, economy) slot in following the order in the specification, section 14.4.
+Later systems (weapons, damage, mining, economy) slot in following the order in the specification, section 14.4.
+
+Components: `bodies`, `ships`, `colliders`, `asteroids`, `stations`, `beacons`. Static bodies (stations) have infinite mass and inertia, so forces and impulses cannot move them. `universe.ts` builds a sector from data: stations first, then each asteroid field from the sector seed, rejecting rocks that would overlap anything already placed or a clear zone.
+
+Systems report what happened through `world.events` (`collision`, `shipDestroyed`). The game drains them after each frame's steps and hands them to the renderer for sparks, shake and explosions, and to the HUD for the damage flash.
+
+## Collisions
+
+All shapes are circles in body-local space: three along each ship hull, one per rock, and a few hundred along the station's modules (derived from `stations.json`).
+
+1. Broad phase: a 96 m uniform grid over each body's swept bounding box (previous to current position).
+2. Narrow phase: circle pairs. If the circles do not overlap at the end of the step, a swept test solves for the time of impact along the relative motion, so a ship at hundreds of m/s cannot pass through a 2 m rock.
+3. Response: bodies are rewound to the time of impact, then an impulse with restitution and Coulomb friction is applied at the contact point (so off-centre hits spin the ship), followed by a positional push-out split by inverse mass.
+4. Damage: impact energy above the safe speed, applied to every ship in the pair (see `docs/DECISIONS.md` 011).
 
 Only `integrationSystem` writes motion. Assists compute the force that would cancel a velocity component in one step and clamp it to what the thrusters can deliver.
 
@@ -44,4 +58,10 @@ The simulation avoids `Math.sin`, `Math.cos`, `Math.atan2` and friends because e
 - Ships are procedural (`shipModel.ts`): boxes and cylinders scaled to the hull length, with additive cone plumes for every thruster group driven by the simulation's actual throttle.
 - Environment: camera-centred starfield, a shader-wrapped dust field (the main speed cue), a snapping reference grid, a distant gas giant and pulsing beacons.
 - Post-processing: bloom (engines and lamps) and ACES tone mapping through `EffectComposer`.
+- Asteroids: per type, six procedural shapes (noise displacement, craters, mineral veins in vertex colours) at two levels of detail, drawn with `InstancedMesh`: about 36 draw calls for the whole belt.
+- Station: built from the same module list the colliders use, with procedural plating, window and solar textures, blinking navigation lights and a chasing approach runway.
+- Sky: a procedural nebula shader on a camera-centred sphere behind the starfield.
+- Shadows: one directional sun with a 720 m shadow frustum that follows the camera focus.
+- Particles: one pooled additive system (6000 points) for engine and RCS exhaust, impact sparks and dust, and explosions; plus a shockwave ring and a flash light per explosion.
+- Quality levels: high, medium and low adjust resolution, shadow map size, shadows and bloom (see `docs/DECISIONS.md` 013).
 - Camera (`camera.ts`): perspective, 50° FOV, 55° tilt, 120 m base distance, exponential smoothing (0.15 s), velocity look-ahead and speed-based pull-back.

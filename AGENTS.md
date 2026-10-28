@@ -10,7 +10,7 @@ Instructions for AI coding agents working on Void Frontier. Read `docs/GDD.md`, 
 
 1. Work one milestone at a time, in `docs/ROADMAP.md` order. A milestone is done when its acceptance criteria have automated tests that pass and the build runs in a browser. Compiling is not done.
 2. `packages/kernel`, `packages/content` and `packages/simulation` are pure deterministic TypeScript: no DOM, no wall clock, no `Math.random`, no transcendental `Math` functions (use `sin`, `cos`, `atan2` from the kernel). ESLint enforces this; do not disable the rule.
-3. Flight assists, AI pilots and autopilots fire thrusters. Nothing outside `integrationSystem` writes a body's position, velocity, angle or angular velocity.
+3. Flight assists, AI pilots and autopilots fire thrusters. Only `integrationSystem` and `collisionSystem` write a body's position, velocity, angle or angular velocity.
 4. React has no game rules. It reads `HudStore` snapshots and calls game actions. The renderer reads the simulation and never writes to it.
 5. Game numbers live in `packages/content/data/` and are validated by the Zod schemas in `packages/content/src/schema.ts`. No magic gameplay numbers in systems.
 6. Every new system gets unit tests in `packages/<package>/test/`; player-visible flows get a Playwright test in `e2e/`.
@@ -28,6 +28,10 @@ Instructions for AI coding agents working on Void Frontier. Read `docs/GDD.md`, 
 - An empty tank produces no thrust.
 - Flight assist and the brake stop the ship by burning fuel through thrusters.
 - The same commands from the same state give the same result, bit for bit.
+- A ship cannot tunnel through a rock at any speed it can reach.
+- Collisions conserve momentum between movable bodies; static bodies never move.
+- Hull damage is zero at or below the safe impact speed and grows with impact energy above it.
+- The same sector seed produces the same asteroid field, with no overlaps and clear zones respected.
 
 ## Commands
 

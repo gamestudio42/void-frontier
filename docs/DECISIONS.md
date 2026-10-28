@@ -37,3 +37,23 @@ The specification makes inertia the core of the game. The game starts in Newtoni
 ## 009. Drop time instead of catching up
 
 The frame loop accepts at most 0.25 s per frame and 8 steps per frame. Anything beyond is dropped and reported in the debug overlay. The game slows down on a slow machine instead of freezing in a catch-up spiral.
+
+## 010. Own collision system instead of Rapier
+
+Milestone 2 needed collisions between ships, rocks and a station. Rapier would have brought a WebAssembly dependency and a second rigid-body solver beside our integrator. The shapes are all circles (ships use three along the hull, the station a few hundred along its modules), so a small system covers it: a uniform grid broad phase, circle pairs, a swept test for fast movers and an impulse solver with friction. It is deterministic, has no dependency and costs about 0.6 ms per step for 430 bodies. Revisit if we need convex polygons or stacking.
+
+## 011. Damage from impact energy
+
+Hull damage = (½ · reduced mass · (v² − v_safe²)) / 1000 · k, with v_safe = 3 m/s and k = 0.22 hull per kJ (`packages/content/data/physics.json`). Gentle docking bumps are free; a 10 m/s hit on a rock costs the scout about 9% hull, 26 m/s about 62%, and about 33 m/s is fatal. Energy rather than speed means a heavy hauler suffers more from the same impact, which supports the "ships are machines" pillar.
+
+## 012. Visuals and colliders come from one layout
+
+Station modules are data (`packages/content/data/stations.json`). The simulation turns them into collision circles; the renderer turns them into meshes. Ships therefore hit exactly what they see, and new stations need data, not code.
+
+## 013. Adaptive graphics quality
+
+The game starts at high quality and steps down (high → medium → low) after three seconds below 45 FPS. Low turns off shadows and bloom and renders at 0.75× resolution. `G` picks a level manually and disables the automatic choice; `?quality=low|medium|high` in the URL pins one, which the end-to-end tests use with the software renderer.
+
+## 014. Wrecks lose their collider
+
+A destroyed ship keeps its body, so the camera eases to a stop, but loses its collider. An invisible wreck bouncing off rocks would create sparks with no visible cause.

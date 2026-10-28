@@ -1,6 +1,6 @@
 # Void Frontier: game design
 
-Status: flight prototype (milestone 1). The full vision and the original Portuguese specification are in `docs/reference/void-frontier-spec-v0.1-pt.md`.
+Status: Outpost Alpha environment (milestone 2). The full vision and the original Portuguese specification are in `docs/reference/void-frontier-spec-v0.1-pt.md`.
 
 ## Fantasy
 
@@ -17,7 +17,7 @@ You are an independent pilot on a remote frontier with a small working ship, and
 
 Dock → pick a contract → undock → fly → mine, fight or collect → return → dock → sell → upgrade → repeat.
 
-Milestone 1 delivers only the *fly* beat. It has to feel good on its own before anything else is built on it.
+Milestones 1 and 2 deliver the *fly* beat in a real place: a station to approach and an asteroid belt to thread. Flying has to feel good on its own before anything else is built on it.
 
 ## Flight model (milestone 1)
 
@@ -52,12 +52,22 @@ Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kes
 | Shift | Boost |
 | Space | Brake |
 | C | Toggle flight assist |
-| Wheel, + / − | Zoom (0.5× to 2×) |
+| Wheel, + / − | Zoom (0.5× to 3.5×) |
 | L | Load or unload 5 t of test cargo (until mining exists) |
+| R | Relaunch after the ship is destroyed |
+| G | Graphics quality (high, medium, low) |
 | F3 | Debug overlay |
 | Esc / P | Pause |
 | H | Controls panel |
 
-## Not in milestone 1
+## Outpost Alpha (milestone 2)
 
-Combat, mining, docking, economy, missions, saves, audio, collisions and the second ship in play (it is defined in content). See `docs/ROADMAP.md`.
+- **Station.** A modular frontier station at the sector origin: core with a lit habitat band, a habitat ring, solar arrays, tanks and a docking bay on the east side with a green approach-light runway. The player starts 360 m east, nose toward the bay. Docking itself arrives with the economy (milestone 5).
+- **Asteroids.** Three fields: Copper Reach to the north-east (dense, mixed), Titan Shoal to the north-west (titanium-rich, larger rocks) and a sparse scatter across the sector. Rock types: ferrous (iron), cupric (copper) and titanic (titanium), each with its own look, density and future mining yield. Rocks drift and tumble slowly.
+- **Collisions.** Everything solid bounces with some energy loss (restitution 0.3) and friction, and off-centre hits spin the ship. Damage grows with impact energy above 3 m/s closing speed: careful flying near rocks is the skill, and a heavy ship hits harder.
+- **Destruction.** At zero hull the ship breaks apart in an explosion; `R` relaunches from the start.
+- **Reading danger.** Radar (1.4 km, north-up), nearest-object distance, a collision warning when contact is under five seconds away at a damaging speed, camera shake and a red flash on damage.
+
+## Not yet
+
+Combat, mining, docking, economy, missions, saves, audio and the second ship in play (it is defined in content). See `docs/ROADMAP.md`.
