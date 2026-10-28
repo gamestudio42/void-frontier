@@ -1,9 +1,10 @@
 import { OUTPOST_ALPHA } from '@void-frontier/content';
 import { FIXED_DT, FixedStepper, type Vec2 } from '@void-frontier/kernel';
-import { Simulation, nearestObstacle, readTelemetry } from '@void-frontier/simulation';
+import { Simulation, hostilesNear, nearestObstacle, readTarget, readTelemetry } from '@void-frontier/simulation';
 import { SpaceRenderer, type Quality } from '@void-frontier/view3d';
 import { InputController } from './input.ts';
 import { drawRadar } from './radar.ts';
+import { drawTargeting } from './targeting.ts';
 import type { HudStore } from './store.ts';
 
 const HUD_INTERVAL = 0.1;
@@ -18,6 +19,9 @@ export class Game {
   private readonly stepper = new FixedStepper({ dt: FIXED_DT, maxFrameTime: 0.25, maxStepsPerFrame: 8 });
   private readonly resizeObserver: ResizeObserver;
   private radar: HTMLCanvasElement | null = null;
+  private overlay: HTMLCanvasElement | null = null;
+  private target: number | null = null;
+  private hitFlash = 0;
   private frameHandle = 0;
   private lastTime = 0;
   private clock = 0;
@@ -62,6 +66,14 @@ export class Game {
         this.renderer.setQuality(next);
         this.publish();
       },
+      cycleTarget: () => {
+        const me = this.sim.world.ships.get(this.sim.playerId);
+        if (!me) return;
+        const hostiles = hostilesNear(this.sim.world, this.sim.playerId, me.definition.sensors.range);
+        if (hostiles.length === 0) this.target = null;
+        else this.target = hostiles[(hostiles.indexOf(this.target ?? -1) + 1) % hostiles.length];
+        this.publish();
+      },
       relaunch: () => {
         if (this.sim.world.ships.get(this.sim.playerId)?.destroyed) this.restart();
       },
@@ -74,6 +86,10 @@ export class Game {
 
   attachRadar(canvas: HTMLCanvasElement | null): void {
     this.radar = canvas;
+  }
+
+  attachOverlay(canvas: HTMLCanvasElement | null): void {
+    this.overlay = canvas;
   }
 
   start(): void {
@@ -95,6 +111,7 @@ export class Game {
     this.renderer.rig.zoomBy(zoom);
     this.renderer.setQuality(quality);
     this.stepper.reset();
+    this.target = null;
     this.resize();
     this.publish();
   }
@@ -124,8 +141,9 @@ export class Game {
     if (paused || help) {
       this.stepper.reset();
     } else {
+      this.updateTarget();
       // One command per frame, applied to every fixed step the frame runs.
-      this.sim.setCommand(this.sim.playerId, this.input.command(this.aim));
+      this.sim.setCommand(this.sim.playerId, { ...this.input.command(this.aim), target: this.target });
       const result = this.stepper.advance(elapsed);
       for (let i = 0; i < result.steps; i++) this.sim.step();
       alpha = result.alpha;
@@ -138,13 +156,20 @@ export class Game {
           const mine = event.type === 'collision' && (event.a === this.sim.playerId || event.b === this.sim.playerId);
           if (mine && event.type === 'collision' && event.damage > 0) this.hits++;
           if (event.type === 'shipDestroyed' && event.id === this.sim.playerId) this.hits++;
+          if (event.type === 'hit' && event.attacker === this.sim.playerId && this.sim.world.ships.has(event.target)) this.hitFlash = 1;
         }
       }
     }
 
     const frameDt = paused || help ? 0 : Math.min(elapsed, 0.1);
-    const stats = this.renderer.render(this.sim, alpha, frameDt, { aim: this.input.steering ? this.aim : null });
-    if (this.radar) drawRadar(this.radar, this.sim, this.clock);
+    // Keep a nearby target in frame so dogfights stay on screen.
+    const targetBody = this.target !== null ? this.sim.world.bodies.get(this.target) : undefined;
+    const me = this.sim.world.bodies.get(this.sim.playerId);
+    const frameTarget = targetBody && me && Math.hypot(targetBody.position.x - me.position.x, targetBody.position.y - me.position.y) < 900 ? targetBody.position : null;
+    const stats = this.renderer.render(this.sim, alpha, frameDt, { aim: this.input.steering ? this.aim : null, frame: frameTarget });
+    if (this.radar) drawRadar(this.radar, this.sim, this.clock, this.target);
+    this.hitFlash = Math.max(0, this.hitFlash - elapsed * 6);
+    if (this.overlay) drawTargeting(this.overlay, this.sim, this.renderer, this.target, this.hitFlash, this.input.pointer);
 
     this.fpsFrames++;
     this.fpsTime += elapsed;
@@ -167,6 +192,16 @@ export class Game {
       this.hudTimer = 0;
       this.stepsThisWindow = 0;
     }
+  }
+
+  /** Drop a dead or out-of-range target; auto-acquire the nearest hostile when there is none. */
+  private updateTarget(): void {
+    const me = this.sim.world.ships.get(this.sim.playerId);
+    if (!me) return;
+    const range = me.definition.sensors.range;
+    const hostiles = hostilesNear(this.sim.world, this.sim.playerId, range * 1.2);
+    if (this.target !== null && !hostiles.includes(this.target)) this.target = null;
+    if (this.target === null) this.target = hostilesNear(this.sim.world, this.sim.playerId, range)[0] ?? null;
   }
 
   private adaptQuality(measuring: boolean): void {
@@ -194,6 +229,7 @@ export class Game {
       telemetry,
       station,
       proximity: nearestObstacle(this.sim.world, this.sim.playerId),
+      target: readTarget(this.sim.world, this.sim.playerId, this.target),
       hits: this.hits,
       steering: this.input.steering,
       braking: this.input.isHeld('Space'),

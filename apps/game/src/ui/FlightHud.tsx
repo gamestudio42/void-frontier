@@ -1,3 +1,4 @@
+import type { FlightTelemetry } from '@void-frontier/simulation';
 import type { MessageKey, Translate } from '../i18n.ts';
 import type { HudState } from '../store.ts';
 import { Compass } from './Compass.tsx';
@@ -30,6 +31,42 @@ function Thruster({ label, value, signed }: { label: string; value: number; sign
         />
       </div>
     </div>
+  );
+}
+
+/** Paired guns show as one line: the hotter of the pair drives the heat bar. */
+function groupWeapons(weapons: FlightTelemetry['weapons']) {
+  const groups = new Map<string, { id: string; group: string; heat: number; overheated: boolean; count: number }>();
+  for (const w of weapons) {
+    const g = groups.get(w.id);
+    if (g) {
+      g.count++;
+      g.heat = Math.max(g.heat, w.heat);
+      g.overheated ||= w.overheated;
+    } else groups.set(w.id, { id: w.id, group: w.group, heat: w.heat, overheated: w.overheated, count: 1 });
+  }
+  return [...groups.values()];
+}
+
+function TargetPanel({ hud, t, locale }: FlightHudProps) {
+  const target = hud.target;
+  if (!target) return null;
+  return (
+    <section className="panel target" data-testid="target" data-shield={target.shield.toFixed(2)} data-hull={target.hull.toFixed(2)}>
+      <div className="row">
+        <span className="label">{t('hud.target')}</span>
+        <span className="hostile">{t(`faction.${target.faction}` as MessageKey)}</span>
+      </div>
+      <strong className="target-name">{t(`ship.${target.shipId}` as MessageKey)}</strong>
+      <div className="row">
+        <span>{formatDistance(locale, target.distance)}</span>
+        <span>
+          {t('hud.closing')} {formatNumber(locale, target.closingSpeed)} {t('unit.speed')}
+        </span>
+      </div>
+      <Bar value={target.shield} max={target.shieldMax} className="shield" />
+      <Bar value={target.hull} max={target.hullMax} className="hull" />
+    </section>
   );
 }
 
@@ -105,6 +142,16 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
         </div>
         <Bar value={tel.hull} max={tel.hullMax} className={`hull ${tel.hull / tel.hullMax < 0.35 ? 'low' : tel.hull / tel.hullMax < 0.7 ? 'mid' : ''}`} />
         <div className="row">
+          <span className="label">{t('hud.shield')}</span>
+          <strong data-testid="shield" data-value={tel.shield.toFixed(2)}>{formatNumber(locale, (tel.shield / Math.max(1, tel.shieldMax)) * 100)}%</strong>
+        </div>
+        <Bar value={tel.shield} max={tel.shieldMax} className="shield" />
+        <div className="row">
+          <span className="label">{t('hud.energy')}</span>
+          <strong>{formatNumber(locale, (tel.energy / Math.max(1, tel.energyMax)) * 100)}%</strong>
+        </div>
+        <Bar value={tel.energy} max={tel.energyMax} className="energy" />
+        <div className="row">
           <span className="label">{t('hud.fuel')}</span>
           <strong data-testid="fuel" data-value={tel.fuel.toFixed(3)}>{formatNumber(locale, fuelRatio * 100)}%</strong>
         </div>
@@ -125,6 +172,26 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
           <span className="label">{t('hud.accel')}</span>
           <strong>{formatNumber(locale, tel.mainAcceleration, 1)} {t('unit.accel')}</strong>
         </div>
+        <div className="weapons">
+          <div className="row">
+            <span className="label">{t('hud.weapons')}</span>
+            <span className="kills" data-testid="kills" data-value={tel.kills}>
+              {t('hud.kills')}: <strong>{tel.kills}</strong>
+            </span>
+          </div>
+          {groupWeapons(tel.weapons).map((w) => (
+            <div key={w.id} className={`weapon ${w.overheated ? 'hot' : ''}`}>
+              <span>
+                <kbd>{w.group === 'primary' ? 'LMB' : 'RMB'}</kbd> {t(`hud.weapon.${w.id}` as MessageKey)}
+                {w.count > 1 ? ` ×${w.count}` : ''}
+              </span>
+              <div className="heat">
+                <div style={{ width: `${w.heat * 100}%` }} />
+              </div>
+              {w.overheated && <em>{t('hud.overheat')}</em>}
+            </div>
+          ))}
+        </div>
         <div className="thrusters">
           <span className="label">{t('hud.thrusters')}</span>
           <Thruster label={t('hud.thruster.main')} value={tel.output.main} />
@@ -133,6 +200,8 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
           <Thruster label={t('hud.thruster.rotation')} value={-tel.output.rotation} signed />
         </div>
       </section>
+
+      <TargetPanel hud={hud} t={t} locale={locale} />
 
       <footer className="hud-bottom">
         <span>{hud.steering ? t('hud.steering.on') : t('hud.steering.off')} <kbd>V</kbd></span>

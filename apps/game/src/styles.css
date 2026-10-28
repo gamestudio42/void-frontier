@@ -306,6 +306,14 @@ kbd {
   background: linear-gradient(90deg, #c0782a, var(--amber));
 }
 
+.bar.shield .bar-fill {
+  background: linear-gradient(90deg, #2f7fbf, var(--blue));
+}
+
+.bar.energy .bar-fill {
+  background: linear-gradient(90deg, #8a6be0, #c9a6ff);
+}
+
 .bar.low .bar-fill,
 .bar.hull.low .bar-fill {
   background: linear-gradient(90deg, #b03a2e, var(--red));
@@ -547,6 +555,13 @@ button {
     height: 96px;
   }
 
+  .target {
+    top: 210px;
+    left: 8px;
+    transform: none;
+    width: 180px;
+  }
+
   .ship {
     top: 204px;
     bottom: auto;
@@ -631,4 +646,93 @@ button {
     top: 56px;
     right: 8px;
   }
+}
+
+.targeting {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.weapons {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.kills {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.kills strong {
+  color: var(--red);
+  font-family: var(--mono);
+}
+
+.weapon {
+  display: grid;
+  grid-template-columns: 1fr 70px;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+}
+
+.weapon kbd {
+  font-size: 9.5px;
+  min-width: 0;
+  padding: 0 4px;
+}
+
+.weapon .heat {
+  height: 5px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.weapon .heat div {
+  height: 100%;
+  background: linear-gradient(90deg, #c0782a, #ff6b3a);
+}
+
+.weapon em {
+  grid-column: span 2;
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--red);
+  animation: blink 0.5s steps(2) infinite;
+}
+
+.target {
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 230px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  border-top: 2px solid var(--red);
+}
+
+.target .hostile {
+  color: var(--red);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.target-name {
+  font-size: 15px;
+  letter-spacing: 0.06em;
+}
+
+.target .row span {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--text);
 }

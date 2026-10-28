@@ -10,11 +10,12 @@ export interface InputActions {
   toggleCargo(): void;
   relaunch(): void;
   cycleQuality(): void;
+  cycleTarget(): void;
   zoom(factor: number): void;
 }
 
 /** Keys the browser would otherwise use for scrolling or its own shortcuts. */
-const CAPTURED = new Set(['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'F3', 'Tab']);
+const CAPTURED = new Set(['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'F3', 'Tab', 'AltLeft']);
 
 /**
  * The game's only keyboard and mouse listener. Held keys become a ship command once per
@@ -43,6 +44,7 @@ export class InputController {
       case 'KeyL': this.actions.toggleCargo(); break;
       case 'KeyR': this.actions.relaunch(); break;
       case 'KeyG': this.actions.cycleQuality(); break;
+      case 'Tab': this.actions.cycleTarget(); break;
       case 'Equal':
       case 'NumpadAdd': this.actions.zoom(1 / 1.15); break;
       case 'Minus':
@@ -54,7 +56,10 @@ export class InputController {
     this.held.delete(event.code);
   };
 
-  private readonly onBlur = () => this.held.clear();
+  private readonly onBlur = () => {
+    this.held.clear();
+    this.buttons.clear();
+  };
 
   private readonly onPointerMove = (event: PointerEvent) => {
     const rect = this.surface.getBoundingClientRect();
@@ -68,6 +73,19 @@ export class InputController {
     this.pointer = null;
   };
 
+  private readonly buttons = new Set<number>();
+
+  private readonly onPointerDown = (event: PointerEvent) => {
+    this.buttons.add(event.button);
+    this.surface.setPointerCapture?.(event.pointerId);
+  };
+
+  private readonly onPointerUp = (event: PointerEvent) => {
+    this.buttons.delete(event.button);
+  };
+
+  private readonly onContextMenu = (event: Event) => event.preventDefault();
+
   private readonly onWheel = (event: WheelEvent) => {
     event.preventDefault();
     this.actions.zoom(event.deltaY > 0 ? 1.1 : 1 / 1.1);
@@ -80,6 +98,9 @@ export class InputController {
     surface.addEventListener('pointermove', this.onPointerMove);
     surface.addEventListener('pointerleave', this.onPointerLeave);
     surface.addEventListener('wheel', this.onWheel, { passive: false });
+    surface.addEventListener('pointerdown', this.onPointerDown);
+    window.addEventListener('pointerup', this.onPointerUp);
+    surface.addEventListener('contextmenu', this.onContextMenu);
   }
 
   isHeld(code: string): boolean {
@@ -94,6 +115,10 @@ export class InputController {
       strafe: axis(['KeyD', 'ArrowRight'], ['KeyA', 'ArrowLeft']),
       turn: axis(['KeyQ'], ['KeyE']),
       aim: this.steering ? aim : null,
+      // Left mouse or Ctrl: guns. Right mouse or Alt: laser.
+      firePrimary: this.buttons.has(0) || this.held.has('ControlLeft'),
+      fireSecondary: this.buttons.has(2) || this.held.has('AltLeft'),
+      target: null,
       brake: this.held.has('Space'),
       boost: this.held.has('ShiftLeft') || this.held.has('ShiftRight'),
     };
@@ -106,6 +131,9 @@ export class InputController {
     this.surface.removeEventListener('pointermove', this.onPointerMove);
     this.surface.removeEventListener('pointerleave', this.onPointerLeave);
     this.surface.removeEventListener('wheel', this.onWheel);
+    this.surface.removeEventListener('pointerdown', this.onPointerDown);
+    window.removeEventListener('pointerup', this.onPointerUp);
+    this.surface.removeEventListener('contextmenu', this.onContextMenu);
   }
 }
 

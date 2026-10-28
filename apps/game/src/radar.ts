@@ -6,7 +6,7 @@ const RANGE = 1400;
  * North-up radar, drawn straight to a 2D canvas every frame: no React re-render.
  * Grey: rocks. Blue: station. Yellow diamonds: beacons. Centre: you.
  */
-export function drawRadar(canvas: HTMLCanvasElement, sim: Simulation, time: number): void {
+export function drawRadar(canvas: HTMLCanvasElement, sim: Simulation, time: number, target: number | null = null): void {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
   const ratio = Math.min(window.devicePixelRatio || 1, 2);
@@ -89,6 +89,31 @@ export function drawRadar(canvas: HTMLCanvasElement, sim: Simulation, time: numb
     ctx.lineTo(sx - 4, sy);
     ctx.closePath();
     ctx.fill();
+  }
+
+  // Other ships: hostiles in red, pointing where they face; the selected target ringed.
+  for (const [id, ship] of sim.world.ships) {
+    if (id === sim.playerId || ship.destroyed) continue;
+    const body = sim.world.bodies.get(id)!;
+    const [sx, sy] = toScreen(body.position.x, body.position.y);
+    ctx.save();
+    ctx.translate(sx, sy);
+    if (id === target) {
+      ctx.strokeStyle = '#ff5a4a';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(0, 0, 8, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.rotate(-body.angle);
+    ctx.fillStyle = ship.faction === 'pirate' ? '#ff5a4a' : '#7dffb2';
+    ctx.beginPath();
+    ctx.moveTo(5, 0);
+    ctx.lineTo(-4, 3.5);
+    ctx.lineTo(-4, -3.5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
   }
 
   const telemetry = readTelemetry(sim.world, sim.playerId);

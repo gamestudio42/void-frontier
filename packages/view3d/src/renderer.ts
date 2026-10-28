@@ -24,6 +24,7 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { AsteroidRenderer } from './asteroids.ts';
+import { BeamRenderer, ShieldBubble, TracerRenderer } from './combatFx.ts';
 import { CameraRig } from './camera.ts';
 import { fromScene, toScene } from './coords.ts';
 import { DustField, PlaneGrid, createBeacon, createPlanet, createStarfield } from './environment.ts';
@@ -37,6 +38,8 @@ import { buildStationModel, type StationModel } from './station.ts';
 export interface RenderOptions {
   /** World point the player is steering toward, if mouse steering is on. */
   aim: Vec2 | null;
+  /** Combat target to keep in frame, if any. */
+  frame?: Vec2 | null;
 }
 
 export type Quality = 'high' | 'medium' | 'low';
@@ -65,6 +68,12 @@ const DUST = { r: 0.28, g: 0.26, b: 0.24 };
 const DUST_END = { r: 0.0, g: 0.0, b: 0.0 };
 const FIRE = { r: 2.4, g: 1.4, b: 0.5 };
 const FIRE_END = { r: 0.4, g: 0.05, b: 0.02 };
+const MUZZLE = { r: 2.0, g: 1.5, b: 0.7 };
+const MUZZLE_END = { r: 0.3, g: 0.1, b: 0.02 };
+const SHIELD_SPARK = { r: 0.4, g: 1.1, b: 2.0 };
+const SHIELD_SPARK_END = { r: 0.0, g: 0.05, b: 0.2 };
+const BEAM_GLOW = { r: 0.8, g: 1.6, b: 2.2 };
+const BEAM_GLOW_END = { r: 0.0, g: 0.1, b: 0.3 };
 
 /** Reads the simulation and draws it. It never writes to the simulation. */
 export class SpaceRenderer {
@@ -78,6 +87,10 @@ export class SpaceRenderer {
   private readonly asteroids: AsteroidRenderer;
   private readonly particles = new ParticleSystem();
   private readonly blasts: Blast[] = [];
+  private readonly tracers: TracerRenderer;
+  private readonly beams: BeamRenderer;
+  private readonly shields = new Map<EntityId, ShieldBubble>();
+  private readonly projected = new Vector3();
   private readonly sun: DirectionalLight;
   private readonly starfield;
   private readonly nebula;
@@ -139,6 +152,8 @@ export class SpaceRenderer {
       this.stations.push(model);
     }
     this.asteroids = new AsteroidRenderer(this.scene, sim.world);
+    this.tracers = new TracerRenderer(this.scene);
+    this.beams = new BeamRenderer(this.scene);
 
     this.composer = new EffectComposer(this.renderer);
     this.composer.addPass(new RenderPass(this.scene, this.rig.camera));
@@ -194,6 +209,26 @@ export class SpaceRenderer {
         const involvesPlayer = event.a === sim.playerId || event.b === sim.playerId;
         this.sparks(event.point, event.normal, event.speed);
         if (involvesPlayer) this.rig.shake(Math.min(0.9, 0.12 + event.speed / 40 + event.damage / 400));
+      } else if (event.type === 'shot') {
+        const p = toScene(event.position, 1);
+        for (let i = 0; i < 6; i++) {
+          const s = 30 + Math.random() * 60;
+          this.particles.emit(p.x, p.y, p.z, event.direction.x * s + (Math.random() - 0.5) * 12, 0, -event.direction.y * s + (Math.random() - 0.5) * 12, MUZZLE, MUZZLE_END, 1.4 + Math.random(), 0.06 + Math.random() * 0.06, 6);
+        }
+      } else if (event.type === 'hit') {
+        const p = toScene(event.point, 1);
+        const count = event.beam ? 1 : 10;
+        if (event.shieldDamage > 0) {
+          const model = this.ships.get(event.target);
+          const bubble = this.shields.get(event.target);
+          if (model && bubble) bubble.hit(model.root.worldToLocal(p.clone()));
+          for (let i = 0; i < count; i++) this.particles.emit(p.x, p.y, p.z, (Math.random() - 0.5) * 40, (Math.random() - 0.5) * 10, (Math.random() - 0.5) * 40, SHIELD_SPARK, SHIELD_SPARK_END, 1 + Math.random(), 0.2 + Math.random() * 0.3, 2);
+        } else if (event.hullDamage > 0) {
+          for (let i = 0; i < count * 1.5; i++) this.particles.emit(p.x, p.y, p.z, (Math.random() - 0.5) * 50, Math.random() * 15, (Math.random() - 0.5) * 50, SPARK, SPARK_END, 0.7 + Math.random() * 0.8, 0.25 + Math.random() * 0.5, 1.5);
+          if (event.target === sim.playerId) this.rig.shake(event.beam ? 0.01 : 0.06);
+        } else {
+          for (let i = 0; i < count / 2; i++) this.particles.emit(p.x, p.y, p.z, (Math.random() - 0.5) * 12, Math.random() * 4, (Math.random() - 0.5) * 12, DUST, DUST_END, 3 + Math.random() * 3, 0.6 + Math.random(), 1);
+        }
       } else if (event.type === 'shipDestroyed') {
         this.explode(event.position);
         if (event.id === sim.playerId) this.rig.shake(1);
@@ -215,7 +250,7 @@ export class SpaceRenderer {
     if (body && ship) {
       const position = toScene(lerp2(body.previousPosition, body.position, alpha));
       const velocity = toScene(body.velocity);
-      const focus = this.rig.update(position, velocity, frameDt);
+      const focus = this.rig.update(position, velocity, frameDt, options.frame ? toScene(options.frame) : null);
       this.dust.setFocus(focus);
       this.grid.setFocus(focus);
       this.starfield.position.copy(this.rig.camera.position);
@@ -237,6 +272,11 @@ export class SpaceRenderer {
       });
     }
 
+    this.tracers.update(sim.world, sim.playerId, alpha, sim.dt);
+    for (const impact of this.beams.update(sim.world, this.time)) {
+      const p = toScene(impact, 1);
+      for (let i = 0; i < 2; i++) this.particles.emit(p.x, p.y, p.z, (Math.random() - 0.5) * 30, Math.random() * 6, (Math.random() - 0.5) * 30, BEAM_GLOW, BEAM_GLOW_END, 2 + Math.random() * 2, 0.15 + Math.random() * 0.2, 3);
+    }
     this.updateBlasts(frameDt);
     this.particles.update(frameDt);
     this.composer.render(frameDt);
@@ -251,8 +291,20 @@ export class SpaceRenderer {
     return this.raycaster.ray.intersectPlane(this.plane, hit) ? fromScene(hit) : null;
   }
 
+  /** Project a world point to canvas pixels; `onScreen` is false behind the camera or outside the view. */
+  worldToScreen(point: Vec2, width: number, height: number): { x: number; y: number; onScreen: boolean; behind: boolean } {
+    toScene(point, 0, this.projected).project(this.rig.camera);
+    const behind = this.projected.z > 1;
+    const x = (this.projected.x * 0.5 + 0.5) * width;
+    const y = (-this.projected.y * 0.5 + 0.5) * height;
+    return { x, y, behind, onScreen: !behind && x >= 0 && x <= width && y >= 0 && y <= height };
+  }
+
   dispose(): void {
     for (const model of this.ships.values()) model.dispose();
+    for (const bubble of this.shields.values()) bubble.dispose();
+    this.tracers.dispose();
+    this.beams.dispose();
     for (const station of this.stations) station.dispose();
     this.asteroids.dispose();
     this.particles.dispose();
@@ -266,15 +318,21 @@ export class SpaceRenderer {
       if (!body) continue;
       let model = this.ships.get(id);
       if (!model) {
-        model = buildShipModel(ship.definition);
+        model = buildShipModel(ship.definition, ship.faction);
         this.ships.set(id, model);
         this.scene.add(model.root);
+        if (ship.definition.shield.capacity > 0) {
+          const bubble = new ShieldBubble(ship.definition.hull.length, ship.faction === 'pirate' ? new Color(1.6, 0.5, 0.35) : new Color(0.35, 0.9, 1.6));
+          model.root.add(bubble.mesh);
+          this.shields.set(id, bubble);
+        }
       }
       model.root.visible = !ship.destroyed;
       if (ship.destroyed) continue;
       toScene(lerp2(body.previousPosition, body.position, alpha), 0, model.root.position);
       model.root.rotation.y = lerpAngle(body.previousAngle, body.angle, alpha);
       model.update(ship.output, this.time);
+      this.shields.get(id)?.update(ship.shield / Math.max(1, ship.definition.shield.capacity), frameDt);
       model.root.updateMatrixWorld();
       this.exhaust(id, model, ship.output, toScene(body.velocity), frameDt);
     }
@@ -283,6 +341,8 @@ export class SpaceRenderer {
         this.scene.remove(model.root);
         model.dispose();
         this.ships.delete(id);
+        this.shields.get(id)?.dispose();
+        this.shields.delete(id);
       }
     }
   }

@@ -1,4 +1,4 @@
-import type { FlightTelemetry, Proximity } from '@void-frontier/simulation';
+import type { FlightTelemetry, Proximity, TargetInfo } from '@void-frontier/simulation';
 
 export interface DebugStats {
   fps: number;
@@ -23,6 +23,7 @@ export interface HudState {
   debug: boolean;
   station: { name: string; distance: number } | null;
   proximity: Proximity | null;
+  target: TargetInfo | null;
   /** Increments on every damaging hit, so the HUD can flash. */
   hits: number;
   stats: DebugStats;
@@ -59,6 +60,7 @@ export const initialHudState = (): HudState => ({
   debug: false,
   station: null,
   proximity: null,
+  target: null,
   hits: 0,
   stats: { fps: 0, frameMs: 0, tick: 0, stepsPerFrame: 0, droppedSeconds: 0, entities: 0, drawCalls: 0, triangles: 0, zoom: 1, quality: 'high', autoQuality: true },
 });

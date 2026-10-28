@@ -38,6 +38,7 @@ export class CameraRig {
   private speedZoom = 1;
   private initialised = false;
   private trauma = 0;
+  private combatZoom = 1;
   private time = 0;
   private readonly lookTarget = new Vector3();
 
@@ -64,13 +65,24 @@ export class CameraRig {
     this.camera.updateProjectionMatrix();
   }
 
-  /** `target` and `velocity` are in scene units (XZ plane). */
-  update(target: Vector3, velocity: Vector3, frameDt: number): Vector3 {
+  /**
+   * `target` and `velocity` are in scene units (XZ plane). `frame` is an optional second
+   * point to keep in view (the combat target): the camera eases back and shifts toward it.
+   */
+  update(target: Vector3, velocity: Vector3, frameDt: number, frame: Vector3 | null = null): Vector3 {
     const s = this.settings;
     const speed = Math.hypot(velocity.x, velocity.z);
     const lead = Math.min(s.maxLookAhead, speed * s.lookAhead);
     const scale = speed > 0.01 ? lead / speed : 0;
     this.desired.set(target.x + velocity.x * scale, 0, target.z + velocity.z * scale);
+    let wantedCombatZoom = 1;
+    if (frame) {
+      const gap = Math.hypot(frame.x - target.x, frame.z - target.z);
+      this.desired.x += (frame.x - this.desired.x) * 0.45;
+      this.desired.z += (frame.z - this.desired.z) * 0.45;
+      wantedCombatZoom = Math.min(3, Math.max(1, (gap * 1.7) / s.distance));
+    }
+    this.combatZoom += (wantedCombatZoom - this.combatZoom) * (this.initialised ? 1 - Math.exp(-frameDt / 0.8) : 1);
 
     const blend = this.initialised ? 1 - Math.exp(-frameDt / s.smoothing) : 1;
     this.focus.lerp(this.desired, blend);
@@ -78,7 +90,7 @@ export class CameraRig {
     this.speedZoom += (targetSpeedZoom - this.speedZoom) * (this.initialised ? 1 - Math.exp(-frameDt / 0.6) : 1);
     this.initialised = true;
 
-    const distance = s.distance * this.zoom * this.speedZoom;
+    const distance = s.distance * this.zoom * Math.max(this.speedZoom, this.combatZoom);
     const tilt = (s.tilt * Math.PI) / 180;
     this.camera.position.set(this.focus.x, this.focus.y + Math.sin(tilt) * distance, this.focus.z + Math.cos(tilt) * distance);
     this.lookTarget.copy(this.focus);

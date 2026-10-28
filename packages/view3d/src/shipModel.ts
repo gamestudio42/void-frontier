@@ -72,7 +72,8 @@ function place(parent: Object3D, p: Plume, x: number, y: number, z: number): Plu
   return p;
 }
 
-export function buildShipModel(definition: ShipDefinition): ShipModel {
+/** `faction` changes the livery: pirates fly dark hulls with blood-red trim. */
+export function buildShipModel(definition: ShipDefinition, faction: 'player' | 'pirate' = 'player'): ShipModel {
   const L = definition.hull.length;
   const hauler = definition.class === 'hauler';
   const W = hauler ? L * 0.42 : L * 0.34;
@@ -80,6 +81,12 @@ export function buildShipModel(definition: ShipDefinition): ShipModel {
   const hull = hullMaterial();
   const dark = darkMaterial();
   const accent = accentMaterial();
+  if (faction === 'pirate') {
+    hull.color.setHex(0x4a4d52);
+    dark.color.setHex(0x1f2125);
+    accent.color.setHex(0xb02a22);
+    accent.emissive.setHex(0x3a0503);
+  }
   const glass = windowMaterial();
 
   // Spine and cockpit.
@@ -100,6 +107,20 @@ export function buildShipModel(definition: ShipDefinition): ShipModel {
     for (let i = 0; i < 3; i++) {
       const x = -L * 0.2 + i * L * 0.16;
       for (const side of [-1, 1]) root.add(box(L * 0.13, L * 0.1, W * 0.2, i % 2 ? accent : hull, x, L * 0.02, side * W * 0.2));
+    }
+  }
+
+  // Interceptors carry forward-swept blades and twin fins: a hunter's silhouette.
+  if (definition.class === 'interceptor') {
+    for (const side of [-1, 1]) {
+      const blade = box(L * 0.42, L * 0.025, W * 0.9, accent, -L * 0.02, 0, side * W * 0.85);
+      blade.rotation.y = side * 0.45;
+      root.add(blade);
+      const tip = box(L * 0.16, L * 0.06, W * 0.12, dark, L * 0.12, 0, side * W * 1.2);
+      root.add(tip);
+      const fin = box(L * 0.2, L * 0.16, L * 0.012, dark, -L * 0.36, L * 0.09, side * W * 0.18);
+      fin.rotation.x = side * -0.3;
+      root.add(fin);
     }
   }
 
