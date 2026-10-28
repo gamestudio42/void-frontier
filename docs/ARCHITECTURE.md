@@ -43,6 +43,7 @@ Dependencies point down only: `game → view3d → simulation → content, kerne
 | 6 | `collisionSystem` | colliders, bodies | velocity, angular velocity, position (push-out), ship hull, the spatial index; collision and destruction events |
 | 7 | `weaponSystem` | commands, weapon mounts, spatial index | projectiles, beams, mining (ore extraction and chunks), heat, energy, shields; shot and hit events |
 | 8 | `projectileSystem` | projectiles, spatial index | hits (swept ray), expiry |
+| 8b | `subsystemSystem` | subsystems, hold, modules | cargo leaks, drone repairs |
 | 9 | `pickupSystem` | pickups, tractors, holds | pickup motion, hold contents; collected and hold-full events |
 | 10 | `scanExpirySystem` | scan readings | expired readings removed |
 | 11 | `encounterSystem` | encounters | respawned pirate groups |
@@ -80,6 +81,7 @@ The collision system also publishes its grid as `world.spatial`; weapons, projec
 - `ai.ts`: pirate pilots (patrol, engage, retreat, avoidance) that only write ShipCommands, plus encounter spawning and respawn.
 - `mining.ts`: ore extraction, rock resizing and break-up, pickups, tractor, scanner, jettison and pirate salvage. Ship mass includes the hold, so mining feeds straight into flight.
 - `station.ts`: bay geometry, docking checks and lock, market pricing and trades, services, upgrades (rebuilding the effective ship definition) and market drift. Trades move goods and credits together or not at all.
+- `subsystems.ts`: zone-based subsystem damage (`damageSubsystems`, called for weapon and collision hull damage) and ongoing effects. Thrust, energy, shields, sensors and guns read subsystem health where they are computed.
 - `missions.ts`: the contract board (offers, active, history, reputation), offer generation from `contracts.json`, accept, hand-in, abandon and `carryBoard` for a lost ship. It lives on `Simulation.missions` and reads the world; it never moves bodies.
 - Gameplay randomness (spread, spawn headings, chunk scatter, contract offers) comes from `world.rng`, seeded from the sector, so fights replay exactly.
 

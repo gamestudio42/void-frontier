@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0: depth
+
+- Subsystem damage by hit position, with effects, smoke, alarms and repair.
+- Factions with their own reputation, docking rules and gated equipment.
+- Module slots, six new modules and resale.
+- Save format 3 with migration.
+
 ## 0.2.0: spatial expansion
 
 - Four sectors on a gate network: Outpost Alpha, Industrial Belt, Pirate Territory, Anomaly Zone.

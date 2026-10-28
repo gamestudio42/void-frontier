@@ -44,6 +44,8 @@ Instructions for AI coding agents working on Void Frontier. Read `docs/GDD.md`, 
 - When the save format changes, bump `SAVE_VERSION` and add a migration; never edit old saves in place.
 - Jumping preserves the player, credits, contracts and clock; leaving and re-entering a sector preserves what was mined and traded there.
 - Every gate has a matching gate on the far side (checked at load).
+- Subsystem damage comes only from hull damage at a position; health stays within 0..1 and engines never give less than 35% thrust.
+- A ship never holds more modules of a kind than it has slots.
 
 ## Commands
 

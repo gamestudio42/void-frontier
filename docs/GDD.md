@@ -1,6 +1,6 @@
 # Void Frontier: game design
 
-Status: 0.2 spatial expansion (four sectors, jump gates, exploration). The full vision and the original Portuguese specification are in `docs/reference/void-frontier-spec-v0.1-pt.md`.
+Status: 0.3 depth (subsystems, factions, outfitting). The full vision and the original Portuguese specification are in `docs/reference/void-frontier-spec-v0.1-pt.md`.
 
 ## Fantasy
 
@@ -126,6 +126,13 @@ Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kes
 - **Gravity well.** Pull grows as 1/d². At 250 m from the core it is close to a scout's full main thrust; the richest rocks sit there. Watch the gravity readout and keep fuel.
 - **Exploration.** A "?" marks a signal; fly within 90 m of derelicts and caches to search them. Deposits only show up on a scanner pulse in range. Each pays once.
 - **Trade runs.** Ore sells best at the refinery; machine parts are cheap there and worth more at the outpost. Station deliveries pay for the trip between them.
+
+## Depth (0.3)
+
+- **Subsystems.** Where a hit lands decides what breaks. Engines (tail) cut thrust to as little as 35%; the reactor slows energy; the shield generator caps and slows the shield; sensors lose range and, wrecked, the scanner; the hold leaks cargo; a gun at 0% stays silent. Smoke shows damaged sections; the ship panel and target panel show a damage diagram.
+- **Repairs.** Station repairs fix hull, systems and mounts together. Repair drones patch the worst system in flight after five quiet seconds, using reactor energy.
+- **Factions.** Outpost Authority (Outpost Alpha), Ferrum Combine (Industrial Belt) and the hostile Free Pirates. Each lawful faction tracks your reputation: contracts move the issuer's, every pirate destroyed raises both. At -25 or below their stations refuse docking. The Ferrum combat computer needs +20 with them.
+- **Outfitting.** The Kestrel has 1 engine, 2 utility and 2 defence slots. Modules: engine tuning or afterburner (engine); cargo frame, deep scanner, tractor Mk II, repair drones, combat computer (utility); reinforced hull, shield capacitor, armour plating (defence). Removing a module refunds half.
 
 ## Not yet
 

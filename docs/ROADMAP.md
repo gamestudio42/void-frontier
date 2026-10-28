@@ -139,6 +139,18 @@ Section 23 of the specification: several sectors, jumps, exploration.
 
 Known limits: one hand-built set of sectors (no procedural universe yet); NPC traders and a dynamic regional economy are the 0.4 plan.
 
-## 0.3: depth (next)
+## 0.3: depth (done)
 
-Subsystem damage (engines, reactor, radar, weapons, cargo hold), factions, advanced equipment and module slots.
+- [x] Subsystems on every ship: engines, reactor, sensors, shield generator, cargo hold and each weapon mount
+- [x] Damage by zone: the side a hit lands on decides what breaks (tail: engines; nose: sensors and guns; middle: reactor, shield generator, hold)
+- [x] Effects: weaker thrust (never below 35%), slower reactor, capped and slower shields, shorter sensor and scanner range, silent guns, a leaking hold
+- [x] Station repairs cover subsystems; repair drones patch them in flight
+- [x] Three factions: Outpost Authority, Ferrum Combine, Free Pirates; reputation per faction from contracts and pirate kills
+- [x] Faction effects: contract pay and elite offers per faction, docking refused at -25, faction-gated equipment
+- [x] Module slots (engine, utility, defence) with six new modules and a 50% resale
+- [x] Damage diagram for your ship and your target, smoke and sparks from damaged sections, alarms
+- [x] Save format 3 with a migration from version 2
+
+## 0.4: dynamic universe (next)
+
+NPC traders moving goods between stations, events that change supply and prices, trade routes pirates can raid, and reputation that reacts to who you protect.

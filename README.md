@@ -42,7 +42,8 @@
 7. **Take contracts.** The station's board offers deliveries to relay beacons, ore orders and pirate bounties, with deadlines and rewards. Reputation grows with every job done and unlocks better ones.
 8. **Trade and upgrade.** Fly back into the station's bay slowly and lined up, press `F` to dock, sell your ore and salvage, repair, refuel and buy upgrades. Prices follow the station's stock.
 9. **Go further.** Four sectors are linked by jump gates: the Industrial Belt's refinery pays best for ore, Pirate Territory hides wrecks and caches behind gunships, and the Anomaly Zone's gravity well guards the rarest crystals. `M` opens the sector map.
-10. **Mind the rocks.** Asteroids and the station are solid. Bump them gently and you bounce; hit them fast and the hull gives way. The radar, the nearest-object readout and the collision warning help you thread the field. `R` relaunches a lost ship.
+10. **Build your ship.** Shots break what they hit: engines at the tail, sensors and guns at the nose, reactor and hold amidships. Fit modules into engine, utility and defence slots, earn standing with the Outpost Authority and the Ferrum Combine, and unlock their best equipment.
+11. **Mind the rocks.** Asteroids and the station are solid. Bump them gently and you bounce; hit them fast and the hull gives way. The radar, the nearest-object readout and the collision warning help you thread the field. `R` relaunches a lost ship.
 
 <p align="center">
   <img src="docs/screenshots/anomaly.jpg" alt="The scout skirts the gravity well of the Anomaly Zone, with crystal rocks, a violet gas giant and the gravity readout on the HUD" width="920">
@@ -50,6 +51,14 @@
 
 <p align="center">
   <img src="docs/screenshots/map.jpg" alt="The sector map: Outpost Alpha, Industrial Belt, Pirate Territory and Anomaly Zone linked by gates, with danger and discoveries" width="920">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/damage.jpg" alt="A damaged scout trails smoke beside a crippled pirate; damage diagrams on the ship and target panels show the broken systems" width="920">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/outfitting.jpg" alt="The outfitting tab: engine, utility and defence slots, installed modules with resale, and modules on offer" width="920">
 </p>
 
 <p align="center">
@@ -76,7 +85,7 @@ New players get a guided first flight that teaches each of these by doing it. Pr
 
 ## Status
 
-**0.2: the frontier opens.** Four sectors linked by jump gates, a second station for trade runs, a pirate stronghold, a gravity well with rare crystals, points of interest to explore, cross-sector contracts and a sector map, on top of the 0.1 vertical slice (flight, combat, mining, economy, contracts, saves, audio, tutorial). Next is the 0.3 depth pass: subsystem damage and factions; see the [roadmap](docs/ROADMAP.md).
+**0.3: depth.** Ships now break where they are hit (engines, reactor, sensors, shield generator, hold, guns), three factions keep their own score of you, and modules fit into engine, utility and defence slots. This builds on 0.2 (four sectors, jump gates, exploration) and the 0.1 vertical slice. Next is the 0.4 dynamic universe: NPC traders and a living economy; see the [roadmap](docs/ROADMAP.md).
 
 ## Develop
 

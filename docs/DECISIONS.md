@@ -145,3 +145,19 @@ Every friendly station has its own offers; active contracts, history and reputat
 ## 036. Save format 2
 
 Saves gained a `sectors` map and a discovery log; contracts gained their issuer and destination sector. The 1 → 2 migration moves the single sector's state under `sectors` and tags existing contracts as issued by Outpost Alpha. A test builds a version 1 save and loads it.
+
+## 037. Subsystems from the hit position
+
+A hit's position along the hull picks the system it damages, scaled so a quarter of the hull's worth of damage wrecks a system. The data model is five systems plus one health value per weapon mount, not per-module geometry. It makes flanking matter (engines are at the tail) without a penetration model, which can come later.
+
+## 038. Crippled, never stranded
+
+Wrecked engines still give 35% thrust, and a wrecked reactor or shield generator degrades the ship rather than stopping it. Losing a system costs speed and safety, but the player can still limp home and pay for repairs.
+
+## 039. Reputation by faction, shared through the board
+
+Reputation is a map by faction on the contract board, and each world reads the same object. Contracts move their issuer's reputation; pirate kills raise every lawful faction's. The Free Pirates sit at -100 and cannot be won over yet.
+
+## 040. Modules occupy slots
+
+Upgrades became modules with a slot kind. Ships have engine, utility and defence slots, so builds involve trade-offs (scanner or tractor?), and modules can be removed for half their price. Faction-gated modules (the combat computer) give reputation a concrete reward.
