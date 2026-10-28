@@ -8,8 +8,8 @@ The plan follows section 19 of the specification. Each milestone ends with a bui
 | 2 | Environment: asteroid field, station, collisions | Done |
 | 3 | Combat: autocannon, laser, predictive aim, first pirate AI | Done |
 | 4 | Mining: scanner, mining laser, cargo, variable mass from ore | Done |
-| 5 | Station and economy: docking, market, repair, refuel, upgrades | Next |
-| 6 | Missions: delivery, mining and bounty contracts, reputation | Planned |
+| 5 | Station and economy: docking, market, repair, refuel, upgrades | Done |
+| 6 | Missions: delivery, mining and bounty contracts, reputation | Next |
 | 7 | Polish and release: menus, settings, audio, saves, tutorial | Planned |
 
 Milestone 1 merges phases 1 and 2 of the specification, as its "First Milestone" brief asks.
@@ -75,6 +75,21 @@ Known limits: no subsystem damage yet (planned for 0.3), no missiles, no loot or
 
 Known limits: ore cannot be sold until the station economy (next); no refining.
 
-## Milestone 5: station and economy (next)
+## Milestone 5: station and economy (done)
 
-Docking as a piloting skill (speed, alignment, approach), station interface, market with buy and sell prices, repair, refuel, credits and the first ship upgrades.
+- [x] Docking as a piloting skill: within 12 m of the bay centre, under 3 m/s relative speed, nose within 15° of the bay axis, no hostiles within 450 m; refusals say why
+- [x] Approach guide: corridor and target ring in the world, a live checklist on the HUD
+- [x] Docked ships are held in the bay: no motion, no weapons, no damage
+- [x] The game starts docked at Outpost Alpha with 800 credits
+- [x] Market with buy and sell prices from stock (scarcity raises prices, a big sale lowers them unit by unit), drifting back to base stock over time
+- [x] Machine parts as the first trade good (bulky: volume matters)
+- [x] Repair and refuel, spending what the player can afford
+- [x] Four upgrades: engine tuning, reinforced hull, cargo frame, shield capacitor; each adds mass
+- [x] Insurance on loss: relaunch at the station with upgrades and 90% of credits; the hold is lost
+- [x] Station panel (market, services, upgrades), credits on the HUD
+
+Known limits: one station, so trade routes wait for more sectors; no saves until the polish milestone.
+
+## Milestone 6: missions (next)
+
+Contract board at the station with delivery, mining and bounty contracts, rewards, history and basic reputation.

@@ -85,3 +85,19 @@ Ore units are dense (70–100 kg for 0.03 m³), so the Kestrel's 6 t mass limit 
 ## 021. R scans, and relaunches only when destroyed
 
 The specification puts the scanner on R. Relaunch moved to the same key because it is only meaningful when the ship is gone; the old test-cargo key (L) is retired now that real cargo exists.
+
+## 022. Docking is a check, not an autopilot
+
+The specification asks for docking as a skill. The station accepts a request (F) only when the ship is inside the bay, slow and aligned, and there are no hostiles nearby. There is no docking autopilot; the corridor, ring and checklist teach the approach instead. Flight assist makes it easy for beginners.
+
+## 023. Prices from scarcity, priced unit by unit
+
+Price = base × clamp(√(base stock / stock), 0.5, 2.5), with a 12% ask markup and a 10% bid discount. Trades are priced one unit at a time, so dumping a full hold earns less per unit than the first sale, and stock drifts back to its base level (about 3% of the gap per minute). This keeps prices sane without a full economy simulation, which the specification defers to version 0.4.
+
+## 024. Upgrades rebuild the ship definition
+
+Ships keep their base definition and a list of installed upgrades; the effective definition is rebuilt from both. Every system keeps reading `ship.definition`, so upgrades need no special cases. Each upgrade also adds equipment mass, so nothing is free in flight.
+
+## 025. Insurance instead of permadeath
+
+Losing the ship relaunches the player from the station with upgrades refitted and 90% of credits; the hold and its contents are lost. Death costs time and cargo, not hours of progress. Saves arrive in the polish milestone.

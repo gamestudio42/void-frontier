@@ -37,6 +37,7 @@ Dependencies point down only: `game → view3d → simulation → content, kerne
 | 9 | `pickupSystem` | pickups, tractors, holds | pickup motion, hold contents; collected and hold-full events |
 | 10 | `scanExpirySystem` | scan readings | expired readings removed |
 | 11 | `encounterSystem` | encounters | respawned pirate groups |
+| 12 | `marketSystem` | market stock (1 Hz) | stock drifting toward base |
 
 Later systems (mining, inventory, missions, economy) slot in following the order in the specification, section 14.4.
 
@@ -61,6 +62,7 @@ The collision system also publishes its grid as `world.spatial`; weapons, projec
 - `damage.ts`: shield → armour → hull with per-weapon multipliers; `destroyShip` credits kills and removes the wreck's collider.
 - `ai.ts`: pirate pilots (patrol, engage, retreat, avoidance) that only write ShipCommands, plus encounter spawning and respawn.
 - `mining.ts`: ore extraction, rock resizing and break-up, pickups, tractor, scanner, jettison and pirate salvage. Ship mass includes the hold, so mining feeds straight into flight.
+- `station.ts`: bay geometry, docking checks and lock, market pricing and trades, services, upgrades (rebuilding the effective ship definition) and market drift. Trades move goods and credits together or not at all.
 - Gameplay randomness (spread, spawn headings, chunk scatter) comes from `world.rng`, seeded from the sector, so fights replay exactly.
 
 Only `integrationSystem` writes motion. Assists compute the force that would cancel a velocity component in one step and clamp it to what the thrusters can deliver.

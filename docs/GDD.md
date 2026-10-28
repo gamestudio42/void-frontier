@@ -1,6 +1,6 @@
 # Void Frontier: game design
 
-Status: mining in Outpost Alpha (milestone 4). The full vision and the original Portuguese specification are in `docs/reference/void-frontier-spec-v0.1-pt.md`.
+Status: station and economy in Outpost Alpha (milestone 5). The full vision and the original Portuguese specification are in `docs/reference/void-frontier-spec-v0.1-pt.md`.
 
 ## Fantasy
 
@@ -17,7 +17,7 @@ You are an independent pilot on a remote frontier with a small working ship, and
 
 Dock → pick a contract → undock → fly → mine, fight or collect → return → dock → sell → upgrade → repeat.
 
-Milestones 1 and 2 deliver the *fly* beat in a real place: a station to approach and an asteroid belt to thread. Flying has to feel good on its own before anything else is built on it.
+Milestones 1–5 close the core loop: start docked, undock, fly, mine or fight, return, dock, sell, upgrade. Contracts (milestone 6) give that loop goals.
 
 ## Flight model (milestone 1)
 
@@ -59,6 +59,7 @@ Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kes
 | Middle mouse / X | Mining laser |
 | R | Scanner pulse; relaunch after the ship is destroyed |
 | K (twice) | Jettison the hold |
+| F | Dock (when the approach checks are green) / undock |
 | G | Graphics quality (high, medium, low) |
 | F3 | Debug overlay |
 | Esc / P | Pause |
@@ -87,6 +88,14 @@ Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kes
 - **Collect.** The tractor pulls chunks within 60 m into the hold. Small rocks crumble when empty; large ones shrink to a husk.
 - **Carry.** The hold takes 6 t. Every tonne lowers acceleration and turn rate, so a full hold makes you slow prey; K twice dumps it.
 - **Salvage.** Pirate wrecks drop salvage chunks you can collect the same way.
+
+## Station and economy (milestone 5)
+
+- **Docking.** Fly into the bay and stop: within 12 m of the bay centre, below 3 m/s, nose within 15° of the bay axis. A dashed corridor and a ring mark the approach, and a checklist turns green item by item. F docks; the station refuses with hostiles within 450 m. Docked, the ship is safe.
+- **Market.** Outpost Alpha buys all three ores and salvage, sells iron, copper and machine parts. Prices follow stock: selling a full hold of one ore lowers its price as you go, and stock recovers over a few minutes, which rewards mixing what you mine.
+- **Services.** Repair (1.5 cr per hull point) and refuel (1.2 cr per kg), as far as your credits go.
+- **Upgrades.** Engine tuning (+15% thrust, 1,200 cr), reinforced hull (+400 hull, +5% armour, 1,500 cr), cargo frame (+3 t, +10 m³, 1,000 cr) and shield capacitor (+150 shield, faster recharge, 1,400 cr). Each adds mass.
+- **Loss.** Insurance relaunches you at the station with upgrades and 90% of credits; the hold is gone.
 
 ## Not yet
 

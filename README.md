@@ -33,7 +33,8 @@
 4. **Mine.** Press `R` to scan nearby rocks, then cut ore with the mining laser (middle mouse or `X`). The tractor pulls the chunks into your hold, and every tonne you carry makes the ship slower to accelerate and turn.
 5. **Ask for help.** `C` switches on flight assist, which cancels drift and spin for you, using the same thrusters and the same fuel.
 6. **Fight.** Pirates patrol the sector. Left mouse fires the autocannons, right mouse the laser, `Tab` picks a target. Burn shields with the laser, break the hull with the guns, and lead your shots: the guns swivel onto the yellow marker when it is close to your nose.
-7. **Mind the rocks.** Asteroids and the station are solid. Bump them gently and you bounce; hit them fast and the hull gives way. The radar, the nearest-object readout and the collision warning help you thread the field. `R` relaunches a lost ship.
+7. **Trade and upgrade.** Fly back into the station's bay slowly and lined up, press `F` to dock, sell your ore and salvage, repair, refuel and buy upgrades. Prices follow the station's stock.
+8. **Mind the rocks.** Asteroids and the station are solid. Bump them gently and you bounce; hit them fast and the hull gives way. The radar, the nearest-object readout and the collision warning help you thread the field. `R` relaunches a lost ship.
 
 <p align="center">
   <img src="docs/screenshots/combat.jpg" alt="The scout burns a pirate raider's shield with its laser while autocannon tracers close in; the target panel and lead marker are on the HUD" width="920">
@@ -44,6 +45,10 @@
 </p>
 
 <p align="center">
+  <img src="docs/screenshots/market.jpg" alt="Docked at Outpost Alpha: the market lists ores, salvage and machine parts with stock, prices and buy and sell buttons" width="920">
+</p>
+
+<p align="center">
   <img src="docs/screenshots/station.jpg" alt="The scout approaches Outpost Alpha's docking bay, with its habitat ring, trusses and green approach lights" width="920">
 </p>
 
@@ -51,7 +56,7 @@ The game opens in Portuguese for Portuguese-language browsers and in English oth
 
 ## Status
 
-**Milestone 4 of 7: mining.** Scanner, mining laser, ore chunks pulled in by a tractor, a hold limited by mass and volume that weighs the ship down, rocks that shrink and crumble, and salvage from pirate wrecks. Earlier milestones built the flight model, Outpost Alpha (station, asteroid fields, collisions) and combat (autocannons, laser, shields, pirate AI). Docking, the economy and missions follow; see the [roadmap](docs/ROADMAP.md).
+**Milestone 5 of 7: station and economy.** The core loop is closed: start docked, undock, mine or fight, dock again with a skill-based approach, sell at prices that follow the station's stock, repair, refuel and fit four upgrades. Earlier milestones built the flight model, Outpost Alpha, combat and mining. Contracts and a polish pass follow; see the [roadmap](docs/ROADMAP.md).
 
 ## Develop
 

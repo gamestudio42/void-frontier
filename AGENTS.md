@@ -37,6 +37,8 @@ Instructions for AI coding agents working on Void Frontier. Read `docs/GDD.md`, 
 - AI ships never change velocity faster than their engines allow.
 - The hold never exceeds its mass or volume limit, and its mass is part of the ship's mass.
 - Ore is conserved: what leaves a rock arrives as chunks, and what a tractor collects leaves the chunk.
+- Trades are atomic: goods and credits move together or not at all; credits never go negative.
+- A docked ship does not move, fire or take damage.
 
 ## Commands
 
