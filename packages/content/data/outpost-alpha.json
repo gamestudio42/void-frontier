@@ -159,5 +159,7 @@
       ],
       "respawnDelay": 90
     }
-  ]
+  ],
+  "startDocked": true,
+  "startingCredits": 800
 }

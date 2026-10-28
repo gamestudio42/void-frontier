@@ -193,6 +193,7 @@ describe('determinism', () => {
   function scriptedRun(): string {
     const sim = Simulation.fromSector(OUTPOST_ALPHA);
     const id = sim.playerId;
+    sim.undock(id);
     const script = [
       { thrust: 1 }, { thrust: 1, turn: 1 }, { strafe: -1 }, { aim: { x: 300, y: -200 } },
       { thrust: 1, boost: true }, { brake: true }, { thrust: -1, strafe: 1 },

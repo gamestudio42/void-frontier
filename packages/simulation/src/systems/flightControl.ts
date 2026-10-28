@@ -16,7 +16,7 @@ export function flightControlSystem(world: World, dt: number): void {
   for (const [id, ship] of world.ships) {
     const body = world.bodies.get(id);
     if (!body) continue;
-    if (ship.destroyed) {
+    if (ship.destroyed || ship.docked !== null) {
       Object.assign(ship.output, { main: 0, reverse: 0, lateral: 0, rotation: 0, boosting: false });
       continue;
     }

@@ -82,7 +82,7 @@ export function spawnStation(world: World, definitionId: string, name: string, p
   const id = world.createEntity();
   world.bodies.set(id, staticBody(position, angle));
   world.colliders.set(id, stationCollider(definition));
-  world.stations.set(id, { definition, name });
+  world.stations.set(id, { definition, name, market: definition.market.map((item) => ({ ...item })) });
   return id;
 }
 

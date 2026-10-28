@@ -5,6 +5,7 @@ import physicsData from '../data/physics.json';
 import resourceData from '../data/resources.json';
 import shipData from '../data/ships.json';
 import stationData from '../data/stations.json';
+import upgradeData from '../data/upgrades.json';
 import weaponData from '../data/weapons.json';
 import {
   asteroidTypeSchema,
@@ -13,6 +14,7 @@ import {
   sectorDefinitionSchema,
   shipDefinitionSchema,
   stationDefinitionSchema,
+  upgradeSchema,
   weaponDefinitionSchema,
   type AsteroidType,
   type CollisionRules,
@@ -20,6 +22,7 @@ import {
   type SectorDefinition,
   type ShipDefinition,
   type StationDefinition,
+  type UpgradeDefinition,
   type WeaponDefinition,
 } from './schema.ts';
 
@@ -32,6 +35,7 @@ export const SHIPS: ReadonlyMap<string, ShipDefinition> = byId(z.array(shipDefin
 export const ASTEROID_TYPES: ReadonlyMap<string, AsteroidType> = byId(z.array(asteroidTypeSchema).parse(asteroidData));
 export const STATIONS: ReadonlyMap<string, StationDefinition> = byId(z.array(stationDefinitionSchema).parse(stationData));
 export const RESOURCES: ReadonlyMap<string, ResourceDefinition> = byId(z.array(resourceSchema).parse(resourceData));
+export const UPGRADES: ReadonlyMap<string, UpgradeDefinition> = byId(z.array(upgradeSchema).parse(upgradeData));
 export const WEAPONS: ReadonlyMap<string, WeaponDefinition> = byId(z.array(weaponDefinitionSchema).parse(weaponData));
 export const COLLISION_RULES: CollisionRules = collisionRulesSchema.parse(physicsData);
 export const OUTPOST_ALPHA: SectorDefinition = sectorDefinitionSchema.parse(outpostAlphaData);
@@ -46,10 +50,16 @@ export const getShip = (id: string): ShipDefinition => lookup(SHIPS, 'ship', id)
 export const getAsteroidType = (id: string): AsteroidType => lookup(ASTEROID_TYPES, 'asteroid type', id);
 export const getStation = (id: string): StationDefinition => lookup(STATIONS, 'station', id);
 export const getResource = (id: string): ResourceDefinition => lookup(RESOURCES, 'resource', id);
+export const getUpgrade = (id: string): UpgradeDefinition => lookup(UPGRADES, 'upgrade', id);
 export const getWeapon = (id: string): WeaponDefinition => lookup(WEAPONS, 'weapon', id);
 
 for (const ship of SHIPS.values()) for (const hardpoint of ship.hardpoints) getWeapon(hardpoint.weapon);
 for (const type of ASTEROID_TYPES.values()) getResource(type.resource);
+for (const station of STATIONS.values()) {
+  for (const item of station.market) getResource(item.resource);
+  for (const upgrade of station.upgrades) getUpgrade(upgrade);
+  if (!station.modules.some((m) => m.kind === 'dock')) throw new Error(`Station ${station.id} has no docking bay`);
+}
 
 /** Cross-references the schemas cannot check: every id a sector names must exist. */
 export function validateSector(sector: SectorDefinition): void {

@@ -73,7 +73,12 @@ export interface WeaponMount {
 }
 
 export interface Ship {
+  /** Effective stats: the base definition with installed upgrades applied. */
   definition: ShipDefinition;
+  baseDefinition: ShipDefinition;
+  upgrades: string[];
+  /** Station the ship is docked at, or null in flight. */
+  docked: EntityId | null;
   faction: Faction;
   mode: FlightMode;
   shield: number;
@@ -135,9 +140,19 @@ export interface Asteroid {
   look: number;
 }
 
+export interface MarketItem {
+  resource: string;
+  /** Units in stock; fractional while it drifts back toward the base stock. */
+  stock: number;
+  baseStock: number;
+  buys: boolean;
+  sells: boolean;
+}
+
 export interface Station {
   definition: StationDefinition;
   name: string;
+  market: MarketItem[];
 }
 
 export type SimEvent =
@@ -153,6 +168,8 @@ export type SimEvent =
       damage: number;
     }
   | { type: 'shipDestroyed'; id: EntityId; position: { x: number; y: number }; by: EntityId | null }
+  | { type: 'docked'; ship: EntityId; station: EntityId }
+  | { type: 'undocked'; ship: EntityId; station: EntityId }
   | { type: 'scan'; owner: EntityId; position: { x: number; y: number }; range: number; found: number }
   | { type: 'asteroidDepleted'; id: EntityId; position: { x: number; y: number }; radius: number; asteroidType: string }
   | { type: 'collected'; ship: EntityId; resource: string; units: number }

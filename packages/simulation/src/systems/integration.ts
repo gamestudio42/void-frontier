@@ -6,7 +6,9 @@ import type { World } from '../world.ts';
  * the velocity is untouched; there is no drag or artificial damping anywhere.
  */
 export function integrationSystem(world: World, dt: number): void {
-  for (const body of world.bodies.values()) {
+  for (const [id, body] of world.bodies) {
+    // Docked ships ride with the station and ignore forces.
+    if (world.ships.get(id)?.docked != null) continue;
     body.previousPosition.x = body.position.x;
     body.previousPosition.y = body.position.y;
     body.previousAngle = body.angle;

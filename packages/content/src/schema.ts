@@ -204,7 +204,54 @@ export type StationModule = z.infer<typeof stationModuleSchema>;
 export const stationDefinitionSchema = z.object({
   id: z.string(),
   modules: z.array(stationModuleSchema).min(1),
+  docking: z.object({
+    /** metres from the bay centre */
+    maxDistance: positive,
+    /** m/s relative to the station */
+    maxRelativeSpeed: positive,
+    /** degrees between the nose and the bay axis */
+    maxAngle: positive,
+    /** metres: docking is refused while a hostile is this close */
+    hostileClearance: z.number().min(0),
+  }),
+  services: z.object({
+    /** credits per hull point */
+    repairPerHull: positive,
+    /** credits per kg of fuel */
+    fuelPerKg: positive,
+  }),
+  market: z.array(
+    z.object({
+      resource: z.string(),
+      stock: z.number().int().min(0),
+      /** the stock the market drifts back to; prices rise when stock is below it */
+      baseStock: z.number().int().positive(),
+      /** the station buys this from pilots */
+      buys: z.boolean(),
+      /** the station sells this to pilots */
+      sells: z.boolean(),
+    }),
+  ),
+  upgrades: z.array(z.string()),
 });
+
+export const upgradeSchema = z.object({
+  id: z.string().regex(/^[a-z][a-z0-9_]*$/),
+  cost: positive,
+  /** kg the upgrade adds to the ship */
+  equipmentMass: z.number().min(0),
+  effects: z.object({
+    thrustMultiplier: z.number().min(1).optional(),
+    hullBonus: z.number().min(0).optional(),
+    armorBonus: z.number().min(0).max(0.5).optional(),
+    cargoMassBonus: z.number().min(0).optional(),
+    cargoVolumeBonus: z.number().min(0).optional(),
+    shieldBonus: z.number().min(0).optional(),
+    shieldRechargeBonus: z.number().min(0).optional(),
+  }),
+});
+
+export type UpgradeDefinition = z.infer<typeof upgradeSchema>;
 
 export type StationDefinition = z.infer<typeof stationDefinitionSchema>;
 
@@ -247,6 +294,9 @@ export const sectorDefinitionSchema = z.object({
   clearZones: z.array(z.object({ x: z.number(), y: z.number(), radius: positive })),
   beacons: z.array(z.object({ id: z.string(), x: z.number(), y: z.number() })),
   encounters: z.array(encounterSchema),
+  /** The player begins docked at the first station. */
+  startDocked: z.boolean(),
+  startingCredits: z.number().int().min(0),
 });
 
 export type SectorDefinition = z.infer<typeof sectorDefinitionSchema>;

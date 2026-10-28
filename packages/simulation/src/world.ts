@@ -24,6 +24,8 @@ export class World {
   spatial: SpatialIndex | null = null;
   /** Gameplay randomness (weapon spread, AI choices); seeded so runs replay exactly. */
   rng = new Rng(1);
+  /** The player's money. */
+  credits = 0;
   /** Things that happened this step; the owner drains them (sparks, sounds, HUD). */
   readonly events: SimEvent[] = [];
   /** Fixed navigation markers: position only, no physics. */

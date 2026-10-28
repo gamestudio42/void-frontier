@@ -35,7 +35,7 @@ export function applyWeaponDamage(
   beam: boolean,
 ): void {
   const ship = world.ships.get(targetId);
-  if (!ship || ship.destroyed || amount <= 0) return;
+  if (!ship || ship.destroyed || ship.docked !== null || amount <= 0) return;
   ship.lastDamageTick = world.tick;
   let raw = amount;
   let shieldDamage = 0;

@@ -1,0 +1,37 @@
+[
+  {
+    "id": "engine_tuning",
+    "cost": 1200,
+    "effects": {
+      "thrustMultiplier": 1.15
+    },
+    "equipmentMass": 150
+  },
+  {
+    "id": "reinforced_hull",
+    "cost": 1500,
+    "effects": {
+      "hullBonus": 400,
+      "armorBonus": 0.05
+    },
+    "equipmentMass": 600
+  },
+  {
+    "id": "cargo_frame",
+    "cost": 1000,
+    "effects": {
+      "cargoMassBonus": 3000,
+      "cargoVolumeBonus": 10
+    },
+    "equipmentMass": 400
+  },
+  {
+    "id": "shield_capacitor",
+    "cost": 1400,
+    "effects": {
+      "shieldBonus": 150,
+      "shieldRechargeBonus": 10
+    },
+    "equipmentMass": 200
+  }
+]

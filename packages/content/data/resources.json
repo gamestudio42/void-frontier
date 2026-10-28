@@ -1,6 +1,37 @@
 [
-  { "id": "iron_ore", "unitMass": 100, "unitVolume": 0.035, "basePrice": 12, "color": "#c0703a" },
-  { "id": "copper_ore", "unitMass": 90, "unitVolume": 0.032, "basePrice": 18, "color": "#3fd0a6" },
-  { "id": "titanium_ore", "unitMass": 70, "unitVolume": 0.03, "basePrice": 34, "color": "#cfe6ff" },
-  { "id": "salvage", "unitMass": 60, "unitVolume": 0.05, "basePrice": 22, "color": "#ffcf5a" }
+  {
+    "id": "iron_ore",
+    "unitMass": 100,
+    "unitVolume": 0.035,
+    "basePrice": 12,
+    "color": "#c0703a"
+  },
+  {
+    "id": "copper_ore",
+    "unitMass": 90,
+    "unitVolume": 0.032,
+    "basePrice": 18,
+    "color": "#3fd0a6"
+  },
+  {
+    "id": "titanium_ore",
+    "unitMass": 70,
+    "unitVolume": 0.03,
+    "basePrice": 34,
+    "color": "#cfe6ff"
+  },
+  {
+    "id": "salvage",
+    "unitMass": 60,
+    "unitVolume": 0.05,
+    "basePrice": 22,
+    "color": "#ffcf5a"
+  },
+  {
+    "id": "machine_parts",
+    "unitMass": 40,
+    "unitVolume": 0.25,
+    "basePrice": 45,
+    "color": "#9fb4c8"
+  }
 ]

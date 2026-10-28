@@ -49,6 +49,9 @@ export function spawnShip(world: World, definition: ShipDefinition, options: Spa
   const id = world.createEntity();
   const ship: Ship = {
     definition,
+    baseDefinition: definition,
+    upgrades: [],
+    docked: null,
     faction: options.faction ?? 'player',
     mode: options.mode ?? 'newtonian',
     shield: definition.shield.capacity,

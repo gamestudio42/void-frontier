@@ -4,6 +4,7 @@ import { spawnShip } from './ship.ts';
 import { aiSystem, encounterSystem, spawnEncounter } from './ai.ts';
 import { projectileSystem, weaponSystem } from './combat.ts';
 import { jettison, pickupSystem, scan, scanExpirySystem } from './mining.ts';
+import { buyUpgrade, dockShip, marketSystem, requestDock, service, trade, undock } from './station.ts';
 import { collisionSystem } from './systems/collision.ts';
 import { flightControlSystem } from './systems/flightControl.ts';
 import { integrationSystem } from './systems/integration.ts';
@@ -49,6 +50,12 @@ export class Simulation {
     for (const beacon of sector.beacons) {
       sim.world.beacons.set(sim.world.createEntity(), { name: beacon.id, position: { x: beacon.x, y: beacon.y } });
     }
+    sim.world.credits = sector.startingCredits;
+    if (sector.startDocked) {
+      const first = [...sim.world.stations.keys()][0];
+      if (first !== undefined) dockShip(sim.world, sim.playerId, first);
+      sim.drainEvents();
+    }
     return sim;
   }
 
@@ -65,6 +72,7 @@ export class Simulation {
     pickupSystem(this.world, this.dt);
     scanExpirySystem(this.world);
     encounterSystem(this.world, this.dt);
+    marketSystem(this.world, this.dt);
     this.world.tick++;
   }
 
@@ -86,6 +94,26 @@ export class Simulation {
   setFlightMode(id: EntityId, mode: FlightMode): void {
     const ship = this.world.ships.get(id);
     if (ship) ship.mode = mode;
+  }
+
+  requestDock(id: EntityId) {
+    return requestDock(this.world, id);
+  }
+
+  undock(id: EntityId): boolean {
+    return undock(this.world, id);
+  }
+
+  trade(id: EntityId, resource: string, units: number, side: 'buy' | 'sell') {
+    return trade(this.world, id, resource, units, side);
+  }
+
+  service(id: EntityId, kind: 'repair' | 'refuel'): number {
+    return service(this.world, id, kind);
+  }
+
+  buyUpgrade(id: EntityId, upgrade: string) {
+    return buyUpgrade(this.world, id, upgrade);
   }
 
   /** Scanner pulse for a ship; false while it recharges. */

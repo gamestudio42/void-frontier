@@ -98,7 +98,7 @@ export function weaponSystem(world: World, dt: number): void {
       if (mount.overheated && mount.heat <= def.maxHeat * 0.3) mount.overheated = false;
       mount.cooldown = Math.max(0, mount.cooldown - dt);
       mount.beam = null;
-      if (ship.destroyed) continue;
+      if (ship.destroyed || ship.docked !== null) continue;
       const group = mount.hardpoint.group;
       const triggered = group === 'primary' ? ship.command.firePrimary : group === 'secondary' ? ship.command.fireSecondary : ship.command.fireMining;
       if (!triggered || mount.overheated) continue;
@@ -187,7 +187,7 @@ export function hostilesNear(world: World, id: EntityId, range: number): EntityI
   if (!self || !body) return [];
   const found: { id: EntityId; d: number }[] = [];
   for (const [other, ship] of world.ships) {
-    if (other === id || ship.destroyed || ship.faction === self.faction) continue;
+    if (other === id || ship.destroyed || ship.docked !== null || ship.faction === self.faction) continue;
     const p = world.bodies.get(other)!.position;
     const dx = p.x - body.position.x;
     const dy = p.y - body.position.y;

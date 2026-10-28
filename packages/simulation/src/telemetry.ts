@@ -1,5 +1,5 @@
 import { atan2, length, toDegrees, worldToLocal } from '@void-frontier/kernel';
-import { forwardOf, holdMass, holdVolume } from './ship.ts';
+import { forwardOf, holdMass, holdVolume, shipMass } from './ship.ts';
 import { leadPoint, muzzlePosition } from './combat.ts';
 import type { EntityId, FlightMode, ThrusterOutput } from './types.ts';
 import type { World } from './world.ts';
@@ -36,6 +36,9 @@ export interface FlightTelemetry {
   /** The rock under the mining laser, if any. */
   miningTarget: { asteroidType: string; resource: string; ore: number; oreMax: number } | null;
   destroyed: boolean;
+  docked: boolean;
+  credits: number;
+  upgrades: string[];
   /** kg */
   mass: number;
   cargoMass: number;
@@ -59,6 +62,8 @@ export function readTelemetry(world: World, id: EntityId): FlightTelemetry | nul
   const body = world.bodies.get(id);
   if (!ship || !body) return null;
   const movement = ship.definition.movement;
+  // Current mass, even between steps (after a trade or an upgrade while docked).
+  const mass = shipMass(ship);
   const speed = length(body.velocity);
   const heading = compassFromAngle(body.angle);
   const moving = speed > 0.05;
@@ -70,8 +75,8 @@ export function readTelemetry(world: World, id: EntityId): FlightTelemetry | nul
 
   // Each local axis brakes independently with its own thrusters: d = v^2 / (2a) per axis.
   const local = worldToLocal(forwardOf(body.angle), body.velocity);
-  const forwardBrake = (local.x > 0 ? movement.reverseThrust : movement.mainThrust) / body.mass;
-  const lateralBrake = movement.lateralThrust / body.mass;
+  const forwardBrake = (local.x > 0 ? movement.reverseThrust : movement.mainThrust) / mass;
+  const lateralBrake = movement.lateralThrust / mass;
   const dx = (local.x * local.x) / (2 * forwardBrake);
   const dy = (local.y * local.y) / (2 * lateralBrake);
 
@@ -109,9 +114,12 @@ export function readTelemetry(world: World, id: EntityId): FlightTelemetry | nul
       return rock ? { asteroidType: rock.type.id, resource: rock.type.resource, ore: rock.ore, oreMax: rock.oreMax } : null;
     })(),
     destroyed: ship.destroyed,
-    mass: body.mass,
+    docked: ship.docked !== null,
+    credits: world.credits,
+    upgrades: [...ship.upgrades],
+    mass,
     cargoMass: ship.cargoMass,
-    mainAcceleration: movement.mainThrust / body.mass,
+    mainAcceleration: movement.mainThrust / mass,
     stoppingDistance: Math.sqrt(dx * dx + dy * dy),
     mode: ship.mode,
     output: { ...ship.output },

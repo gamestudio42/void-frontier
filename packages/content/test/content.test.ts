@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ASTEROID_TYPES, OUTPOST_ALPHA, RESOURCES, SHIPS, STATIONS, getResource, getShip, getWeapon, shipDefinitionSchema, validateSector } from '../src/index.ts';
+import { ASTEROID_TYPES, OUTPOST_ALPHA, RESOURCES, SHIPS, STATIONS, getResource, getShip, getUpgrade, getWeapon, shipDefinitionSchema, validateSector } from '../src/index.ts';
 
 describe('content', () => {
   it('ships two player ships and one pirate for the vertical slice', () => {
@@ -32,6 +32,13 @@ describe('content', () => {
       expect(resource.unitVolume).toBeGreaterThan(0);
     }
     expect(RESOURCES.has('salvage')).toBe(true);
+  });
+
+  it('offers four upgrades and a market that trades every slice resource', () => {
+    const station = [...STATIONS.values()][0];
+    expect(station.upgrades.map((u) => getUpgrade(u).cost).every((c) => c > 0)).toBe(true);
+    expect(station.upgrades).toHaveLength(4);
+    expect(station.market.map((m) => m.resource).sort()).toEqual(['copper_ore', 'iron_ore', 'machine_parts', 'salvage', 'titanium_ore']);
   });
 
   it('has one station with a docking bay', () => {
