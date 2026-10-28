@@ -2,44 +2,162 @@
   "id": "outpost_alpha",
   "seed": 1337,
   "playerShip": "kestrel",
-  "playerStart": { "x": 360, "y": 0, "heading": 270 },
-  "stations": [{ "id": "outpost_alpha_station", "definition": "outpost", "x": 0, "y": 0, "angle": 0 }],
+  "playerStart": {
+    "x": 360,
+    "y": 0,
+    "heading": 270
+  },
+  "stations": [
+    {
+      "id": "outpost_alpha_station",
+      "definition": "outpost",
+      "x": 0,
+      "y": 0,
+      "angle": 0
+    }
+  ],
   "asteroidFields": [
     {
       "id": "copper_reach",
-      "center": { "x": 1500, "y": 900 },
+      "center": {
+        "x": 1500,
+        "y": 900
+      },
       "radius": 750,
       "count": 420,
       "minRadius": 3,
       "maxRadius": 26,
       "maxDrift": 1.5,
-      "types": { "ferrous": 0.5, "cupric": 0.38, "titanic": 0.12 }
+      "types": {
+        "ferrous": 0.5,
+        "cupric": 0.38,
+        "titanic": 0.12
+      }
     },
     {
       "id": "titan_shoal",
-      "center": { "x": -1300, "y": 1300 },
+      "center": {
+        "x": -1300,
+        "y": 1300
+      },
       "radius": 420,
       "count": 90,
       "minRadius": 4,
       "maxRadius": 34,
       "maxDrift": 0.8,
-      "types": { "ferrous": 0.35, "cupric": 0.15, "titanic": 0.5 }
+      "types": {
+        "ferrous": 0.35,
+        "cupric": 0.15,
+        "titanic": 0.5
+      }
     },
     {
       "id": "scatter",
-      "center": { "x": 0, "y": 0 },
+      "center": {
+        "x": 0,
+        "y": 0
+      },
       "radius": 2600,
       "count": 110,
       "minRadius": 2,
       "maxRadius": 14,
       "maxDrift": 3,
-      "types": { "ferrous": 0.6, "cupric": 0.3, "titanic": 0.1 }
+      "types": {
+        "ferrous": 0.6,
+        "cupric": 0.3,
+        "titanic": 0.1
+      }
     }
   ],
-  "clearZones": [{ "x": 0, "y": 0, "radius": 520 }, { "x": 360, "y": 0, "radius": 220 }],
+  "clearZones": [
+    {
+      "x": 0,
+      "y": 0,
+      "radius": 520
+    },
+    {
+      "x": 360,
+      "y": 0,
+      "radius": 220
+    },
+    {
+      "x": 700,
+      "y": -1050,
+      "radius": 160
+    },
+    {
+      "x": 1900,
+      "y": 300,
+      "radius": 120
+    }
+  ],
   "beacons": [
-    { "id": "reach", "x": 900, "y": 520 },
-    { "id": "shoal", "x": -980, "y": 1050 },
-    { "id": "gate", "x": 600, "y": -900 }
+    {
+      "id": "reach",
+      "x": 900,
+      "y": 520
+    },
+    {
+      "id": "shoal",
+      "x": -980,
+      "y": 1050
+    },
+    {
+      "id": "gate",
+      "x": 600,
+      "y": -900
+    }
+  ],
+  "encounters": [
+    {
+      "id": "gate_pirates",
+      "ship": "jackal",
+      "faction": "pirate",
+      "count": 2,
+      "spawn": {
+        "x": 700,
+        "y": -1050
+      },
+      "patrol": [
+        [
+          700,
+          -1050
+        ],
+        [
+          1250,
+          -900
+        ],
+        [
+          450,
+          -1300
+        ]
+      ],
+      "respawnDelay": 60
+    },
+    {
+      "id": "reach_raider",
+      "ship": "jackal",
+      "faction": "pirate",
+      "count": 1,
+      "spawn": {
+        "x": 1900,
+        "y": 300
+      },
+      "patrol": [
+        [
+          1900,
+          300
+        ],
+        [
+          1700,
+          1300
+        ],
+        [
+          2300,
+          900
+        ]
+      ],
+      "respawnDelay": 90
+    }
   ]
 }

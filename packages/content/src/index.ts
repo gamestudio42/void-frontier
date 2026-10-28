@@ -4,17 +4,20 @@ import outpostAlphaData from '../data/outpost-alpha.json';
 import physicsData from '../data/physics.json';
 import shipData from '../data/ships.json';
 import stationData from '../data/stations.json';
+import weaponData from '../data/weapons.json';
 import {
   asteroidTypeSchema,
   collisionRulesSchema,
   sectorDefinitionSchema,
   shipDefinitionSchema,
   stationDefinitionSchema,
+  weaponDefinitionSchema,
   type AsteroidType,
   type CollisionRules,
   type SectorDefinition,
   type ShipDefinition,
   type StationDefinition,
+  type WeaponDefinition,
 } from './schema.ts';
 
 export * from './schema.ts';
@@ -25,6 +28,7 @@ const byId = <T extends { id: string }>(items: T[]): ReadonlyMap<string, T> => n
 export const SHIPS: ReadonlyMap<string, ShipDefinition> = byId(z.array(shipDefinitionSchema).parse(shipData));
 export const ASTEROID_TYPES: ReadonlyMap<string, AsteroidType> = byId(z.array(asteroidTypeSchema).parse(asteroidData));
 export const STATIONS: ReadonlyMap<string, StationDefinition> = byId(z.array(stationDefinitionSchema).parse(stationData));
+export const WEAPONS: ReadonlyMap<string, WeaponDefinition> = byId(z.array(weaponDefinitionSchema).parse(weaponData));
 export const COLLISION_RULES: CollisionRules = collisionRulesSchema.parse(physicsData);
 export const OUTPOST_ALPHA: SectorDefinition = sectorDefinitionSchema.parse(outpostAlphaData);
 
@@ -37,6 +41,9 @@ function lookup<T>(map: ReadonlyMap<string, T>, kind: string, id: string): T {
 export const getShip = (id: string): ShipDefinition => lookup(SHIPS, 'ship', id);
 export const getAsteroidType = (id: string): AsteroidType => lookup(ASTEROID_TYPES, 'asteroid type', id);
 export const getStation = (id: string): StationDefinition => lookup(STATIONS, 'station', id);
+export const getWeapon = (id: string): WeaponDefinition => lookup(WEAPONS, 'weapon', id);
+
+for (const ship of SHIPS.values()) for (const hardpoint of ship.hardpoints) getWeapon(hardpoint.weapon);
 
 /** Cross-references the schemas cannot check: every id a sector names must exist. */
 export function validateSector(sector: SectorDefinition): void {
@@ -46,6 +53,7 @@ export function validateSector(sector: SectorDefinition): void {
     if (field.minRadius > field.maxRadius) throw new Error(`Field ${field.id}: minRadius > maxRadius`);
     for (const type of Object.keys(field.types)) getAsteroidType(type);
   }
+  for (const encounter of sector.encounters) getShip(encounter.ship);
 }
 
 validateSector(OUTPOST_ALPHA);

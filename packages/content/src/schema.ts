@@ -13,6 +13,8 @@ export const shipDefinitionSchema = z.object({
     length: positive,
     /** metres */
     collisionRadius: positive,
+    /** fraction of weapon damage that armour stops after shields are down, 0..0.9 */
+    armor: z.number().min(0).max(0.9),
   }),
   movement: z.object({
     /** newtons */
@@ -41,10 +43,94 @@ export const shipDefinitionSchema = z.object({
     /** m^3 */
     maxVolume: positive,
   }),
+  shield: z.object({
+    capacity: z.number().min(0),
+    /** points per second once recharging */
+    rechargeRate: z.number().min(0),
+    /** seconds without taking damage before the shield recharges */
+    rechargeDelay: z.number().min(0),
+  }),
+  reactor: z.object({
+    /** stored energy units */
+    capacity: z.number().min(0),
+    /** units per second */
+    rechargeRate: z.number().min(0),
+  }),
+  sensors: z.object({
+    /** metres: how far this ship notices others */
+    range: positive,
+  }),
+  hardpoints: z.array(
+    z.object({
+      id: z.string(),
+      /** ship-local metres, x forward, y right */
+      x: z.number(),
+      y: z.number(),
+      weapon: z.string(),
+      group: z.enum(['primary', 'secondary']),
+    }),
+  ),
 });
 
 export type ShipDefinition = z.infer<typeof shipDefinitionSchema>;
 export type ShipClass = ShipDefinition['class'];
+
+const damageMultipliers = z.object({ shield: positive, hull: positive });
+
+export const weaponDefinitionSchema = z.discriminatedUnion('kind', [
+  z.object({
+    id: z.string(),
+    kind: z.literal('projectile'),
+    damage: positive,
+    /** shots per second */
+    fireRate: positive,
+    /** m/s relative to the gun */
+    projectileSpeed: positive,
+    /** seconds */
+    projectileLifetime: positive,
+    /** 0..1: how much of the ship's velocity the round keeps */
+    velocityInheritance: z.number().min(0).max(1),
+    /** radians of random spread per shot */
+    spread: z.number().min(0),
+    /** degrees the gun can swivel off the nose */
+    gimbal: z.number().min(0).max(45),
+    heatPerShot: z.number().min(0),
+    maxHeat: positive,
+    /** heat per second */
+    coolingRate: positive,
+    energyPerShot: z.number().min(0),
+    multipliers: damageMultipliers,
+  }),
+  z.object({
+    id: z.string(),
+    kind: z.literal('beam'),
+    damagePerSecond: positive,
+    /** metres */
+    range: positive,
+    gimbal: z.number().min(0).max(45),
+    heatPerSecond: z.number().min(0),
+    maxHeat: positive,
+    coolingRate: positive,
+    energyPerSecond: z.number().min(0),
+    multipliers: damageMultipliers,
+  }),
+]);
+
+export type WeaponDefinition = z.infer<typeof weaponDefinitionSchema>;
+
+export const encounterSchema = z.object({
+  id: z.string(),
+  ship: z.string(),
+  faction: z.enum(['pirate']),
+  count: z.number().int().min(1),
+  spawn: z.object({ x: z.number(), y: z.number() }),
+  /** waypoints the group cycles through while no target is in sensor range */
+  patrol: z.array(z.tuple([z.number(), z.number()])).min(1),
+  /** seconds after the whole group is destroyed before it returns */
+  respawnDelay: positive,
+});
+
+export type EncounterDefinition = z.infer<typeof encounterSchema>;
 
 const point = z.object({ x: z.number(), y: z.number() });
 const pair = z.tuple([z.number(), z.number()]);
@@ -119,6 +205,7 @@ export const sectorDefinitionSchema = z.object({
   /** circles kept free of asteroids (station approaches, spawn point) */
   clearZones: z.array(z.object({ x: z.number(), y: z.number(), radius: positive })),
   beacons: z.array(z.object({ id: z.string(), x: z.number(), y: z.number() })),
+  encounters: z.array(encounterSchema),
 });
 
 export type SectorDefinition = z.infer<typeof sectorDefinitionSchema>;

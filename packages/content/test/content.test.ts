@@ -1,11 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import { ASTEROID_TYPES, OUTPOST_ALPHA, SHIPS, STATIONS, getShip, shipDefinitionSchema, validateSector } from '../src/index.ts';
+import { ASTEROID_TYPES, OUTPOST_ALPHA, SHIPS, STATIONS, getShip, getWeapon, shipDefinitionSchema, validateSector } from '../src/index.ts';
 
 describe('content', () => {
-  it('ships two valid ship definitions for the vertical slice', () => {
-    expect(SHIPS.size).toBe(2);
+  it('ships two player ships and one pirate for the vertical slice', () => {
+    expect(SHIPS.size).toBe(3);
     expect(getShip('kestrel').class).toBe('scout');
     expect(getShip('mule').class).toBe('hauler');
+    expect(getShip('jackal').class).toBe('interceptor');
+  });
+
+  it('arms the starter ship with an autocannon pair and a laser', () => {
+    const weapons = getShip('kestrel').hardpoints.map((h) => getWeapon(h.weapon).kind);
+    expect(weapons.sort()).toEqual(['beam', 'projectile', 'projectile']);
+  });
+
+  it('gives each weapon a reason to exist: lasers strip shields, cannons break hulls', () => {
+    const cannon = getWeapon('autocannon_mk1');
+    const laser = getWeapon('laser_mk1');
+    expect(laser.multipliers.shield).toBeGreaterThan(cannon.multipliers.shield);
+    expect(cannon.multipliers.hull).toBeGreaterThan(laser.multipliers.hull);
   });
 
   it('defines three asteroid types for the three slice minerals', () => {

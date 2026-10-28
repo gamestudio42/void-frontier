@@ -1,4 +1,6 @@
-import type { Asteroid, Body, Collider, EntityId, Ship, SimEvent, Station } from './types.ts';
+import { Rng } from '@void-frontier/kernel';
+import type { SpatialIndex } from './spatial.ts';
+import type { AiPilot, Asteroid, Body, Collider, EncounterState, EntityId, Projectile, Ship, SimEvent, Station } from './types.ts';
 
 /**
  * Minimal entity store: components live in maps keyed by entity id. Maps iterate in
@@ -12,6 +14,13 @@ export class World {
   readonly colliders = new Map<EntityId, Collider>();
   readonly asteroids = new Map<EntityId, Asteroid>();
   readonly stations = new Map<EntityId, Station>();
+  readonly projectiles = new Map<EntityId, Projectile>();
+  readonly pilots = new Map<EntityId, AiPilot>();
+  readonly encounters: EncounterState[] = [];
+  /** Broad-phase index of colliders, rebuilt by the collision system every step. */
+  spatial: SpatialIndex | null = null;
+  /** Gameplay randomness (weapon spread, AI choices); seeded so runs replay exactly. */
+  rng = new Rng(1);
   /** Things that happened this step; the owner drains them (sparks, sounds, HUD). */
   readonly events: SimEvent[] = [];
   /** Fixed navigation markers: position only, no physics. */
@@ -27,6 +36,8 @@ export class World {
     this.colliders.delete(id);
     this.asteroids.delete(id);
     this.stations.delete(id);
+    this.projectiles.delete(id);
+    this.pilots.delete(id);
     this.beacons.delete(id);
   }
 

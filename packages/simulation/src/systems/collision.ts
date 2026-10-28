@@ -1,6 +1,8 @@
 import type { CollisionRules } from '@void-frontier/content';
 import { cos, sin } from '@void-frontier/kernel';
 import type { Body, Collider, EntityId } from '../types.ts';
+import { destroyShip } from '../damage.ts';
+import { SpatialIndex } from '../spatial.ts';
 import type { World } from '../world.ts';
 
 const CELL = 96;
@@ -54,6 +56,10 @@ export function collisionSystem(world: World, rules: CollisionRules): void {
       maxY: Math.max(body.position.y, body.previousPosition.y) + r,
     });
   }
+
+  const spatial = new SpatialIndex(CELL);
+  for (const entry of entries) spatial.insert(entry.id, entry.minX, entry.minY, entry.maxX, entry.maxY);
+  world.spatial = spatial;
 
   const grid = new Map<number, number[]>();
   const key = (cx: number, cy: number) => cx * 92821 + cy;
@@ -210,13 +216,7 @@ function resolve(world: World, rules: CollisionRules, a: Entry, b: Entry, contac
       const ship = world.ships.get(id);
       if (!ship || ship.destroyed || damage <= 0) continue;
       ship.hull = Math.max(0, ship.hull - damage);
-      if (ship.hull === 0) {
-        ship.destroyed = true;
-        // The wreck is gone as a solid object; its body stays so the camera can settle.
-        world.colliders.delete(id);
-        const body = world.bodies.get(id)!;
-        world.events.push({ type: 'shipDestroyed', id, position: { x: body.position.x, y: body.position.y } });
-      }
+      if (ship.hull === 0) destroyShip(world, id, null);
     }
     if (closing > 0.5) {
       world.events.push({

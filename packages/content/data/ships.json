@@ -2,7 +2,13 @@
   {
     "id": "kestrel",
     "class": "scout",
-    "hull": { "integrity": 1000, "dryMass": 8000, "length": 16, "collisionRadius": 7 },
+    "hull": {
+      "integrity": 1000,
+      "dryMass": 8000,
+      "length": 16,
+      "collisionRadius": 7,
+      "armor": 0.15
+    },
     "movement": {
       "mainThrust": 160000,
       "reverseThrust": 80000,
@@ -13,13 +19,60 @@
       "boostMultiplier": 1.6,
       "boostFuelMultiplier": 2.5
     },
-    "fuel": { "capacity": 500, "consumptionPerMegaNewtonSecond": 15 },
-    "cargo": { "maxMass": 6000, "maxVolume": 20 }
+    "fuel": {
+      "capacity": 500,
+      "consumptionPerMegaNewtonSecond": 15
+    },
+    "cargo": {
+      "maxMass": 6000,
+      "maxVolume": 20
+    },
+    "shield": {
+      "capacity": 300,
+      "rechargeRate": 30,
+      "rechargeDelay": 3
+    },
+    "reactor": {
+      "capacity": 100,
+      "rechargeRate": 12
+    },
+    "sensors": {
+      "range": 1400
+    },
+    "hardpoints": [
+      {
+        "id": "gun_left",
+        "x": 5.5,
+        "y": -2.6,
+        "weapon": "autocannon_mk1",
+        "group": "primary"
+      },
+      {
+        "id": "gun_right",
+        "x": 5.5,
+        "y": 2.6,
+        "weapon": "autocannon_mk1",
+        "group": "primary"
+      },
+      {
+        "id": "laser",
+        "x": 7.6,
+        "y": 0,
+        "weapon": "laser_mk1",
+        "group": "secondary"
+      }
+    ]
   },
   {
     "id": "mule",
     "class": "hauler",
-    "hull": { "integrity": 2400, "dryMass": 22000, "length": 26, "collisionRadius": 12 },
+    "hull": {
+      "integrity": 2400,
+      "dryMass": 22000,
+      "length": 26,
+      "collisionRadius": 12,
+      "armor": 0.25
+    },
     "movement": {
       "mainThrust": 300000,
       "reverseThrust": 120000,
@@ -30,7 +83,84 @@
       "boostMultiplier": 1.4,
       "boostFuelMultiplier": 2.5
     },
-    "fuel": { "capacity": 1200, "consumptionPerMegaNewtonSecond": 12 },
-    "cargo": { "maxMass": 20000, "maxVolume": 120 }
+    "fuel": {
+      "capacity": 1200,
+      "consumptionPerMegaNewtonSecond": 12
+    },
+    "cargo": {
+      "maxMass": 20000,
+      "maxVolume": 120
+    },
+    "shield": {
+      "capacity": 500,
+      "rechargeRate": 25,
+      "rechargeDelay": 4
+    },
+    "reactor": {
+      "capacity": 140,
+      "rechargeRate": 14
+    },
+    "sensors": {
+      "range": 1200
+    },
+    "hardpoints": [
+      {
+        "id": "turret",
+        "x": 10,
+        "y": 0,
+        "weapon": "autocannon_mk1",
+        "group": "primary"
+      }
+    ]
+  },
+  {
+    "id": "jackal",
+    "class": "interceptor",
+    "hull": {
+      "integrity": 450,
+      "dryMass": 6500,
+      "length": 14,
+      "collisionRadius": 6,
+      "armor": 0.1
+    },
+    "movement": {
+      "mainThrust": 140000,
+      "reverseThrust": 70000,
+      "lateralThrust": 60000,
+      "rotationalTorque": 380000,
+      "gyrationRadius": 3.5,
+      "maxAngularVelocity": 2.4,
+      "boostMultiplier": 1.5,
+      "boostFuelMultiplier": 2.5
+    },
+    "fuel": {
+      "capacity": 400,
+      "consumptionPerMegaNewtonSecond": 10
+    },
+    "cargo": {
+      "maxMass": 1500,
+      "maxVolume": 8
+    },
+    "shield": {
+      "capacity": 200,
+      "rechargeRate": 20,
+      "rechargeDelay": 4
+    },
+    "reactor": {
+      "capacity": 60,
+      "rechargeRate": 8
+    },
+    "sensors": {
+      "range": 950
+    },
+    "hardpoints": [
+      {
+        "id": "gun",
+        "x": 6.5,
+        "y": 0,
+        "weapon": "pirate_autocannon",
+        "group": "primary"
+      }
+    ]
   }
 ]

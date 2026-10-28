@@ -1,6 +1,6 @@
-import type { ShipDefinition } from '@void-frontier/content';
+import { getWeapon, type ShipDefinition } from '@void-frontier/content';
 import { cos, sin, type Vec2 } from '@void-frontier/kernel';
-import { idleCommand, idleOutput, type Body, type Collider, type EntityId, type FlightMode, type Ship } from './types.ts';
+import { idleCommand, idleOutput, type Body, type Collider, type EntityId, type Faction, type FlightMode, type Ship } from './types.ts';
 import type { World } from './world.ts';
 
 export interface SpawnShipOptions {
@@ -11,6 +11,7 @@ export interface SpawnShipOptions {
   mode?: FlightMode;
   fuel?: number;
   cargoMass?: number;
+  faction?: Faction;
 }
 
 export function shipMass(ship: Ship): number {
@@ -26,7 +27,20 @@ export function spawnShip(world: World, definition: ShipDefinition, options: Spa
   const id = world.createEntity();
   const ship: Ship = {
     definition,
+    faction: options.faction ?? 'player',
     mode: options.mode ?? 'newtonian',
+    shield: definition.shield.capacity,
+    energy: definition.reactor.capacity,
+    lastDamageTick: -1e9,
+    weapons: definition.hardpoints.map((hardpoint) => ({
+      hardpoint,
+      definition: getWeapon(hardpoint.weapon),
+      cooldown: 0,
+      heat: 0,
+      overheated: false,
+      beam: null,
+    })),
+    kills: 0,
     hull: definition.hull.integrity,
     destroyed: false,
     fuel: options.fuel ?? definition.fuel.capacity,

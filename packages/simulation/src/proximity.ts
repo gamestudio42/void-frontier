@@ -19,8 +19,13 @@ export function nearestObstacle(world: World, id: EntityId, range = 400): Proxim
   const selfCollider = world.colliders.get(id);
   if (!self || !selfCollider) return null;
   let best: Proximity | null = null;
-  for (const [other, collider] of world.colliders) {
-    if (other === id) continue;
+  const reach = range + selfCollider.bound;
+  const candidates = world.spatial
+    ? world.spatial.query(self.position.x - reach, self.position.y - reach, self.position.x + reach, self.position.y + reach)
+    : [...world.colliders.keys()];
+  for (const other of candidates) {
+    const collider = world.colliders.get(other);
+    if (other === id || !collider) continue;
     const body = world.bodies.get(other)!;
     const dx = body.position.x - self.position.x;
     const dy = body.position.y - self.position.y;

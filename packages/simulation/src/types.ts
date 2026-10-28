@@ -1,9 +1,11 @@
-import type { AsteroidType, ShipDefinition, StationDefinition } from '@void-frontier/content';
+import type { AsteroidType, EncounterDefinition, ShipDefinition, StationDefinition, WeaponDefinition } from '@void-frontier/content';
 import type { Vec2 } from '@void-frontier/kernel';
 
 export type EntityId = number;
 
 export type FlightMode = 'newtonian' | 'assisted';
+
+export type Faction = 'player' | 'pirate';
 
 /** Rigid body on the movement plane. Angle is counter-clockwise from +X, in radians. */
 export interface Body {
@@ -36,6 +38,11 @@ export interface ShipCommand {
   /** Use every thruster to stop moving and turning. */
   brake: boolean;
   boost: boolean;
+  /** Primary weapon group (guns) and secondary group (laser). */
+  firePrimary: boolean;
+  fireSecondary: boolean;
+  /** Selected target: guns swivel toward its lead point when it is inside their gimbal. */
+  target: EntityId | null;
 }
 
 /** Throttle actually applied to each thruster group after fuel limits, for physics and visuals. */
@@ -51,9 +58,28 @@ export interface ThrusterOutput {
   boosting: boolean;
 }
 
+export interface WeaponMount {
+  hardpoint: ShipDefinition['hardpoints'][number];
+  definition: WeaponDefinition;
+  /** seconds until the next shot */
+  cooldown: number;
+  heat: number;
+  /** Locked out after reaching max heat until it cools to 30%. */
+  overheated: boolean;
+  /** Current beam segment while a beam weapon fires, for hits and visuals. */
+  beam: { from: { x: number; y: number }; to: { x: number; y: number }; hit: EntityId | null } | null;
+}
+
 export interface Ship {
   definition: ShipDefinition;
+  faction: Faction;
   mode: FlightMode;
+  shield: number;
+  energy: number;
+  /** Tick of the last weapon damage; shields recharge after the definition's delay. */
+  lastDamageTick: number;
+  weapons: WeaponMount[];
+  kills: number;
   /** Hull integrity points; the ship is destroyed at 0. */
   hull: number;
   destroyed: boolean;
@@ -67,7 +93,17 @@ export interface Ship {
   output: ThrusterOutput;
 }
 
-export const idleCommand = (): ShipCommand => ({ thrust: 0, strafe: 0, turn: 0, aim: null, brake: false, boost: false });
+export const idleCommand = (): ShipCommand => ({
+  thrust: 0,
+  strafe: 0,
+  turn: 0,
+  aim: null,
+  brake: false,
+  boost: false,
+  firePrimary: false,
+  fireSecondary: false,
+  target: null,
+});
 export const idleOutput = (): ThrusterOutput => ({ main: 0, reverse: 0, lateral: 0, rotation: 0, boosting: false });
 
 /** Collision shape: circles in body-local axes (x along the body's angle). */
@@ -101,4 +137,45 @@ export type SimEvent =
       /** hull points removed from ships in the pair */
       damage: number;
     }
-  | { type: 'shipDestroyed'; id: EntityId; position: { x: number; y: number } };
+  | { type: 'shipDestroyed'; id: EntityId; position: { x: number; y: number }; by: EntityId | null }
+  | { type: 'shot'; owner: EntityId; position: { x: number; y: number }; direction: { x: number; y: number } }
+  | {
+      type: 'hit';
+      target: EntityId;
+      attacker: EntityId;
+      point: { x: number; y: number };
+      /** damage after multipliers, split by layer */
+      shieldDamage: number;
+      hullDamage: number;
+      beam: boolean;
+    };
+
+export interface Projectile {
+  owner: EntityId;
+  position: { x: number; y: number };
+  velocity: { x: number; y: number };
+  /** seconds left */
+  life: number;
+  damage: number;
+  multipliers: { shield: number; hull: number };
+}
+
+export type AiMode = 'patrol' | 'engage' | 'retreat';
+
+export interface AiPilot {
+  mode: AiMode;
+  patrol: { x: number; y: number }[];
+  waypoint: number;
+  target: EntityId | null;
+  /** Tick until which the current retreat lasts. */
+  retreatUntil: number;
+  /** +1 or -1: which way this pilot circles a target. */
+  orbit: number;
+}
+
+export interface EncounterState {
+  definition: EncounterDefinition;
+  members: EntityId[];
+  /** Tick at which a destroyed group returns, or null while any member lives. */
+  respawnAt: number | null;
+}

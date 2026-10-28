@@ -1,5 +1,6 @@
 import { atan2, length, toDegrees, worldToLocal } from '@void-frontier/kernel';
 import { forwardOf } from './ship.ts';
+import { leadPoint, muzzlePosition } from './combat.ts';
 import type { EntityId, FlightMode, ThrusterOutput } from './types.ts';
 import type { World } from './world.ts';
 
@@ -18,6 +19,12 @@ export interface FlightTelemetry {
   fuelCapacity: number;
   hull: number;
   hullMax: number;
+  shield: number;
+  shieldMax: number;
+  energy: number;
+  energyMax: number;
+  weapons: { id: string; group: 'primary' | 'secondary'; kind: 'projectile' | 'beam'; heat: number; overheated: boolean }[];
+  kills: number;
   destroyed: boolean;
   /** kg */
   mass: number;
@@ -68,6 +75,18 @@ export function readTelemetry(world: World, id: EntityId): FlightTelemetry | nul
     fuelCapacity: ship.definition.fuel.capacity,
     hull: ship.hull,
     hullMax: ship.definition.hull.integrity,
+    shield: ship.shield,
+    shieldMax: ship.definition.shield.capacity,
+    energy: ship.energy,
+    energyMax: ship.definition.reactor.capacity,
+    weapons: ship.weapons.map((w) => ({
+      id: w.definition.id,
+      group: w.hardpoint.group,
+      kind: w.definition.kind,
+      heat: w.heat / w.definition.maxHeat,
+      overheated: w.overheated,
+    })),
+    kills: ship.kills,
     destroyed: ship.destroyed,
     mass: body.mass,
     cargoMass: ship.cargoMass,
@@ -76,5 +95,54 @@ export function readTelemetry(world: World, id: EntityId): FlightTelemetry | nul
     mode: ship.mode,
     output: { ...ship.output },
     position: { x: body.position.x, y: body.position.y },
+  };
+}
+
+export interface TargetInfo {
+  id: EntityId;
+  shipId: string;
+  faction: string;
+  position: { x: number; y: number };
+  distance: number;
+  /** m/s, positive when closing */
+  closingSpeed: number;
+  shield: number;
+  shieldMax: number;
+  hull: number;
+  hullMax: number;
+  /** Where to aim the primary guns, if they can reach it. */
+  lead: { x: number; y: number } | null;
+}
+
+export function readTarget(world: World, viewer: EntityId, target: EntityId | null): TargetInfo | null {
+  if (target === null) return null;
+  const ship = world.ships.get(target);
+  const body = world.bodies.get(target);
+  const me = world.bodies.get(viewer);
+  const myShip = world.ships.get(viewer);
+  if (!ship || !body || !me || !myShip || ship.destroyed) return null;
+  const dx = body.position.x - me.position.x;
+  const dy = body.position.y - me.position.y;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  const rvx = me.velocity.x - body.velocity.x;
+  const rvy = me.velocity.y - body.velocity.y;
+  const gun = myShip.weapons.find((w) => w.definition.kind === 'projectile');
+  let lead: { x: number; y: number } | null = null;
+  if (gun && gun.definition.kind === 'projectile') {
+    const solution = leadPoint(muzzlePosition(me, gun), me.velocity, body.position, body.velocity, gun.definition.projectileSpeed, gun.definition.velocityInheritance);
+    if (solution && solution.time <= gun.definition.projectileLifetime) lead = solution.point;
+  }
+  return {
+    id: target,
+    shipId: ship.definition.id,
+    faction: ship.faction,
+    position: { ...body.position },
+    distance,
+    closingSpeed: distance > 1e-6 ? (rvx * dx + rvy * dy) / distance : 0,
+    shield: ship.shield,
+    shieldMax: ship.definition.shield.capacity,
+    hull: ship.hull,
+    hullMax: ship.definition.hull.integrity,
+    lead,
   };
 }

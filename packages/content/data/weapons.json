@@ -1,0 +1,46 @@
+[
+  {
+    "id": "autocannon_mk1",
+    "kind": "projectile",
+    "damage": 12,
+    "fireRate": 7,
+    "projectileSpeed": 520,
+    "projectileLifetime": 2.2,
+    "velocityInheritance": 1,
+    "spread": 0.012,
+    "gimbal": 6,
+    "heatPerShot": 5.5,
+    "maxHeat": 100,
+    "coolingRate": 26,
+    "energyPerShot": 0,
+    "multipliers": { "shield": 0.6, "hull": 1.2 }
+  },
+  {
+    "id": "pirate_autocannon",
+    "kind": "projectile",
+    "damage": 9,
+    "fireRate": 5,
+    "projectileSpeed": 460,
+    "projectileLifetime": 2.2,
+    "velocityInheritance": 1,
+    "spread": 0.03,
+    "gimbal": 5,
+    "heatPerShot": 4,
+    "maxHeat": 100,
+    "coolingRate": 22,
+    "energyPerShot": 0,
+    "multipliers": { "shield": 0.6, "hull": 1.2 }
+  },
+  {
+    "id": "laser_mk1",
+    "kind": "beam",
+    "damagePerSecond": 70,
+    "range": 650,
+    "gimbal": 3,
+    "heatPerSecond": 20,
+    "maxHeat": 100,
+    "coolingRate": 18,
+    "energyPerSecond": 26,
+    "multipliers": { "shield": 1.4, "hull": 0.7 }
+  }
+]
