@@ -129,3 +129,19 @@ The game ships no audio files: every sound is built with Web Audio from noise an
 ## 032. Tutorial checks the simulation, not the keys
 
 Each tutorial step watches the game state (speed, heading, flight mode, scan events, hold contents, docking, credits) instead of listening for key presses. The player can use any control scheme, and a step completes only when the thing it teaches has actually happened.
+
+## 033. One simulation per sector, memory for the rest
+
+Only the sector the player is in is simulated. Leaving it stores a snapshot (rocks, markets, loose ore, RNG state); entering it rebuilds the sector from its seed and applies the snapshot. Pirates start fresh on each visit. The simulation clock is carried across jumps, so contract deadlines and cooldowns stay consistent. This keeps the cost of a sector constant no matter how many exist.
+
+## 034. Gravity as a force
+
+The anomaly's well adds a = k / d² (capped inside a core radius) to ship forces before integration, like any thruster. Flight assist, the brake and AI all have to fight it with real thrust, and a loaded ship escapes more slowly. Rocks are not pulled; they read as being in stable orbits.
+
+## 035. Contracts belong to stations, the board is global
+
+Every friendly station has its own offers; active contracts, history and reputation are shared. Deliveries can target a relay in any sector or another station (completed by docking there), and mining and bounty contracts can be handed in at any friendly station. Waypoints route through the gate network with a breadth-first search.
+
+## 036. Save format 2
+
+Saves gained a `sectors` map and a discovery log; contracts gained their issuer and destination sector. The 1 → 2 migration moves the single sector's state under `sectors` and tags existing contracts as issued by Outpost Alpha. A test builds a version 1 save and loads it.

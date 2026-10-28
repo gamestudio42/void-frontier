@@ -38,6 +38,7 @@ Dependencies point down only: `game → view3d → simulation → content, kerne
 | 2 | `aiSystem` | pilots, sensors, bodies | AI ship commands |
 | 3 | `flightControlSystem` | command, flight mode, body state | thruster throttles |
 | 4 | `thrusterSystem` | throttles, fuel | body force and torque, fuel |
+| 4b | `gravitySystem` | anomalies, ship positions | body force |
 | 5 | `integrationSystem` | force, torque, mass | velocity, position, angle |
 | 6 | `collisionSystem` | colliders, bodies | velocity, angular velocity, position (push-out), ship hull, the spatial index; collision and destruction events |
 | 7 | `weaponSystem` | commands, weapon mounts, spatial index | projectiles, beams, mining (ore extraction and chunks), heat, energy, shields; shot and hit events |
@@ -46,6 +47,7 @@ Dependencies point down only: `game → view3d → simulation → content, kerne
 | 10 | `scanExpirySystem` | scan readings | expired readings removed |
 | 11 | `encounterSystem` | encounters | respawned pirate groups |
 | 12 | `marketSystem` | market stock (1 Hz) | stock drifting toward base |
+| 12b | `explorationSystem` | points of interest, player, scan events | discoveries, rewards |
 | 13 | `missionSystem` | contract board, player position and hold | deliveries completed, deadlines failed, board refreshed; contract events |
 
 Later systems (mining, inventory, missions, economy) slot in following the order in the specification, section 14.4.
@@ -53,6 +55,12 @@ Later systems (mining, inventory, missions, economy) slot in following the order
 Components: `bodies`, `ships`, `colliders`, `asteroids`, `stations`, `beacons`. Static bodies (stations) have infinite mass and inertia, so forces and impulses cannot move them. `universe.ts` builds a sector from data: stations first, then each asteroid field from the sector seed, rejecting rocks that would overlap anything already placed or a clear zone.
 
 Systems report what happened through `world.events` (`collision`, `shipDestroyed`). The game drains them after each frame's steps and hands them to the renderer for sparks, shake and explosions, and to the HUD for the damage flash.
+
+## Sectors
+
+- `sector.ts`: `captureSector`/`applySectorSnapshot` (what a sector remembers), `capturePlayer`/`applyPlayer` (what travels with the player), `gateExit`, `jump` and `nextGate` (route finding).
+- The game keeps `memory` (snapshots of sectors not being simulated) and `discovered` (points of interest found anywhere); both are saved.
+- `Simulation.fromSector(sector, dt, { board, startDocked })` builds any sector; the contract board is passed in so it is shared.
 
 ## Collisions
 

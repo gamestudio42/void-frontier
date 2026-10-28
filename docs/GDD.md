@@ -1,6 +1,6 @@
 # Void Frontier: game design
 
-Status: MVP 0.1 vertical slice complete (milestone 7). The full vision and the original Portuguese specification are in `docs/reference/void-frontier-spec-v0.1-pt.md`.
+Status: 0.2 spatial expansion (four sectors, jump gates, exploration). The full vision and the original Portuguese specification are in `docs/reference/void-frontier-spec-v0.1-pt.md`.
 
 ## Fantasy
 
@@ -59,7 +59,8 @@ Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kes
 | Middle mouse / X | Mining laser |
 | R | Scanner pulse; relaunch after the ship is destroyed |
 | K (twice) | Jettison the hold |
-| F | Dock (when the approach checks are green) / undock |
+| F | Dock (when the approach checks are green) / undock / jump through a gate |
+| M | Sector map |
 | G | Graphics quality (high, medium, low) |
 | F3 | Debug overlay |
 | Esc / P | Pause menu (save, load, settings) |
@@ -111,6 +112,20 @@ Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kes
 - The game opens on the main menu over the live station scene. New game starts docked with the guided first flight switched on.
 - The tutorial teaches one verb per step and moves on only when it has happened: undock, accelerate, coast, turn without changing course, brake, flight assist, scan, mine 8 units, dock, sell.
 - Progress is saved automatically on every docking and every two minutes, and manually to three slots from the pause menu. Continue loads the most recent save.
+
+## The frontier (0.2)
+
+| Sector | Character | What it offers |
+| --- | --- | --- |
+| Outpost Alpha | Home, medium danger | Outpost station, mixed belt, a derelict |
+| Industrial Belt | Busy, low danger | Ferrum Refinery (best ore prices, cheap machine parts), dense iron, titanium and platinum belts, a hidden deposit |
+| Pirate Territory | Hostile, high danger | Black Harbour pirate den (no docking), Marauder gunship, raider packs, a smugglers' cache and a gunship wreck |
+| Anomaly Zone | Strange, low pirate presence | A gravity well, exotic-matter crystals and platinum near it, an ancient structure |
+
+- **Gates.** Each sector has two gates; fly into the ring under 30 m/s and press F. The map (M) shows the network.
+- **Gravity well.** Pull grows as 1/d². At 250 m from the core it is close to a scout's full main thrust; the richest rocks sit there. Watch the gravity readout and keep fuel.
+- **Exploration.** A "?" marks a signal; fly within 90 m of derelicts and caches to search them. Deposits only show up on a scanner pulse in range. Each pays once.
+- **Trade runs.** Ore sells best at the refinery; machine parts are cheap there and worth more at the outpost. Station deliveries pay for the trip between them.
 
 ## Not yet
 

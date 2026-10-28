@@ -118,4 +118,27 @@ Known limits: performance has been checked with software rendering only; it stil
 
 ## MVP 0.1 status
 
-All seven milestones are complete: the vertical slice from section 18 of the specification is playable end to end. Next steps follow the specification's 0.2 plan (several sectors and jump navigation) once the slice has been playtested.
+All seven milestones are complete and tagged `v0.1.0`: the vertical slice from section 18 of the specification is playable end to end.
+
+## 0.2: spatial expansion (done)
+
+Section 23 of the specification: several sectors, jumps, exploration.
+
+- [x] Four sectors on one gate network: Outpost Alpha, Industrial Belt, Pirate Territory and Anomaly Zone, each with its own seed, fields, encounters, sky and planet
+- [x] Paired jump gates: fly into the ring under 30 m/s and press F; you come out near the far gate already moving inward
+- [x] Sector memory: rocks mined, markets traded and loose ore stay as you left them; the clock runs on across jumps, so contract deadlines hold
+- [x] Ferrum Refinery in the Industrial Belt: pays more for ore, sells machine parts cheap; trade runs between stations
+- [x] Black Harbour, a pirate den that refuses docking, guarded by the new Marauder gunship
+- [x] Anomaly Zone gravity well: a real force (a = k / d²) that thrusters must fight, with platinum and exotic-matter rocks close to it
+- [x] Two new resources: platinum ore and exotic matter
+- [x] Points of interest: derelicts and caches found by flying to them, hidden deposits found by scanning; one-time rewards
+- [x] Contracts across sectors: deliveries to other stations (dock to deliver) and to relays in any sector; waypoints lead to the right gate
+- [x] Sector map (M) with the gate network, danger, discoveries and contract destinations
+- [x] Save format 2 with a migration from version 1 saves
+- [x] Insurance always relaunches you at Outpost Alpha; every sector keeps its memory
+
+Known limits: one hand-built set of sectors (no procedural universe yet); NPC traders and a dynamic regional economy are the 0.4 plan.
+
+## 0.3: depth (next)
+
+Subsystem damage (engines, reactor, radar, weapons, cargo hold), factions, advanced equipment and module slots.

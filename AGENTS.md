@@ -42,6 +42,8 @@ Instructions for AI coding agents working on Void Frontier. Read `docs/GDD.md`, 
 - A contract pays once: it leaves the active list when it completes, fails or is abandoned.
 - Save → load → save gives identical data; damaged files and files from newer versions are refused with a reason.
 - When the save format changes, bump `SAVE_VERSION` and add a migration; never edit old saves in place.
+- Jumping preserves the player, credits, contracts and clock; leaving and re-entering a sector preserves what was mined and traded there.
+- Every gate has a matching gate on the far side (checked at load).
 
 ## Commands
 

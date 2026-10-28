@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0: spatial expansion
+
+- Four sectors on a gate network: Outpost Alpha, Industrial Belt, Pirate Territory, Anomaly Zone.
+- Jump gates, sector memory and a sector map.
+- Ferrum Refinery (trade runs) and Black Harbour (pirate den), Marauder gunship.
+- Gravity well with platinum and exotic matter; points of interest to discover.
+- Contracts across sectors and stations; save format 2 with migration.
+
 ## 0.1.0: vertical slice
 
 The MVP from the specification, built in seven milestones:

@@ -41,7 +41,16 @@
 6. **Fight.** Pirates patrol the sector. Left mouse fires the autocannons, right mouse the laser, `Tab` picks a target. Burn shields with the laser, break the hull with the guns, and lead your shots: the guns swivel onto the yellow marker when it is close to your nose.
 7. **Take contracts.** The station's board offers deliveries to relay beacons, ore orders and pirate bounties, with deadlines and rewards. Reputation grows with every job done and unlocks better ones.
 8. **Trade and upgrade.** Fly back into the station's bay slowly and lined up, press `F` to dock, sell your ore and salvage, repair, refuel and buy upgrades. Prices follow the station's stock.
-9. **Mind the rocks.** Asteroids and the station are solid. Bump them gently and you bounce; hit them fast and the hull gives way. The radar, the nearest-object readout and the collision warning help you thread the field. `R` relaunches a lost ship.
+9. **Go further.** Four sectors are linked by jump gates: the Industrial Belt's refinery pays best for ore, Pirate Territory hides wrecks and caches behind gunships, and the Anomaly Zone's gravity well guards the rarest crystals. `M` opens the sector map.
+10. **Mind the rocks.** Asteroids and the station are solid. Bump them gently and you bounce; hit them fast and the hull gives way. The radar, the nearest-object readout and the collision warning help you thread the field. `R` relaunches a lost ship.
+
+<p align="center">
+  <img src="docs/screenshots/anomaly.jpg" alt="The scout skirts the gravity well of the Anomaly Zone, with crystal rocks, a violet gas giant and the gravity readout on the HUD" width="920">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/map.jpg" alt="The sector map: Outpost Alpha, Industrial Belt, Pirate Territory and Anomaly Zone linked by gates, with danger and discoveries" width="920">
+</p>
 
 <p align="center">
   <img src="docs/screenshots/combat.jpg" alt="The scout burns a pirate raider's shield with its laser while autocannon tracers close in; the target panel and lead marker are on the HUD" width="920">
@@ -67,7 +76,7 @@ New players get a guided first flight that teaches each of these by doing it. Pr
 
 ## Status
 
-**MVP 0.1: the vertical slice is complete.** Newtonian flight, Outpost Alpha with its station and asteroid belt, combat against pirate raiders, mining, a station economy with upgrades, contracts with reputation, and a finished shell: main menu, guided first flight, local saves, settings and synthesised audio. Next comes playtesting and the specification's 0.2 plan (more sectors and jump navigation); see the [roadmap](docs/ROADMAP.md).
+**0.2: the frontier opens.** Four sectors linked by jump gates, a second station for trade runs, a pirate stronghold, a gravity well with rare crystals, points of interest to explore, cross-sector contracts and a sector map, on top of the 0.1 vertical slice (flight, combat, mining, economy, contracts, saves, audio, tutorial). Next is the 0.3 depth pass: subsystem damage and factions; see the [roadmap](docs/ROADMAP.md).
 
 ## Develop
 

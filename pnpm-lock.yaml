@@ -92,6 +92,9 @@ importers:
 
   packages/view3d:
     dependencies:
+      '@void-frontier/content':
+        specifier: workspace:*
+        version: link:../content
       '@void-frontier/kernel':
         specifier: workspace:*
         version: link:../kernel
