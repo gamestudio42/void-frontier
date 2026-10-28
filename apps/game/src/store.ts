@@ -28,7 +28,12 @@ export interface StationView {
   market: { resource: string; stock: number; held: number; buy: number | null; sell: number | null }[];
   repairCost: number;
   refuelCost: number;
-  upgrades: { id: string; cost: number; installed: boolean }[];
+  /** Owning faction and the player's standing with it. */
+  faction: string;
+  standing: number;
+  /** Modules on offer here plus any already installed, with whether they can be fitted. */
+  upgrades: { id: string; slot: 'engine' | 'utility' | 'defense'; cost: number; installed: boolean; offered: boolean; locked: { faction: string; reputation: number } | null }[];
+  slots: Record<'engine' | 'utility' | 'defense', { used: number; total: number }>;
 }
 
 export interface ContractView {
@@ -53,7 +58,8 @@ export interface ActiveContractView extends ContractView {
 }
 
 export interface ContractsView {
-  reputation: number;
+  /** Standing with each lawful faction. */
+  reputation: Record<string, number>;
   maxActive: number;
   offers: ContractView[];
   active: ActiveContractView[];

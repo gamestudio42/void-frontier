@@ -1,4 +1,4 @@
-import { SECTORS, STATIONS } from '@void-frontier/content';
+import { FACTIONS, SECTORS, STATIONS } from '@void-frontier/content';
 import type { MessageKey, Translate } from '../i18n.ts';
 import type { ContractsView } from '../store.ts';
 
@@ -39,7 +39,7 @@ export function SectorMap({ current, visited, discovered, contracts, t, onClose 
           <h2>{t('map.title')}</h2>
           <span className="label">{t('map.hint')}</span>
         </header>
-        <svg viewBox="0 0 720 470" role="img" aria-label={t('map.title')}>
+        <svg viewBox="0 0 720 490" role="img" aria-label={t('map.title')}>
           {[...links].map((link) => {
             const [a, b] = link.split('|');
             const pa = at(a);
@@ -55,16 +55,19 @@ export function SectorMap({ current, visited, discovered, contracts, t, onClose 
             const stations = s.stations.map((st) => STATIONS.get(st.definition)!);
             return (
               <g key={s.id} transform={`translate(${p.x} ${p.y})`} className={`map-node ${here ? 'here' : ''} ${seen ? '' : 'unseen'} danger-${level}`}>
-                <circle r={here ? 34 : 28} />
+                <circle r={here ? 34 : 28} style={s.controllingFaction ? { stroke: FACTIONS.get(s.controllingFaction)!.color } : undefined} />
                 {targets.has(s.id) && <circle r={42} className="map-target" />}
                 {stations.map((st, i) => (
-                  <rect key={i} x={-26 + i * 14} y={-6} width={10} height={10} className={st.faction === 'pirate' ? 'map-station pirate' : 'map-station'} />
+                  <rect key={i} x={-26 + i * 14} y={-6} width={10} height={10} className={FACTIONS.get(st.faction)!.hostile ? 'map-station pirate' : 'map-station'} />
                 ))}
                 <text y={52} className="map-name">
                   {t(`sector.${s.id}` as MessageKey)}
                 </text>
                 <text y={68} className="map-meta">
                   {here ? t('map.here') : seen ? `${t('map.danger')}: ${t(`map.danger.${level}` as MessageKey)}` : t('map.unvisited')}
+                </text>
+                <text y={98} className="map-meta">
+                  {s.controllingFaction ? t(`faction.${s.controllingFaction}` as MessageKey) : '—'}
                 </text>
                 <text y={83} className="map-meta">
                   {t('map.discoveries')}: {found}/{s.pointsOfInterest.length}

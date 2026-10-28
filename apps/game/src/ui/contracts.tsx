@@ -26,16 +26,19 @@ export function ContractsTab({ view, actions, t, locale }: { view: ContractsView
   const full = view.active.length >= view.maxActive;
   return (
     <div className="contracts">
-      <div className="reputation">
-        <span className="label">{t('contract.reputation')}</span>
-        <div className="rep-track">
-          <div className="rep-fill" style={{ left: view.reputation < 0 ? `${50 + view.reputation / 2}%` : '50%', width: `${Math.abs(view.reputation) / 2}%` }} />
+      <h3>{t('contract.reputation')}</h3>
+      {Object.entries(view.reputation).map(([faction, value]) => (
+        <div key={faction} className="reputation">
+          <span>{t(`faction.${faction}` as MessageKey)}</span>
+          <div className="rep-track">
+            <div className={`rep-fill ${value < 0 ? 'negative' : ''}`} style={{ left: value < 0 ? `${50 + value / 2}%` : '50%', width: `${Math.abs(value) / 2}%` }} />
+          </div>
+          <strong data-testid={`reputation-${faction}`} data-value={value}>
+            {value > 0 ? '+' : ''}
+            {Math.round(value * 10) / 10}
+          </strong>
         </div>
-        <strong data-testid="reputation" data-value={view.reputation}>
-          {view.reputation > 0 ? '+' : ''}
-          {view.reputation}
-        </strong>
-      </div>
+      ))}
 
       {view.active.length > 0 && (
         <>
@@ -132,6 +135,10 @@ export function Notices({ notices, t, locale }: { notices: { id: number; kind: s
         <div key={`${n.id}-${n.outcome}`} className={`notice ${n.outcome}`} data-testid="notice">
           {n.kind === 'tutorial' ? (
             <strong>{t('tutorial.done')}</strong>
+          ) : n.kind.startsWith('system:') ? (
+            <strong>
+              {t(`system.${n.kind.slice(7)}` as MessageKey)} {n.outcome === 'failed' ? t('system.offline') : t('system.damaged')}
+            </strong>
           ) : n.kind.startsWith('poi:') ? (
             <>
               <strong>{t(`poi.${n.kind.slice(4)}` as MessageKey)}</strong>

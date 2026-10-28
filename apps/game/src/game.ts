@@ -1,7 +1,7 @@
-import { OUTPOST_ALPHA, getSector } from '@void-frontier/content';
+import { OUTPOST_ALPHA, getFaction, getSector } from '@void-frontier/content';
 import { FIXED_DT, FixedStepper, type Vec2 } from '@void-frontier/kernel';
 import { getUpgrade } from '@void-frontier/content';
-import { Simulation, applySectorSnapshot, captureSector, gateStatus, gravityAt, jump, markDiscovered, nextGate, dockedStationKey, type SectorSnapshot, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, installUpgrades, hostilesNear, nearestObstacle, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
+import { Simulation, slotUsage, applySectorSnapshot, captureSector, gateStatus, gravityAt, jump, markDiscovered, nextGate, dockedStationKey, type SectorSnapshot, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, installUpgrades, hostilesNear, nearestObstacle, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
 import { SpaceRenderer, type Quality } from '@void-frontier/view3d';
 import { AudioEngine } from './audio.ts';
 import { InputController } from './input.ts';
@@ -162,6 +162,11 @@ export class Game {
 
   abandonContract(id: number): void {
     this.sim.abandonContract(id);
+    this.publish();
+  }
+
+  sellUpgrade(id: string): void {
+    this.sim.sellUpgrade(this.sim.playerId, id);
     this.publish();
   }
 
@@ -352,6 +357,9 @@ export class Game {
             this.discovered.add(event.id);
             this.notices.push({ text: `poi:${event.kind}`, kind: 'completed', reward: event.credits, at: this.clock, id: -2 - this.discovered.size });
           }
+          if (event.type === 'subsystemDamaged' && event.ship === this.sim.playerId) {
+            this.notices.push({ text: `system:${event.system}`, kind: event.health === 0 ? 'failed' : 'abandoned', reward: 0, at: this.clock, id: -1000 - Math.round(this.clock * 10) });
+          }
           if (event.type === 'contract') {
             this.notices.push({ text: event.kind, kind: event.outcome, reward: event.reward, at: this.clock, id: event.id });
           }
@@ -504,7 +512,7 @@ export class Game {
       sector: c.delivery?.sector ?? null,
     });
     return {
-      reputation: board.reputation,
+      reputation: Object.fromEntries(Object.entries(board.reputation).filter(([id]) => !getFaction(id).hostile)),
       maxActive: board.rules.maxActive,
       offers: (stationKey ? (board.offers[stationKey] ?? []) : []).map(describe),
       active: board.active.map((c) => {
@@ -539,7 +547,14 @@ export class Game {
       })),
       repairCost: serviceCost(world, this.sim.playerId, 'repair'),
       refuelCost: serviceCost(world, this.sim.playerId, 'refuel'),
-      upgrades: station.definition.upgrades.map((id) => ({ id, cost: getUpgrade(id).cost, installed: ship.upgrades.includes(id) })),
+      faction: station.definition.faction,
+      standing: world.standing[station.definition.faction] ?? 0,
+      upgrades: [...new Set([...station.definition.upgrades, ...ship.upgrades])].map((id) => {
+        const u = getUpgrade(id);
+        const locked = u.requires && (world.standing[u.requires.faction] ?? 0) < u.requires.reputation ? u.requires : null;
+        return { id, slot: u.slot, cost: u.cost, installed: ship.upgrades.includes(id), offered: station.definition.upgrades.includes(id), locked };
+      }),
+      slots: slotUsage(ship),
     };
   }
 

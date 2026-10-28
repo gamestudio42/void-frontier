@@ -6,6 +6,7 @@ import { ContractsTab, type ContractActions } from './contracts.tsx';
 import { formatNumber } from './format.ts';
 
 export interface StationActions extends ContractActions {
+  sellUpgrade(id: string): void;
   undock(): void;
   trade(resource: string, units: number, side: 'buy' | 'sell'): void;
   service(kind: 'repair' | 'refuel'): void;
@@ -35,6 +36,12 @@ function effectLines(id: string, t: Translate, locale: string): string[] {
   if (e.cargoMassBonus) lines.push(`${t('hud.hold')} +${formatNumber(locale, e.cargoMassBonus / 1000, 1)} ${t('unit.mass')}`);
   if (e.shieldBonus) lines.push(`${t('hud.shield')} +${e.shieldBonus}`);
   if (e.shieldRechargeBonus) lines.push(`${t('upgrade.effect.recharge')} +${e.shieldRechargeBonus}/s`);
+  if (e.boostBonus) lines.push(`${t('upgrade.effect.boost')} +${formatNumber(locale, e.boostBonus * 100)}%`);
+  if (e.scanRangeBonus) lines.push(`${t('hud.scanner')} +${e.scanRangeBonus} m`);
+  if (e.sensorRangeBonus) lines.push(`${t('upgrade.effect.sensors')} +${e.sensorRangeBonus} m`);
+  if (e.tractorMultiplier) lines.push(`${t('upgrade.effect.tractor')} ×${e.tractorMultiplier}`);
+  if (e.gimbalBonus) lines.push(`${t('upgrade.effect.gimbal')} +${e.gimbalBonus}°`);
+  if (e.repairRate) lines.push(`${t('upgrade.effect.repair')} ${formatNumber(locale, e.repairRate * 100, 1)}%/s`);
   lines.push(`${t('hud.mass')} +${formatNumber(locale, getUpgrade(id).equipmentMass / 1000, 2)} ${t('unit.mass')}`);
   return lines;
 }
@@ -47,7 +54,10 @@ export function StationPanel({ view, contracts, hull, fuel, hold, actions, t, lo
       <section className="station" role="dialog" aria-label={t(`station.${view.name}` as MessageKey)} data-testid="station">
         <header>
           <div>
-            <span className="label">{t('station.docked')}</span>
+            <span className="label">
+              {t('station.docked')} · {t(`faction.${view.faction}` as MessageKey)} ({view.standing > 0 ? '+' : ''}
+              {Math.round(view.standing)})
+            </span>
             <h2>{t(`station.${view.name}` as MessageKey)}</h2>
           </div>
           <div className="credits" data-testid="credits" data-value={view.credits}>
@@ -138,21 +148,45 @@ export function StationPanel({ view, contracts, hull, fuel, hold, actions, t, lo
         )}
 
         {tab === 'upgrades' && (
-          <div className="upgrades">
-            {view.upgrades.map((u) => (
-              <article key={u.id} className={u.installed ? 'installed' : ''} data-testid={`upgrade-${u.id}`}>
-                <strong>{t(`upgrade.${u.id}` as MessageKey)}</strong>
-                <p>{t(`upgrade.${u.id}.desc` as MessageKey)}</p>
-                <ul>
-                  {effectLines(u.id, t, locale).map((line) => (
-                    <li key={line}>{line}</li>
-                  ))}
-                </ul>
-                <button disabled={u.installed || view.credits < u.cost} onClick={() => actions.buyUpgrade(u.id)}>
-                  {u.installed ? t('station.installed') : cr(u.cost)}
-                </button>
-              </article>
-            ))}
+          <div className="outfitting">
+            <div className="slot-summary">
+              {(['engine', 'utility', 'defense'] as const).map((slot) => (
+                <span key={slot} className={view.slots[slot].used >= view.slots[slot].total ? 'full' : ''}>
+                  {t(`slot.${slot}` as MessageKey)} {view.slots[slot].used}/{view.slots[slot].total}
+                </span>
+              ))}
+            </div>
+            <div className="upgrades">
+              {view.upgrades.map((u) => {
+                const noSlot = !u.installed && view.slots[u.slot].used >= view.slots[u.slot].total;
+                return (
+                  <article key={u.id} className={u.installed ? 'installed' : u.locked ? 'locked' : ''} data-testid={`upgrade-${u.id}`}>
+                    <span className="slot-tag">{t(`slot.${u.slot}` as MessageKey)}</span>
+                    <strong>{t(`upgrade.${u.id}` as MessageKey)}</strong>
+                    <p>{t(`upgrade.${u.id}.desc` as MessageKey)}</p>
+                    <ul>
+                      {effectLines(u.id, t, locale).map((line) => (
+                        <li key={line}>{line}</li>
+                      ))}
+                    </ul>
+                    {u.locked && !u.installed && (
+                      <em className="requires">
+                        {t('station.requires')} {t(`faction.${u.locked.faction}` as MessageKey)} +{u.locked.reputation}
+                      </em>
+                    )}
+                    {u.installed ? (
+                      <button onClick={() => actions.sellUpgrade(u.id)} data-testid={`remove-${u.id}`}>
+                        {t('station.remove')} · +{cr(Math.round(u.cost / 2))}
+                      </button>
+                    ) : (
+                      <button disabled={!u.offered || !!u.locked || noSlot || view.credits < u.cost} onClick={() => actions.buyUpgrade(u.id)}>
+                        {noSlot ? t('station.noSlot') : cr(u.cost)}
+                      </button>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
           </div>
         )}
 

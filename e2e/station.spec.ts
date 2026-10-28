@@ -31,7 +31,7 @@ test('starts docked, sells ore, buys an upgrade, undocks and docks again', async
 
   await page.getByTestId('tab-upgrades').click();
   await page.getByTestId('upgrade-cargo_frame').getByRole('button').click();
-  await expect(page.getByTestId('upgrade-cargo_frame').getByRole('button')).toBeDisabled();
+  await expect(page.getByTestId('remove-cargo_frame')).toBeVisible();
 
   await page.getByTestId('undock').click();
   await expect(page.getByTestId('station')).toBeHidden();

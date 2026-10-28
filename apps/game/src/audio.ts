@@ -205,6 +205,9 @@ export class AudioEngine {
             this.chime(e.type === 'docked' ? [660, 880] : [880, 660], 0.05, 0.2);
           }
           break;
+        case 'subsystemDamaged':
+          if (e.ship === sim.playerId) this.chime(e.health === 0 ? [880, 660, 880, 660] : [880, 660], 0.07);
+          break;
         case 'discovered':
           this.chime([392, 523, 659, 784, 1047], 0.06);
           break;

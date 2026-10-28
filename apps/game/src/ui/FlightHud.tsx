@@ -4,6 +4,7 @@ import type { MessageKey, Translate } from '../i18n.ts';
 import type { HudState } from '../store.ts';
 import { Compass } from './Compass.tsx';
 import { DockingPanel } from './DockingPanel.tsx';
+import { ShipSchematic } from './ShipSchematic.tsx';
 import { formatBearing, formatDistance, formatNumber } from './format.ts';
 
 interface FlightHudProps {
@@ -21,20 +22,6 @@ function Bar({ value, max, className }: { value: number; max: number; className?
   );
 }
 
-function Thruster({ label, value, signed }: { label: string; value: number; signed?: boolean }) {
-  const magnitude = Math.min(1, Math.abs(value));
-  return (
-    <div className="thruster">
-      <span>{label}</span>
-      <div className={`thruster-track ${signed ? 'signed' : ''}`}>
-        <div
-          className="thruster-fill"
-          style={signed ? { width: `${magnitude * 50}%`, left: value >= 0 ? '50%' : `${50 - magnitude * 50}%` } : { width: `${magnitude * 100}%` }}
-        />
-      </div>
-    </div>
-  );
-}
 
 const RESOURCE_COLORS: Record<string, string> = Object.fromEntries([...RESOURCES.values()].map((r) => [r.id, r.color]));
 
@@ -70,6 +57,7 @@ function TargetPanel({ hud, t, locale }: FlightHudProps) {
       </div>
       <Bar value={target.shield} max={target.shieldMax} className="shield" />
       <Bar value={target.hull} max={target.hullMax} className="hull" />
+      <ShipSchematic systems={target.subsystems} t={t} compact />
     </section>
   );
 }
@@ -148,6 +136,7 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
       </section>
 
       <section className="panel ship">
+        <ShipSchematic systems={tel.subsystems} mounts={tel.mounts} t={t} />
         <div className="row">
           <span className="label">{t('hud.hull')}</span>
           <strong data-testid="hull" data-value={tel.hull.toFixed(2)}>{formatNumber(locale, (tel.hull / tel.hullMax) * 100)}%</strong>
@@ -214,13 +203,6 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
               {w.overheated && <em>{t('hud.overheat')}</em>}
             </div>
           ))}
-        </div>
-        <div className="thrusters">
-          <span className="label">{t('hud.thrusters')}</span>
-          <Thruster label={t('hud.thruster.main')} value={tel.output.main} />
-          <Thruster label={t('hud.thruster.reverse')} value={tel.output.reverse} />
-          <Thruster label={t('hud.thruster.lateral')} value={tel.output.lateral} signed />
-          <Thruster label={t('hud.thruster.rotation')} value={-tel.output.rotation} signed />
         </div>
       </section>
 
