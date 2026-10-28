@@ -101,3 +101,15 @@ Ships keep their base definition and a list of installed upgrades; the effective
 ## 025. Insurance instead of permadeath
 
 Losing the ship relaunches the player from the station with upgrades refitted and 90% of credits; the hold and its contents are lost. Death costs time and cargo, not hours of progress. Saves arrive in the polish milestone.
+
+## 026. Deliveries end in flight, other contracts at the station
+
+A delivery completes the moment the ship stops within 60 m of the relay beacon: the flight is the work, and coming home is optional. Mining and bounty contracts are handed in at the station, which keeps the "return and dock" beat of the core loop meaningful.
+
+## 027. Contract crates are heavy and unsellable
+
+Sealed crates weigh 120 kg a unit, so a delivery loads 1–3 t and changes how the ship flies. The station does not buy them, so a contract cannot be turned into a market trade, and jettisoning them means the delivery cannot be completed.
+
+## 028. Reputation as one number
+
+The specification keeps factions for later. Reputation with the outpost is a single number from -100 to +100: +0.5% payout per point, elite contracts (bigger, +60% pay) from +20. One number is enough to make failing a contract cost something without a faction system.

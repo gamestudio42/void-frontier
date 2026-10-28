@@ -39,6 +39,7 @@ Instructions for AI coding agents working on Void Frontier. Read `docs/GDD.md`, 
 - Ore is conserved: what leaves a rock arrives as chunks, and what a tractor collects leaves the chunk.
 - Trades are atomic: goods and credits move together or not at all; credits never go negative.
 - A docked ship does not move, fire or take damage.
+- A contract pays once: it leaves the active list when it completes, fails or is abandoned.
 
 ## Commands
 

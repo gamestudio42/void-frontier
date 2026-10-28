@@ -9,8 +9,8 @@ The plan follows section 19 of the specification. Each milestone ends with a bui
 | 3 | Combat: autocannon, laser, predictive aim, first pirate AI | Done |
 | 4 | Mining: scanner, mining laser, cargo, variable mass from ore | Done |
 | 5 | Station and economy: docking, market, repair, refuel, upgrades | Done |
-| 6 | Missions: delivery, mining and bounty contracts, reputation | Next |
-| 7 | Polish and release: menus, settings, audio, saves, tutorial | Planned |
+| 6 | Missions: delivery, mining and bounty contracts, reputation | Done |
+| 7 | Polish and release: menus, settings, audio, saves, tutorial | Next |
 
 Milestone 1 merges phases 1 and 2 of the specification, as its "First Milestone" brief asks.
 
@@ -90,6 +90,20 @@ Known limits: ore cannot be sold until the station economy (next); no refining.
 
 Known limits: one station, so trade routes wait for more sectors; no saves until the polish milestone.
 
-## Milestone 6: missions (next)
+## Milestone 6: missions (done)
 
-Contract board at the station with delivery, mining and bounty contracts, rewards, history and basic reputation.
+- [x] Contract rules as data (`contracts.json`): slots, limits, rewards, deadlines, reputation, penalties
+- [x] Deterministic contract board at the station, refreshed over time
+- [x] Delivery: sealed crates loaded on acceptance (heavy, unsellable), completed by stopping within 60 m of a relay beacon; Gate relay sits in pirate space and pays more
+- [x] Mining: bring a given ore to the station and hand it in
+- [x] Bounty: destroy pirates after accepting, then report back
+- [x] Deadlines, abandoning, failure; history of the last contracts
+- [x] Reputation from -100 to +100: completions raise it, failures lower it; it raises payouts and unlocks elite contracts
+- [x] Losing the ship fails deliveries but keeps other contracts, their time and their progress
+- [x] Contracts tab, in-flight tracker, waypoints with edge arrows, radar markers, completion notices
+
+Known limits: one faction and one station; no escort or salvage contracts yet.
+
+## Milestone 7: polish and release (next)
+
+Main menu and settings, audio (engines, weapons, impacts, UI), local saves with versioned migrations, a short guided tutorial for the first flight, bug fixes and performance work on real hardware.

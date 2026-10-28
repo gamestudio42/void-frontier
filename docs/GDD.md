@@ -1,6 +1,6 @@
 # Void Frontier: game design
 
-Status: station and economy in Outpost Alpha (milestone 5). The full vision and the original Portuguese specification are in `docs/reference/void-frontier-spec-v0.1-pt.md`.
+Status: contracts in Outpost Alpha (milestone 6). The full vision and the original Portuguese specification are in `docs/reference/void-frontier-spec-v0.1-pt.md`.
 
 ## Fantasy
 
@@ -17,7 +17,7 @@ You are an independent pilot on a remote frontier with a small working ship, and
 
 Dock → pick a contract → undock → fly → mine, fight or collect → return → dock → sell → upgrade → repeat.
 
-Milestones 1–5 close the core loop: start docked, undock, fly, mine or fight, return, dock, sell, upgrade. Contracts (milestone 6) give that loop goals.
+Milestones 1–6 deliver the specification's full loop: start docked, select a contract, undock, fly, mine, fight or deliver, return, dock, sell, complete the contract, earn credits, upgrade, repeat.
 
 ## Flight model (milestone 1)
 
@@ -96,6 +96,15 @@ Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kes
 - **Services.** Repair (1.5 cr per hull point) and refuel (1.2 cr per kg), as far as your credits go.
 - **Upgrades.** Engine tuning (+15% thrust, 1,200 cr), reinforced hull (+400 hull, +5% armour, 1,500 cr), cargo frame (+3 t, +10 m³, 1,000 cr) and shield capacitor (+150 shield, faster recharge, 1,400 cr). Each adds mass.
 - **Loss.** Insurance relaunches you at the station with upgrades and 90% of credits; the hold is gone.
+
+## Contracts (milestone 6)
+
+- **Board.** Four offers at the station; one is replaced every four minutes and taken offers are replaced at once. Up to three active contracts.
+- **Delivery.** Sealed crates (120 kg each, unsellable) go into the hold on acceptance. Stop within 60 m of the relay beacon below 6 m/s to deliver. Reach, Shoal and Gate relays; Gate is in pirate space and pays 45% more.
+- **Mining.** Bring a set amount of iron, copper or titanium ore and hand it in at the station.
+- **Bounty.** Destroy one to three pirates after accepting, then hand in.
+- **Deadlines and reputation.** Every contract has a time limit. Completing raises outpost reputation (+3 to +6); failing (-6) or abandoning (-4) lowers it. Each point is +0.5% pay; from +20, elite contracts appear (bigger and better paid).
+- **Readability.** The Contracts tab opens first when docked; in flight a tracker lists objectives and timers, delivery relays get a waypoint, an edge arrow and a radar ring, and a notice confirms each outcome.
 
 ## Not yet
 

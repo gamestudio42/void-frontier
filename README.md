@@ -33,8 +33,9 @@
 4. **Mine.** Press `R` to scan nearby rocks, then cut ore with the mining laser (middle mouse or `X`). The tractor pulls the chunks into your hold, and every tonne you carry makes the ship slower to accelerate and turn.
 5. **Ask for help.** `C` switches on flight assist, which cancels drift and spin for you, using the same thrusters and the same fuel.
 6. **Fight.** Pirates patrol the sector. Left mouse fires the autocannons, right mouse the laser, `Tab` picks a target. Burn shields with the laser, break the hull with the guns, and lead your shots: the guns swivel onto the yellow marker when it is close to your nose.
-7. **Trade and upgrade.** Fly back into the station's bay slowly and lined up, press `F` to dock, sell your ore and salvage, repair, refuel and buy upgrades. Prices follow the station's stock.
-8. **Mind the rocks.** Asteroids and the station are solid. Bump them gently and you bounce; hit them fast and the hull gives way. The radar, the nearest-object readout and the collision warning help you thread the field. `R` relaunches a lost ship.
+7. **Take contracts.** The station's board offers deliveries to relay beacons, ore orders and pirate bounties, with deadlines and rewards. Reputation grows with every job done and unlocks better ones.
+8. **Trade and upgrade.** Fly back into the station's bay slowly and lined up, press `F` to dock, sell your ore and salvage, repair, refuel and buy upgrades. Prices follow the station's stock.
+9. **Mind the rocks.** Asteroids and the station are solid. Bump them gently and you bounce; hit them fast and the hull gives way. The radar, the nearest-object readout and the collision warning help you thread the field. `R` relaunches a lost ship.
 
 <p align="center">
   <img src="docs/screenshots/combat.jpg" alt="The scout burns a pirate raider's shield with its laser while autocannon tracers close in; the target panel and lead marker are on the HUD" width="920">
@@ -42,6 +43,10 @@
 
 <p align="center">
   <img src="docs/screenshots/mining.jpg" alt="The scout cuts a copper-rich rock with its amber mining laser while scanner tags label nearby rocks and the hold fills on the HUD" width="920">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/contracts.jpg" alt="The contracts tab at Outpost Alpha: an active delivery, mining orders with rewards and time limits, and the reputation bar" width="920">
 </p>
 
 <p align="center">
@@ -56,7 +61,7 @@ The game opens in Portuguese for Portuguese-language browsers and in English oth
 
 ## Status
 
-**Milestone 5 of 7: station and economy.** The core loop is closed: start docked, undock, mine or fight, dock again with a skill-based approach, sell at prices that follow the station's stock, repair, refuel and fit four upgrades. Earlier milestones built the flight model, Outpost Alpha, combat and mining. Contracts and a polish pass follow; see the [roadmap](docs/ROADMAP.md).
+**Milestone 6 of 7: contracts.** The specification's full loop is playable: start docked, pick a delivery, mining or bounty contract, undock, do the job, come back, get paid, upgrade, repeat, with deadlines and a reputation that unlocks better work. Earlier milestones built the flight model, Outpost Alpha, combat, mining and the station economy. The polish pass (menus, audio, saves, tutorial) follows; see the [roadmap](docs/ROADMAP.md).
 
 ## Develop
 
