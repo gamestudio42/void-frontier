@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import asteroidData from '../data/asteroids.json';
+import contractData from '../data/contracts.json';
 import outpostAlphaData from '../data/outpost-alpha.json';
 import physicsData from '../data/physics.json';
 import resourceData from '../data/resources.json';
@@ -10,6 +11,7 @@ import weaponData from '../data/weapons.json';
 import {
   asteroidTypeSchema,
   collisionRulesSchema,
+  contractRulesSchema,
   resourceSchema,
   sectorDefinitionSchema,
   shipDefinitionSchema,
@@ -18,6 +20,7 @@ import {
   weaponDefinitionSchema,
   type AsteroidType,
   type CollisionRules,
+  type ContractRules,
   type ResourceDefinition,
   type SectorDefinition,
   type ShipDefinition,
@@ -37,6 +40,7 @@ export const STATIONS: ReadonlyMap<string, StationDefinition> = byId(z.array(sta
 export const RESOURCES: ReadonlyMap<string, ResourceDefinition> = byId(z.array(resourceSchema).parse(resourceData));
 export const UPGRADES: ReadonlyMap<string, UpgradeDefinition> = byId(z.array(upgradeSchema).parse(upgradeData));
 export const WEAPONS: ReadonlyMap<string, WeaponDefinition> = byId(z.array(weaponDefinitionSchema).parse(weaponData));
+export const CONTRACT_RULES: ContractRules = contractRulesSchema.parse(contractData);
 export const COLLISION_RULES: CollisionRules = collisionRulesSchema.parse(physicsData);
 export const OUTPOST_ALPHA: SectorDefinition = sectorDefinitionSchema.parse(outpostAlphaData);
 
@@ -70,6 +74,11 @@ export function validateSector(sector: SectorDefinition): void {
     for (const type of Object.keys(field.types)) getAsteroidType(type);
   }
   for (const encounter of sector.encounters) getShip(encounter.ship);
+  for (const drop of sector.dropPoints) {
+    if (!sector.beacons.some((b) => b.id === drop.beacon)) throw new Error(`Drop point ${drop.id} names unknown beacon ${drop.beacon}`);
+  }
 }
 
 validateSector(OUTPOST_ALPHA);
+getResource(CONTRACT_RULES.delivery.cargo);
+for (const resource of Object.keys(CONTRACT_RULES.mining.resources)) getResource(resource);

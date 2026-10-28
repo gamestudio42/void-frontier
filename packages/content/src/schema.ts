@@ -294,9 +294,61 @@ export const sectorDefinitionSchema = z.object({
   clearZones: z.array(z.object({ x: z.number(), y: z.number(), radius: positive })),
   beacons: z.array(z.object({ id: z.string(), x: z.number(), y: z.number() })),
   encounters: z.array(encounterSchema),
+  /** Delivery destinations: a beacon plus a risk multiplier on the reward. */
+  dropPoints: z.array(z.object({ id: z.string(), beacon: z.string(), risk: z.number().min(1) })),
   /** The player begins docked at the first station. */
   startDocked: z.boolean(),
   startingCredits: z.number().int().min(0),
 });
 
 export type SectorDefinition = z.infer<typeof sectorDefinitionSchema>;
+
+export const contractRulesSchema = z.object({
+  maxActive: z.number().int().min(1),
+  offerSlots: z.number().int().min(1),
+  /** seconds between board refreshes */
+  refreshSeconds: positive,
+  reputation: z.object({
+    min: z.number(),
+    max: z.number(),
+    /** reward bonus per reputation point (0.005 = +0.5%) */
+    rewardPerPoint: z.number().min(0),
+    /** reputation that unlocks larger, better-paid contracts */
+    eliteThreshold: z.number(),
+  }),
+  delivery: z.object({
+    cargo: z.string(),
+    minUnits: z.number().int().min(1),
+    maxUnits: z.number().int().min(1),
+    baseReward: positive,
+    rewardPerMetre: positive,
+    rewardPerUnit: positive,
+    /** metres from the drop point */
+    dropRadius: positive,
+    /** m/s: the drop needs a near stop */
+    maxDropSpeed: positive,
+    secondsPerKm: positive,
+    minSeconds: positive,
+    repGain: positive,
+  }),
+  mining: z.object({
+    minUnits: z.number().int().min(1),
+    maxUnits: z.number().int().min(1),
+    /** reward = units x resource base price x this */
+    priceMultiplier: positive,
+    seconds: positive,
+    repGain: positive,
+    resources: z.record(z.string(), z.number().min(0)),
+  }),
+  bounty: z.object({
+    minCount: z.number().int().min(1),
+    maxCount: z.number().int().min(1),
+    rewardPerKill: positive,
+    seconds: positive,
+    repGain: positive,
+  }),
+  elite: z.object({ unitsMultiplier: z.number().min(1), rewardMultiplier: z.number().min(1) }),
+  penalty: z.object({ failed: z.number().min(0), abandoned: z.number().min(0) }),
+});
+
+export type ContractRules = z.infer<typeof contractRulesSchema>;

@@ -33,5 +33,12 @@
     "unitVolume": 0.25,
     "basePrice": 45,
     "color": "#9fb4c8"
+  },
+  {
+    "id": "sealed_crates",
+    "unitMass": 120,
+    "unitVolume": 0.4,
+    "basePrice": 1,
+    "color": "#ff9f43"
   }
 ]

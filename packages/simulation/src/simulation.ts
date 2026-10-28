@@ -4,6 +4,7 @@ import { spawnShip } from './ship.ts';
 import { aiSystem, encounterSystem, spawnEncounter } from './ai.ts';
 import { projectileSystem, weaponSystem } from './combat.ts';
 import { jettison, pickupSystem, scan, scanExpirySystem } from './mining.ts';
+import { abandonContract, acceptContract, createBoard, handInContract, missionSystem, type MissionBoard } from './missions.ts';
 import { buyUpgrade, dockShip, marketSystem, requestDock, service, trade, undock } from './station.ts';
 import { collisionSystem } from './systems/collision.ts';
 import { flightControlSystem } from './systems/flightControl.ts';
@@ -24,6 +25,8 @@ export class Simulation {
   playerId: EntityId = 0;
 
   rules: CollisionRules = COLLISION_RULES;
+  /** Contract board for the player; null in bare test worlds. */
+  missions: MissionBoard | null = null;
 
   constructor(dt = FIXED_DT) {
     this.dt = dt;
@@ -51,6 +54,7 @@ export class Simulation {
       sim.world.beacons.set(sim.world.createEntity(), { name: beacon.id, position: { x: beacon.x, y: beacon.y } });
     }
     sim.world.credits = sector.startingCredits;
+    sim.missions = createBoard(sector, sim.world);
     if (sector.startDocked) {
       const first = [...sim.world.stations.keys()][0];
       if (first !== undefined) dockShip(sim.world, sim.playerId, first);
@@ -73,6 +77,7 @@ export class Simulation {
     scanExpirySystem(this.world);
     encounterSystem(this.world, this.dt);
     marketSystem(this.world, this.dt);
+    if (this.missions) missionSystem(this.world, this.missions, this.playerId, this.dt);
     this.world.tick++;
   }
 
@@ -114,6 +119,18 @@ export class Simulation {
 
   buyUpgrade(id: EntityId, upgrade: string) {
     return buyUpgrade(this.world, id, upgrade);
+  }
+
+  acceptContract(offerId: number) {
+    return this.missions ? acceptContract(this.world, this.missions, this.playerId, offerId) : ({ ok: false, reason: 'unknown' } as const);
+  }
+
+  handInContract(contractId: number) {
+    return this.missions ? handInContract(this.world, this.missions, this.playerId, contractId) : ({ ok: false, reason: 'unknown' } as const);
+  }
+
+  abandonContract(contractId: number): boolean {
+    return this.missions ? abandonContract(this.world, this.missions, contractId) : false;
   }
 
   /** Scanner pulse for a ship; false while it recharges. */

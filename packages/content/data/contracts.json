@@ -1,0 +1,51 @@
+{
+  "maxActive": 3,
+  "offerSlots": 4,
+  "refreshSeconds": 240,
+  "reputation": {
+    "min": -100,
+    "max": 100,
+    "rewardPerPoint": 0.005,
+    "eliteThreshold": 20
+  },
+  "delivery": {
+    "cargo": "sealed_crates",
+    "minUnits": 8,
+    "maxUnits": 24,
+    "baseReward": 120,
+    "rewardPerMetre": 0.22,
+    "rewardPerUnit": 10,
+    "dropRadius": 60,
+    "maxDropSpeed": 6,
+    "secondsPerKm": 210,
+    "minSeconds": 240,
+    "repGain": 4
+  },
+  "mining": {
+    "minUnits": 20,
+    "maxUnits": 50,
+    "priceMultiplier": 1.35,
+    "seconds": 900,
+    "repGain": 3,
+    "resources": {
+      "iron_ore": 0.45,
+      "copper_ore": 0.35,
+      "titanium_ore": 0.2
+    }
+  },
+  "bounty": {
+    "minCount": 1,
+    "maxCount": 3,
+    "rewardPerKill": 420,
+    "seconds": 900,
+    "repGain": 6
+  },
+  "elite": {
+    "unitsMultiplier": 1.5,
+    "rewardMultiplier": 1.6
+  },
+  "penalty": {
+    "failed": 6,
+    "abandoned": 4
+  }
+}

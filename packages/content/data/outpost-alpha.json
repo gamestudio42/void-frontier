@@ -161,5 +161,22 @@
     }
   ],
   "startDocked": true,
-  "startingCredits": 800
+  "startingCredits": 800,
+  "dropPoints": [
+    {
+      "id": "reach_relay",
+      "beacon": "reach",
+      "risk": 1.0
+    },
+    {
+      "id": "shoal_relay",
+      "beacon": "shoal",
+      "risk": 1.15
+    },
+    {
+      "id": "gate_relay",
+      "beacon": "gate",
+      "risk": 1.45
+    }
+  ]
 }
