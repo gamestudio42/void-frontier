@@ -1,6 +1,6 @@
 # Void Frontier: game design
 
-Status: Outpost Alpha environment (milestone 2). The full vision and the original Portuguese specification are in `docs/reference/void-frontier-spec-v0.1-pt.md`.
+Status: combat in Outpost Alpha (milestone 3). The full vision and the original Portuguese specification are in `docs/reference/void-frontier-spec-v0.1-pt.md`.
 
 ## Fantasy
 
@@ -49,6 +49,9 @@ Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kes
 | A / D | Lateral thrusters |
 | Q / E | Rotate left / right |
 | Mouse | Point the nose at the cursor (V toggles) |
+| Left mouse / Ctrl | Fire autocannons |
+| Right mouse / Alt | Fire laser |
+| Tab | Next target |
 | Shift | Boost |
 | Space | Brake |
 | C | Toggle flight assist |
@@ -68,6 +71,14 @@ Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kes
 - **Destruction.** At zero hull the ship breaks apart in an explosion; `R` relaunches from the start.
 - **Reading danger.** Radar (1.4 km, north-up), nearest-object distance, a collision warning when contact is under five seconds away at a damaging speed, camera shake and a red flash on damage.
 
+## Combat (milestone 3)
+
+- **Weapons.** The Kestrel carries two autocannons (left mouse) and a laser (right mouse). Rounds keep the ship's velocity, so firing while sliding matters. Guns swivel up to 6° (laser 3°) onto the target's lead point; outside that cone they fire where the nose points.
+- **Defences.** Shield, then armour, then hull. Shields recharge 3–4 s after the last hit. The laser is 1.4× against shields and 0.7× against hulls; the autocannon is the reverse (0.6× and 1.2×). Burn shields with the laser, finish with the guns.
+- **Limits.** Guns heat up and lock out at 100% until they cool to 30%. The laser drains the reactor.
+- **Pirates.** Jackal raiders patrol south of the station and in Copper Reach. They notice you within 950 m, close to about 230 m, circle, lead their shots and hold fire when a rock is in the way. Badly hurt, they run, and come back once their shields recover. Destroyed groups return after 60–90 s.
+- **Reading the fight.** Red brackets on hostiles, the target panel with shield and hull, a yellow lead diamond, an edge arrow when the target is off screen, a hit marker, shield flares and sparks. The camera pulls back to keep both ships in frame.
+
 ## Not yet
 
-Combat, mining, docking, economy, missions, saves, audio and the second ship in play (it is defined in content). See `docs/ROADMAP.md`.
+Mining, docking, economy, missions, saves, audio and the second ship in play (it is defined in content). See `docs/ROADMAP.md`.

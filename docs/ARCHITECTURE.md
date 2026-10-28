@@ -22,17 +22,21 @@ Dependencies point down only: `game → view3d → simulation → content, kerne
 
 ## Simulation
 
-`World` is a small entity store: component maps (`bodies`, `ships`, `beacons`) keyed by entity id, iterated in insertion order. `Simulation.step()` runs the systems in a fixed order:
+`World` is a small entity store: component maps (`bodies`, `ships`, `colliders`, `asteroids`, `stations`, `projectiles`, `pilots`, `beacons`) keyed by entity id, iterated in insertion order. `Simulation.step()` runs the systems in a fixed order:
 
 | Order | System | Reads | Writes |
 | --- | --- | --- | --- |
 | 1 | `massSystem` | ship fuel, cargo, equipment | body mass and inertia |
-| 2 | `flightControlSystem` | command, flight mode, body state | thruster throttles |
-| 3 | `thrusterSystem` | throttles, fuel | body force and torque, fuel |
-| 4 | `integrationSystem` | force, torque, mass | velocity, position, angle |
-| 5 | `collisionSystem` | colliders, bodies | velocity, angular velocity, position (push-out), ship hull; collision and destruction events |
+| 2 | `aiSystem` | pilots, sensors, bodies | AI ship commands |
+| 3 | `flightControlSystem` | command, flight mode, body state | thruster throttles |
+| 4 | `thrusterSystem` | throttles, fuel | body force and torque, fuel |
+| 5 | `integrationSystem` | force, torque, mass | velocity, position, angle |
+| 6 | `collisionSystem` | colliders, bodies | velocity, angular velocity, position (push-out), ship hull, the spatial index; collision and destruction events |
+| 7 | `weaponSystem` | commands, weapon mounts, spatial index | projectiles, beams, heat, energy, shields; shot and hit events |
+| 8 | `projectileSystem` | projectiles, spatial index | hits (swept ray), expiry |
+| 9 | `encounterSystem` | encounters | respawned pirate groups |
 
-Later systems (weapons, damage, mining, economy) slot in following the order in the specification, section 14.4.
+Later systems (mining, inventory, missions, economy) slot in following the order in the specification, section 14.4.
 
 Components: `bodies`, `ships`, `colliders`, `asteroids`, `stations`, `beacons`. Static bodies (stations) have infinite mass and inertia, so forces and impulses cannot move them. `universe.ts` builds a sector from data: stations first, then each asteroid field from the sector seed, rejecting rocks that would overlap anything already placed or a clear zone.
 
@@ -46,6 +50,15 @@ All shapes are circles in body-local space: three along each ship hull, one per 
 2. Narrow phase: circle pairs. If the circles do not overlap at the end of the step, a swept test solves for the time of impact along the relative motion, so a ship at hundreds of m/s cannot pass through a 2 m rock.
 3. Response: bodies are rewound to the time of impact, then an impulse with restitution and Coulomb friction is applied at the contact point (so off-centre hits spin the ship), followed by a positional push-out split by inverse mass.
 4. Damage: impact energy above the safe speed, applied to every ship in the pair (see `docs/DECISIONS.md` 011).
+
+The collision system also publishes its grid as `world.spatial`; weapons, projectiles, line-of-sight checks and proximity queries reuse it through `raycast` and `query`.
+
+## Combat
+
+- `combat.ts`: weapon mounts (cooldown, heat, overheat, gimbal), projectile spawning with velocity inheritance and seeded spread, beam raycasts, `leadPoint` (intercept solver) and `hostilesNear`.
+- `damage.ts`: shield → armour → hull with per-weapon multipliers; `destroyShip` credits kills and removes the wreck's collider.
+- `ai.ts`: pirate pilots (patrol, engage, retreat, avoidance) that only write ShipCommands, plus encounter spawning and respawn.
+- Gameplay randomness (spread, spawn headings) comes from `world.rng`, seeded from the sector, so fights replay exactly.
 
 Only `integrationSystem` writes motion. Assists compute the force that would cancel a velocity component in one step and clamp it to what the thrusters can deliver.
 
@@ -63,5 +76,7 @@ The simulation avoids `Math.sin`, `Math.cos`, `Math.atan2` and friends because e
 - Sky: a procedural nebula shader on a camera-centred sphere behind the starfield.
 - Shadows: one directional sun with a 720 m shadow frustum that follows the camera focus.
 - Particles: one pooled additive system (6000 points) for engine and RCS exhaust, impact sparks and dust, and explosions; plus a shockwave ring and a flash light per explosion.
+- Combat effects (`combatFx.ts`): instanced tracers, beam meshes, a fresnel shield bubble per ship that flares at the hit direction, muzzle flashes and sparks through the particle system.
+- Targeting overlay (`apps/game/src/targeting.ts`): a 2D canvas over the scene with brackets, lead marker, off-screen arrow and hit marker, drawn each frame from `worldToScreen`.
 - Quality levels: high, medium and low adjust resolution, shadow map size, shadows and bloom (see `docs/DECISIONS.md` 013).
 - Camera (`camera.ts`): perspective, 50° FOV, 55° tilt, 120 m base distance, exponential smoothing (0.15 s), velocity look-ahead and speed-based pull-back.

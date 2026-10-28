@@ -32,7 +32,12 @@
 3. **Stop on purpose.** Hold `Space` to fire every thruster against your motion. The red ring shows where you would stop.
 4. **Feel the load.** Press `L` to take on 5 t of test cargo and compare how the ship accelerates and turns.
 5. **Ask for help.** `C` switches on flight assist, which cancels drift and spin for you, using the same thrusters and the same fuel.
-6. **Mind the rocks.** Asteroids and the station are solid. Bump them gently and you bounce; hit them fast and the hull gives way. The radar, the nearest-object readout and the collision warning help you thread the field. `R` relaunches a lost ship.
+6. **Fight.** Pirates patrol the sector. Left mouse fires the autocannons, right mouse the laser, `Tab` picks a target. Burn shields with the laser, break the hull with the guns, and lead your shots: the guns swivel onto the yellow marker when it is close to your nose.
+7. **Mind the rocks.** Asteroids and the station are solid. Bump them gently and you bounce; hit them fast and the hull gives way. The radar, the nearest-object readout and the collision warning help you thread the field. `R` relaunches a lost ship.
+
+<p align="center">
+  <img src="docs/screenshots/combat.jpg" alt="The scout burns a pirate raider's shield with its laser while autocannon tracers close in; the target panel and lead marker are on the HUD" width="920">
+</p>
 
 <p align="center">
   <img src="docs/screenshots/station.jpg" alt="The scout approaches Outpost Alpha's docking bay, with its habitat ring, trusses and green approach lights" width="920">
@@ -42,7 +47,7 @@ The game opens in Portuguese for Portuguese-language browsers and in English oth
 
 ## Status
 
-**Milestone 2 of 7: environment.** Outpost Alpha: a modular station with a docking bay, three asteroid fields with three rock types, continuous collision detection with bounce, spin and hull damage, ship destruction and relaunch, radar, procedural nebula, shadows, engine and impact particles and adaptive graphics quality (`G`). Milestone 1 delivered the flight model. Combat, mining, docking, the economy and missions follow; see the [roadmap](docs/ROADMAP.md).
+**Milestone 3 of 7: combat.** Autocannons and a laser with heat and energy, predictive aim, shields, armour and hull, and pirate raiders whose AI flies with the same thrusters as you. Earlier milestones built the flight model and Outpost Alpha: the station, three asteroid fields and collisions. Mining, docking, the economy and missions follow; see the [roadmap](docs/ROADMAP.md).
 
 ## Develop
 

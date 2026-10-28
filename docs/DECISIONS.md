@@ -57,3 +57,19 @@ The game starts at high quality and steps down (high → medium → low) after t
 ## 014. Wrecks lose their collider
 
 A destroyed ship keeps its body, so the camera eases to a stop, but loses its collider. An invisible wreck bouncing off rocks would create sparks with no visible cause.
+
+## 015. Collisions bypass shields
+
+Shields stop weapons, not rocks. Impact damage still goes straight to the hull (decision 011), so careless flying stays dangerous even with full shields, and the two damage paths stay easy to reason about.
+
+## 016. Fixed guns with a small gimbal, not turrets
+
+Guns fire along the nose and can swivel a few degrees (6° autocannon, 3° laser) toward the selected target's lead point. Aiming stays a piloting skill, which is the core pillar, while the gimbal forgives small errors. Turrets can arrive later as a module for bigger ships.
+
+## 017. AI pilots produce ShipCommands
+
+Pirate AI never touches bodies. It decides a desired velocity (patrol, engage, retreat, plus obstacle avoidance) and an aim point, and converts the velocity error into thrust and strafe commands. A test checks that no AI velocity change exceeds what its engines can deliver in one step.
+
+## 018. Combat camera framing
+
+With a target within 900 m, the camera eases back and shifts toward the midpoint so both ships stay on screen. Without it, the preferred pirate range (230 m) put most fights off screen at the default zoom.

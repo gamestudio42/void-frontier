@@ -32,6 +32,9 @@ Instructions for AI coding agents working on Void Frontier. Read `docs/GDD.md`, 
 - Collisions conserve momentum between movable bodies; static bodies never move.
 - Hull damage is zero at or below the safe impact speed and grows with impact energy above it.
 - The same sector seed produces the same asteroid field, with no overlaps and clear zones respected.
+- Weapon damage goes shield → armour → hull; a ship never damages itself.
+- Rounds and beams are blocked by rocks and the station.
+- AI ships never change velocity faster than their engines allow.
 
 ## Commands
 

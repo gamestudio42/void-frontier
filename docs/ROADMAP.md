@@ -6,8 +6,8 @@ The plan follows section 19 of the specification. Each milestone ends with a bui
 | --- | --- | --- |
 | 1 | Foundation + flight physics | Done |
 | 2 | Environment: asteroid field, station, collisions | Done |
-| 3 | Combat: autocannon, laser, predictive aim, first pirate AI | Next |
-| 4 | Mining: scanner, mining laser, cargo, variable mass from ore | Planned |
+| 3 | Combat: autocannon, laser, predictive aim, first pirate AI | Done |
+| 4 | Mining: scanner, mining laser, cargo, variable mass from ore | Next |
 | 5 | Station and economy: docking, market, repair, refuel, upgrades | Planned |
 | 6 | Missions: delivery, mining and bounty contracts, reputation | Planned |
 | 7 | Polish and release: menus, settings, audio, saves, tutorial | Planned |
@@ -47,6 +47,20 @@ Known limits at the time: no collisions, no audio, no saves.
 
 Known limits: docking is visual only until milestone 5; asteroids cannot be broken or mined yet; no audio; frame rate on low-end GPUs not yet measured on real hardware (the quality fallback covers it).
 
-## Milestone 3: combat (next)
+## Milestone 3: combat (done)
 
-Autocannon and laser, projectiles that inherit ship velocity, predictive aim marker, shields, armour and hull, and a pirate scout whose AI flies with the same thrusters and limits as the player.
+- [x] Weapons as data: autocannon (projectile) and laser (beam), with gimbal, heat, overheat lock-out and reactor energy
+- [x] Rounds inherit the ship's velocity and are tested with a swept ray, so they never skip a target; asteroids and the station block fire
+- [x] Predictive aim: guns swivel onto the target's lead point inside their gimbal; the HUD draws the lead marker
+- [x] Defence layers: shield (recharges after a delay), armour (stops a fraction), hull; lasers are strong against shields, cannons against hulls
+- [x] Pirate interceptor (Jackal) with its own livery and silhouette
+- [x] Pirate AI: patrol, engage (close to range, match velocity, circle, fire with line-of-sight check), retreat when hurt, obstacle avoidance; flies only through ShipCommands
+- [x] Encounters: two patrol groups in Outpost Alpha that respawn after being destroyed
+- [x] Effects: tracers, laser beams, shield bubbles that flare where they are hit, muzzle flashes, hull sparks
+- [x] HUD: target panel, brackets, lead marker, off-screen arrow, hit marker, shield, energy, weapon heat, kills; radar contacts; camera frames the target in a fight
+
+Known limits: no subsystem damage yet (planned for 0.3), no missiles, no loot or bounty payout until the economy milestone, no audio.
+
+## Milestone 4: mining (next)
+
+Scanner, mining laser, ore extraction from the three rock types, cargo with mass and volume feeding the flight model, and collectable ore.
