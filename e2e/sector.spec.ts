@@ -8,6 +8,7 @@ interface DevGame {
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/?quality=low');
+  await page.getByTestId('tutorial-toggle').uncheck();
   await page.getByTestId('start').click();
   // The game starts docked at Outpost Alpha.
   await page.getByTestId('undock').click();

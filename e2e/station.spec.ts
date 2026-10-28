@@ -15,6 +15,7 @@ const credits = async (page: import('@playwright/test').Page) => Number(await pa
 
 test('starts docked, sells ore, buys an upgrade, undocks and docks again', async ({ page }) => {
   await page.goto('/?quality=low');
+  await page.getByTestId('tutorial-toggle').uncheck();
   await page.getByTestId('start').click();
   await expect(page.getByTestId('station')).toBeVisible();
   const start = await credits(page);

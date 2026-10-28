@@ -13,6 +13,7 @@ interface DevGame {
 
 test('scans a rock, mines it and fills the hold', async ({ page }) => {
   await page.goto('/?quality=low');
+  await page.getByTestId('tutorial-toggle').uncheck();
   await page.getByTestId('start').click();
   // The game starts docked at Outpost Alpha.
   await page.getByTestId('undock').click();

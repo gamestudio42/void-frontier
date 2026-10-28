@@ -15,6 +15,7 @@ interface DevGame {
 
 test('takes a delivery contract, flies the crates to the relay and gets paid', async ({ page }) => {
   await page.goto('/?quality=low');
+  await page.getByTestId('tutorial-toggle').uncheck();
   await page.getByTestId('start').click();
   await expect(page.getByTestId('station')).toBeVisible();
   const offer = page.getByTestId('offer-delivery').first();

@@ -125,8 +125,14 @@ export function Notices({ notices, t, locale }: { notices: { id: number; kind: s
     <div className="notices" aria-live="polite">
       {notices.map((n) => (
         <div key={`${n.id}-${n.outcome}`} className={`notice ${n.outcome}`} data-testid="notice">
-          <strong>{t(`contract.outcome.${n.outcome}` as MessageKey)}</strong> · {t(`contract.kind.${n.kind}` as MessageKey)}
-          {n.reward > 0 && <span> +{formatNumber(locale, n.reward)} cr</span>}
+          {n.kind === 'tutorial' ? (
+            <strong>{t('tutorial.done')}</strong>
+          ) : (
+            <>
+              <strong>{t(`contract.outcome.${n.outcome}` as MessageKey)}</strong> · {t(`contract.kind.${n.kind}` as MessageKey)}
+              {n.reward > 0 && <span> +{formatNumber(locale, n.reward)} cr</span>}
+            </>
+          )}
         </div>
       ))}
     </div>

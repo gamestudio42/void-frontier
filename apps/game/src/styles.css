@@ -1242,7 +1242,7 @@ button {
 
 .notices {
   position: absolute;
-  top: 120px;
+  top: 210px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -1269,4 +1269,257 @@ button {
 .notice span {
   color: #ffd27a;
   font-family: var(--mono);
+}
+
+.menu-backdrop {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: radial-gradient(ellipse at 30% 40%, rgba(5, 7, 11, 0.25), rgba(5, 7, 11, 0.85));
+}
+
+.main-menu {
+  place-items: center start;
+  padding-left: clamp(16px, 8vw, 120px);
+}
+
+.menu {
+  width: min(460px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  padding: 28px 30px 22px;
+  background: rgba(10, 14, 20, 0.86);
+  border: 1px solid var(--panel-edge);
+  border-top: 2px solid var(--amber);
+  border-radius: 12px;
+  backdrop-filter: blur(6px);
+}
+
+.menu h1 {
+  margin: 0;
+  font-size: clamp(30px, 5vw, 44px);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  line-height: 1.05;
+}
+
+.menu h2 {
+  margin: 0 0 14px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.menu .tagline {
+  margin: 8px 0 22px;
+  color: var(--muted);
+}
+
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.menu-buttons button,
+.menu .back,
+.slot-actions button {
+  padding: 11px 14px;
+  border: 1px solid var(--panel-edge);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  text-align: left;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 13px;
+}
+
+.menu-buttons button:hover,
+.menu-buttons button:focus-visible,
+.menu .back:hover,
+.slot-actions button:hover {
+  border-color: var(--amber);
+  background: rgba(255, 179, 71, 0.08);
+}
+
+.menu-buttons button.primary {
+  margin-top: 0;
+  background: var(--amber);
+  color: #1a1206;
+  border-color: var(--amber);
+  font-weight: 700;
+}
+
+.menu .back {
+  margin-top: 14px;
+  width: 100%;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -2px 0 6px 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.menu footer {
+  margin-top: 22px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.slots {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.slot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--panel-edge);
+  border-radius: 6px;
+}
+
+.slot div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.slot span {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.slot-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.slot-actions button {
+  padding: 6px 10px;
+  font-size: 11px;
+}
+
+.import {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.menu-message {
+  color: var(--amber);
+  font-size: 12.5px;
+}
+
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.setting {
+  display: grid;
+  grid-template-columns: 1fr 180px;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.setting.check {
+  grid-template-columns: 1fr auto;
+}
+
+.setting select,
+.setting input[type='range'] {
+  width: 100%;
+  accent-color: var(--amber);
+}
+
+.setting select {
+  padding: 6px;
+  background: #0e131a;
+  color: var(--text);
+  border: 1px solid var(--panel-edge);
+  border-radius: 4px;
+}
+
+.tutorial {
+  position: absolute;
+  bottom: 44px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(420px, calc(100% - 32px));
+  padding: 12px 16px;
+  background: rgba(10, 14, 20, 0.9);
+  border: 1px solid var(--panel-edge);
+  border-left: 3px solid var(--green);
+  border-radius: 8px;
+}
+
+.tutorial {
+  pointer-events: none;
+  z-index: 5;
+}
+
+.tutorial button {
+  pointer-events: auto;
+}
+
+/* Docked, the station panel fills the middle: move the card to the top edge. */
+.tutorial.top {
+  bottom: auto;
+  top: 12px;
+}
+
+.tutorial-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tutorial-head button {
+  padding: 2px 8px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  text-decoration: underline;
+}
+
+.tutorial strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 15px;
+}
+
+.tutorial p {
+  margin: 4px 0 8px;
+  color: #c3ccd4;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.tutorial-progress {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+}
+
+.tutorial-progress div {
+  height: 100%;
+  background: var(--green);
+  border-radius: 2px;
 }

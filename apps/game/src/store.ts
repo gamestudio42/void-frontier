@@ -77,6 +77,9 @@ export interface HudState {
   station: StationView | null;
   contracts: ContractsView | null;
   notices: { id: number; kind: string; outcome: string; reward: number }[];
+  /** Which menu is open over the game, if any. */
+  menu: 'main' | 'pause' | null;
+  tutorial: { index: number; total: number; title: string; hint: string } | null;
   /** Increments on every damaging hit, so the HUD can flash. */
   hits: number;
   stats: DebugStats;
@@ -109,7 +112,7 @@ export const initialHudState = (): HudState => ({
   braking: false,
   steering: true,
   paused: false,
-  help: true,
+  help: false,
   debug: false,
   proximity: null,
   target: null,
@@ -121,6 +124,8 @@ export const initialHudState = (): HudState => ({
   station: null,
   contracts: null,
   notices: [],
+  menu: 'main',
+  tutorial: null,
   hits: 0,
   stats: { fps: 0, frameMs: 0, tick: 0, stepsPerFrame: 0, droppedSeconds: 0, entities: 0, drawCalls: 0, triangles: 0, zoom: 1, quality: 'high', autoQuality: true },
 });

@@ -1,9 +1,13 @@
 import { OUTPOST_ALPHA } from '@void-frontier/content';
 import { FIXED_DT, FixedStepper, type Vec2 } from '@void-frontier/kernel';
 import { getUpgrade } from '@void-frontier/content';
-import { Simulation, carryBoard, contractProgress, payout, dockingStatus, installUpgrades, hostilesNear, nearestObstacle, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
+import { Simulation, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, installUpgrades, hostilesNear, nearestObstacle, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
 import { SpaceRenderer, type Quality } from '@void-frontier/view3d';
+import { AudioEngine } from './audio.ts';
 import { InputController } from './input.ts';
+import { saveStore, type SlotId } from './saves.ts';
+import type { Settings } from './settings.ts';
+import { TUTORIAL } from './tutorial.ts';
 import { drawRadar } from './radar.ts';
 import { drawTargeting } from './targeting.ts';
 import type { HudStore } from './store.ts';
@@ -40,6 +44,16 @@ export class Game {
   /** Automatic quality: step down after sustained low frame rate, unless the player chose one. */
   private autoQuality = true;
   private slowTime = 0;
+  readonly audio = new AudioEngine();
+  private shakeEnabled = true;
+  private autosaveTimer = 0;
+  /** The docking checklist stays hidden right after leaving the bay. */
+  private undockedAt = -100;
+  private frameErrorReported = false;
+  /** Index into TUTORIAL, or null when no tutorial is running. */
+  private tutorialStep: number | null = null;
+  private tutorialStarted = 0;
+  private tutorialStart = { heading: 0, credits: 0 };
 
   constructor(private readonly canvas: HTMLCanvasElement, private readonly store: HudStore) {
     this.renderer = new SpaceRenderer(canvas, this.sim, OUTPOST_ALPHA.seed);
@@ -58,7 +72,11 @@ export class Game {
       toggleSteering: () => this.publish(),
       toggleHelp: () => this.store.update({ help: !this.store.getSnapshot().help }),
       toggleDebug: () => this.store.update({ debug: !this.store.getSnapshot().debug }),
-      togglePause: () => this.store.update({ paused: !this.store.getSnapshot().paused }),
+      togglePause: () => {
+        const { menu } = this.store.getSnapshot();
+        if (menu === 'main') return;
+        this.store.update({ menu: menu === 'pause' ? null : 'pause', paused: false });
+      },
       jettison: () => {
         // Two presses within a second, so a stray key does not dump a full hold.
         const now = this.clock;
@@ -110,6 +128,7 @@ export class Game {
   // Station actions, called from the docked station panel.
   undock(): void {
     this.sim.undock(this.sim.playerId);
+    this.undockedAt = this.clock;
     this.publish();
   }
 
@@ -150,30 +169,92 @@ export class Game {
   start(): void {
     this.lastTime = performance.now();
     const frame = (now: number) => {
-      this.frame(now);
+      // Keep the loop alive even if one frame fails; report it once.
+      try {
+        this.frame(now);
+      } catch (error) {
+        if (!this.frameErrorReported) console.error('Frame failed', error);
+        this.frameErrorReported = true;
+      }
       this.frameHandle = requestAnimationFrame(frame);
     };
     this.frameHandle = requestAnimationFrame(frame);
   }
 
-  /** New sector from the same seed: everything is back where it started. */
+  /** Relaunch after losing the ship: a fresh sector with the insured parts of the old game. */
   restart(): void {
-    const zoom = this.renderer.rig.zoomLevel;
-    const quality = this.renderer.currentQuality;
     // Insurance: the hold is lost, upgrades are refitted, and 10% of credits pay the premium.
     const oldShip = this.sim.world.ships.get(this.sim.playerId);
     const upgrades = oldShip ? [...oldShip.upgrades] : [];
     const credits = Math.floor(this.sim.world.credits * 0.9);
     const board = this.sim.missions ? carryBoard(this.sim.missions, this.sim.world.tick, oldShip?.kills ?? 0) : null;
+    const sim = Simulation.fromSector(OUTPOST_ALPHA);
+    sim.world.credits = credits;
+    installUpgrades(sim.world, sim.playerId, upgrades);
+    if (board) sim.missions = board;
+    this.replaceSim(sim);
+  }
+
+  /** A brand-new game, optionally with the guided first flight. */
+  newGame(tutorial: boolean): void {
+    this.replaceSim(Simulation.fromSector(OUTPOST_ALPHA));
+    this.tutorialStep = tutorial ? 0 : null;
+    this.beginTutorialStep();
+    this.store.update({ menu: null });
+  }
+
+  /** Saves the current game into a slot. Saves only happen between steps, so the state is consistent. */
+  async saveTo(slot: SlotId): Promise<void> {
+    const file = encodeSave(serialize(this.sim, OUTPOST_ALPHA));
+    await saveStore.put({ slot, savedAt: Date.now(), playtime: this.sim.world.tick / 60, credits: this.sim.world.credits, file });
+  }
+
+  /** Loads a save file (from a slot or an imported file). Throws a readable error when it is damaged. */
+  load(file: unknown): void {
+    const data = decodeSave(file);
+    this.replaceSim(restore(OUTPOST_ALPHA, data));
+    this.tutorialStep = null;
+    this.store.update({ menu: null });
+  }
+
+  exportCurrent() {
+    return encodeSave(serialize(this.sim, OUTPOST_ALPHA));
+  }
+
+  applySettings(settings: Settings): void {
+    this.audio.setVolumes(settings.masterVolume, settings.effectsVolume, settings.musicVolume);
+    this.shakeEnabled = settings.cameraShake;
+    this.renderer.rig.shakeEnabled = settings.cameraShake;
+    this.input.steering = settings.mouseSteering;
+    if (!new URLSearchParams(window.location.search).get('quality')) {
+      this.autoQuality = settings.quality === 'auto';
+      if (settings.quality !== 'auto') this.renderer.setQuality(settings.quality);
+    }
+    this.publish();
+  }
+
+  skipTutorial(): void {
+    this.tutorialStep = null;
+    this.publish();
+  }
+
+  private beginTutorialStep(): void {
+    const t = readTelemetry(this.sim.world, this.sim.playerId);
+    this.tutorialStarted = this.clock;
+    this.tutorialStart = { heading: t?.heading ?? 0, credits: t?.credits ?? 0 };
+  }
+
+  private replaceSim(sim: Simulation): void {
+    const zoom = this.renderer.rig.zoomLevel;
+    const quality = this.renderer.currentQuality;
     this.renderer.dispose();
-    this.sim = Simulation.fromSector(OUTPOST_ALPHA);
-    this.sim.world.credits = credits;
-    installUpgrades(this.sim.world, this.sim.playerId, upgrades);
-    if (board) this.sim.missions = board;
+    this.sim = sim;
     this.renderer = new SpaceRenderer(this.canvas, this.sim, OUTPOST_ALPHA.seed);
     this.renderer.rig.zoomBy(zoom);
+    this.renderer.rig.shakeEnabled = this.shakeEnabled;
     this.renderer.setQuality(quality);
     this.stepper.reset();
+    this.autosaveTimer = 0;
     this.target = null;
     this.gains.clear();
     this.dockRefused = null;
@@ -187,6 +268,7 @@ export class Game {
     this.resizeObserver.disconnect();
     this.input.dispose();
     this.renderer.dispose();
+    this.audio.dispose();
   }
 
   private resize(): void {
@@ -198,7 +280,9 @@ export class Game {
     const elapsed = Math.max(0, (now - this.lastTime) / 1000);
     this.lastTime = now;
     this.clock += elapsed;
-    const { paused, help } = this.store.getSnapshot();
+    const snapshot = this.store.getSnapshot();
+    const help = snapshot.help;
+    const paused = snapshot.paused || snapshot.menu !== null;
 
     // The camera from the last frame is close enough to turn the cursor into a world point.
     this.aim = this.input.pointer ? this.renderer.screenToWorld(this.input.pointer.x, this.input.pointer.y) : null;
@@ -216,6 +300,9 @@ export class Game {
       this.stepsThisWindow += result.steps;
       this.droppedTotal += result.droppedTime;
       const events = this.sim.drainEvents();
+      this.audio.handle(this.sim, events);
+      this.updateTutorial(events);
+      this.autosave(elapsed, events);
       if (events.length) {
         this.renderer.handleEvents(this.sim, events);
         for (const event of events) {
@@ -240,6 +327,7 @@ export class Game {
     const targetBody = this.target !== null ? this.sim.world.bodies.get(this.target) : undefined;
     const me = this.sim.world.bodies.get(this.sim.playerId);
     const frameTarget = targetBody && me && Math.hypot(targetBody.position.x - me.position.x, targetBody.position.y - me.position.y) < 650 ? targetBody.position : null;
+    this.audio.update(this.sim, !paused && !help, elapsed);
     const stats = this.renderer.render(this.sim, alpha, frameDt, { aim: this.input.steering ? this.aim : null, frame: frameTarget });
     if (this.radar) drawRadar(this.radar, this.sim, this.clock, this.target);
     this.hitFlash = Math.max(0, this.hitFlash - elapsed * 6);
@@ -268,6 +356,31 @@ export class Game {
     }
   }
 
+  private updateTutorial(events: ReturnType<Simulation['drainEvents']>): void {
+    if (this.tutorialStep === null) return;
+    const telemetry = readTelemetry(this.sim.world, this.sim.playerId);
+    if (!telemetry) return;
+    const step = TUTORIAL[this.tutorialStep];
+    const done = step.done({ telemetry, events, playerId: this.sim.playerId, stepTime: this.clock - this.tutorialStarted, start: this.tutorialStart });
+    if (!done) return;
+    this.audio.click();
+    this.tutorialStep = this.tutorialStep + 1 < TUTORIAL.length ? this.tutorialStep + 1 : null;
+    if (this.tutorialStep === null) this.notices.push({ text: 'tutorial', kind: 'completed', reward: 0, at: this.clock, id: -1 });
+    this.beginTutorialStep();
+  }
+
+  /** Autosave on docking and every two minutes in flight; never while destroyed. */
+  private autosave(elapsed: number, events: ReturnType<Simulation['drainEvents']>): void {
+    this.autosaveTimer += elapsed;
+    const docked = events.some((e) => e.type === 'docked' && e.ship === this.sim.playerId);
+    const ship = this.sim.world.ships.get(this.sim.playerId);
+    if (!ship || ship.destroyed) return;
+    if (docked || this.autosaveTimer >= 120) {
+      this.autosaveTimer = 0;
+      void this.saveTo('auto').catch(() => undefined);
+    }
+  }
+
   /** Drop a dead or out-of-range target; auto-acquire the nearest hostile when there is none. */
   private updateTarget(): void {
     const me = this.sim.world.ships.get(this.sim.playerId);
@@ -284,7 +397,7 @@ export class Game {
 
   private dockingView() {
     const ship = this.sim.world.ships.get(this.sim.playerId);
-    if (!ship || ship.docked !== null || ship.destroyed) return null;
+    if (!ship || ship.docked !== null || ship.destroyed || this.clock - this.undockedAt < 10) return null;
     const status = dockingStatus(this.sim.world, this.sim.playerId, 400);
     return status ? { distance: status.distance, speed: status.speed, angleError: status.angleError, refusals: status.refusals, limits: status.limits } : null;
   }
@@ -380,6 +493,10 @@ export class Game {
       dockRefused: this.dockRefused && this.clock - this.dockRefused.at < 3 ? this.dockRefused.refusals : null,
       station: this.stationView(),
       contracts: this.contractsView(),
+      tutorial:
+        this.tutorialStep === null
+          ? null
+          : { index: this.tutorialStep, total: TUTORIAL.length, title: TUTORIAL[this.tutorialStep].title, hint: TUTORIAL[this.tutorialStep].hint },
       notices: this.notices.filter((n) => this.clock - n.at < 4.5).map((n) => ({ id: n.id, kind: n.text, outcome: n.kind, reward: n.reward })),
       holdFull: (() => {
         const t = readTelemetry(this.sim.world, this.sim.playerId);

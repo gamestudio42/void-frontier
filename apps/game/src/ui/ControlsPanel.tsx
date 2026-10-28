@@ -56,7 +56,7 @@ export function ControlsPanel({ t, locale, locales, onLocale, onClose }: Control
             </div>
           ))}
         </dl>
-        <button type="button" className="primary" onClick={onClose} autoFocus data-testid="start">
+        <button type="button" className="primary" onClick={onClose} autoFocus data-testid="close-controls">
           {t('help.close')}
         </button>
       </section>

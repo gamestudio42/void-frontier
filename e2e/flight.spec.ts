@@ -11,11 +11,10 @@ async function hold(page: Page, key: string, ms: number) {
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/?quality=low');
-  await expect(page.getByTestId('controls')).toBeVisible();
+  await page.getByTestId('tutorial-toggle').uncheck();
   await page.getByTestId('start').click();
   // The game starts docked at Outpost Alpha.
   await page.getByTestId('undock').click();
-  await expect(page.getByTestId('controls')).toBeHidden();
   // Keep the cursor off the canvas so mouse steering does not turn the ship.
   await page.mouse.move(0, 0);
 });

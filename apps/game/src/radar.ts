@@ -12,6 +12,8 @@ export function drawRadar(canvas: HTMLCanvasElement, sim: Simulation, time: numb
   if (!ctx) return;
   const ratio = Math.min(window.devicePixelRatio || 1, 2);
   const size = canvas.clientWidth;
+  // Hidden (under a menu) or not laid out yet.
+  if (size < 20) return;
   if (canvas.width !== Math.round(size * ratio)) {
     canvas.width = Math.round(size * ratio);
     canvas.height = Math.round(size * ratio);

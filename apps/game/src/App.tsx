@@ -5,6 +5,8 @@ import { Game } from './game.ts';
 import { LOCALES, detectLocale, saveLocale, translator, type Locale, type MessageKey } from './i18n.ts';
 import { HudStore, initialHudState } from './store.ts';
 import { ControlsPanel } from './ui/ControlsPanel.tsx';
+import { MainMenu, PauseMenu, TutorialCard } from './ui/menus.tsx';
+import { loadSettings, saveSettings, type Settings } from './settings.ts';
 import { DebugOverlay } from './ui/DebugOverlay.tsx';
 import { FlightHud } from './ui/FlightHud.tsx';
 
@@ -14,7 +16,8 @@ export function App() {
   const overlayRef = useRef<HTMLCanvasElement>(null);
   const store = useMemo(() => new HudStore(initialHudState()), []);
   const hud = useSyncExternalStore(store.subscribe, store.getSnapshot);
-  const [locale, setLocale] = useState<Locale>(detectLocale);
+  const [settings, setSettings] = useState<Settings>(loadSettings);
+  const [locale, setLocale] = useState<Locale>(() => settings.locale ?? detectLocale());
   const [game, setGame] = useState<Game | null>(null);
   const t = useMemo(() => translator(locale), [locale]);
 
@@ -37,26 +40,36 @@ export function App() {
   }, [locale]);
 
   useEffect(() => {
+    game?.applySettings(settings);
+  }, [game, settings]);
+
+  const changeSettings = (next: Settings) => {
+    setSettings(next);
+    saveSettings(next);
+    if (next.locale && next.locale !== locale) chooseLocale(next.locale);
+  };
+
+  useEffect(() => {
     if (game) game.labels = { drop: (id) => t(`drop.${id}` as MessageKey) };
   }, [game, t]);
 
-  const chooseLocale = (next: Locale) => {
+  function chooseLocale(next: Locale) {
     setLocale(next);
     saveLocale(next);
-  };
+  }
 
   return (
     <div className="app">
       <canvas ref={canvasRef} className="viewport" data-testid="viewport" />
       <canvas ref={overlayRef} className="targeting" aria-hidden="true" />
       <div key={hud.hits} className={hud.hits > 0 ? 'damage-flash' : ''} aria-hidden="true" />
-      <FlightHud hud={hud} t={t} locale={locale} />
+      {hud.menu !== 'main' && <FlightHud hud={hud} t={t} locale={locale} />}
       {hud.contracts && !hud.station && <ContractTracker active={hud.contracts.active} t={t} />}
       <Notices notices={hud.notices} t={t} locale={locale} />
-      <figure className="radar" aria-label={t('hud.radar')}>
+      <figure className="radar" aria-label={t('hud.radar')} hidden={hud.menu === 'main'}>
         <canvas ref={radarRef} data-testid="radar" />
       </figure>
-      {hud.station && hud.telemetry && game && !hud.help && (
+      {hud.station && hud.telemetry && game && !hud.help && !hud.menu && (
         <StationPanel
           view={hud.station}
           contracts={hud.contracts}
@@ -85,11 +98,23 @@ export function App() {
           onClose={() => store.update({ help: false })}
         />
       )}
-      {hud.paused && !hud.help && (
-        <div className="pause" data-testid="pause">
-          <h2>{t('pause.title')}</h2>
-          <p>{t('pause.resume')}</p>
-        </div>
+      {hud.tutorial && !hud.menu && game && <TutorialCard tutorial={hud.tutorial} t={t} onSkip={() => game.skipTutorial()} top={!!hud.station} />}
+      {hud.menu === 'main' && game && !hud.help && (
+        <MainMenu game={game} t={t} locale={locale} settings={settings} onSettings={changeSettings} onControls={() => store.update({ help: true })} />
+      )}
+      {hud.menu === 'pause' && game && !hud.help && (
+        <PauseMenu
+          game={game}
+          t={t}
+          locale={locale}
+          settings={settings}
+          onSettings={changeSettings}
+          onControls={() => store.update({ help: true })}
+          onResume={() => store.update({ menu: null })}
+          onMainMenu={() => {
+            void game.saveTo('auto').finally(() => store.update({ menu: 'main' }));
+          }}
+        />
       )}
     </div>
   );
