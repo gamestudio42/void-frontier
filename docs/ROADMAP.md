@@ -7,8 +7,8 @@ The plan follows section 19 of the specification. Each milestone ends with a bui
 | 1 | Foundation + flight physics | Done |
 | 2 | Environment: asteroid field, station, collisions | Done |
 | 3 | Combat: autocannon, laser, predictive aim, first pirate AI | Done |
-| 4 | Mining: scanner, mining laser, cargo, variable mass from ore | Next |
-| 5 | Station and economy: docking, market, repair, refuel, upgrades | Planned |
+| 4 | Mining: scanner, mining laser, cargo, variable mass from ore | Done |
+| 5 | Station and economy: docking, market, repair, refuel, upgrades | Next |
 | 6 | Missions: delivery, mining and bounty contracts, reputation | Planned |
 | 7 | Polish and release: menus, settings, audio, saves, tutorial | Planned |
 
@@ -61,6 +61,20 @@ Known limits: docking is visual only until milestone 5; asteroids cannot be brok
 
 Known limits: no subsystem damage yet (planned for 0.3), no missiles, no loot or bounty payout until the economy milestone, no audio.
 
-## Milestone 4: mining (next)
+## Milestone 4: mining (done)
 
-Scanner, mining laser, ore extraction from the three rock types, cargo with mass and volume feeding the flight model, and collectable ore.
+- [x] Resources as data (iron, copper, titanium ore and salvage) with mass, volume, price and colour
+- [x] Ore per rock from its size and type; rocks shrink as they are mined, small ones break apart, large ones leave a husk
+- [x] Mining laser: full rate inside its optimal range, falling to 25% at maximum range; ejects ore chunks from the cut
+- [x] Tractor pulls chunks into the hold; the hold is limited by mass and volume and its mass feeds the flight model
+- [x] Scanner pulse (R) reveals composition and ore left for 30 s; tags on screen and colours on the radar
+- [x] Jettison (K twice) drops the hold behind the ship
+- [x] Destroyed pirates drop salvage
+- [x] Effects: amber cutting beam with sparks and dust, glowing chunks, tractor lines, scanner wave, rock break-up
+- [x] HUD: hold bar and contents, mining readout, scanner status, pickup feed, hold-full warning
+
+Known limits: ore cannot be sold until the station economy (next); no refining.
+
+## Milestone 5: station and economy (next)
+
+Docking as a piloting skill (speed, alignment, approach), station interface, market with buy and sell prices, repair, refuel, credits and the first ship upgrades.

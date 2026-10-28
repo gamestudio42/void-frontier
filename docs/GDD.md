@@ -1,6 +1,6 @@
 # Void Frontier: game design
 
-Status: combat in Outpost Alpha (milestone 3). The full vision and the original Portuguese specification are in `docs/reference/void-frontier-spec-v0.1-pt.md`.
+Status: mining in Outpost Alpha (milestone 4). The full vision and the original Portuguese specification are in `docs/reference/void-frontier-spec-v0.1-pt.md`.
 
 ## Fantasy
 
@@ -56,8 +56,9 @@ Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kes
 | Space | Brake |
 | C | Toggle flight assist |
 | Wheel, + / − | Zoom (0.5× to 3.5×) |
-| L | Load or unload 5 t of test cargo (until mining exists) |
-| R | Relaunch after the ship is destroyed |
+| Middle mouse / X | Mining laser |
+| R | Scanner pulse; relaunch after the ship is destroyed |
+| K (twice) | Jettison the hold |
 | G | Graphics quality (high, medium, low) |
 | F3 | Debug overlay |
 | Esc / P | Pause |
@@ -79,6 +80,14 @@ Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kes
 - **Pirates.** Jackal raiders patrol south of the station and in Copper Reach. They notice you within 950 m, close to about 230 m, circle, lead their shots and hold fire when a rock is in the way. Badly hurt, they run, and come back once their shields recover. Destroyed groups return after 60–90 s.
 - **Reading the fight.** Red brackets on hostiles, the target panel with shield and hull, a yellow lead diamond, an edge arrow when the target is off screen, a hit marker, shield flares and sparks. The camera pulls back to keep both ships in frame.
 
+## Mining (milestone 4)
+
+- **Find.** Press R: a scanner wave (900 m) tags rocks with their resource and ore left (Fe, Cu, Ti) for 30 s and colours them on the radar. Big rocks hold more: ore grows with cross-section.
+- **Cut.** The mining laser (middle mouse or X) works best within 70 m and fades to a quarter at 160 m. It heats up and uses a little energy. Each 4 units cut fly off as a glowing chunk.
+- **Collect.** The tractor pulls chunks within 60 m into the hold. Small rocks crumble when empty; large ones shrink to a husk.
+- **Carry.** The hold takes 6 t. Every tonne lowers acceleration and turn rate, so a full hold makes you slow prey; K twice dumps it.
+- **Salvage.** Pirate wrecks drop salvage chunks you can collect the same way.
+
 ## Not yet
 
-Mining, docking, economy, missions, saves, audio and the second ship in play (it is defined in content). See `docs/ROADMAP.md`.
+ docking, economy, missions, saves, audio and the second ship in play (it is defined in content). See `docs/ROADMAP.md`.

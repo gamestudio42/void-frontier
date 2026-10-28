@@ -35,6 +35,8 @@ Instructions for AI coding agents working on Void Frontier. Read `docs/GDD.md`, 
 - Weapon damage goes shield → armour → hull; a ship never damages itself.
 - Rounds and beams are blocked by rocks and the station.
 - AI ships never change velocity faster than their engines allow.
+- The hold never exceeds its mass or volume limit, and its mass is part of the ship's mass.
+- Ore is conserved: what leaves a rock arrives as chunks, and what a tractor collects leaves the chunk.
 
 ## Commands
 

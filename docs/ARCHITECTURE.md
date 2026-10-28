@@ -32,9 +32,11 @@ Dependencies point down only: `game → view3d → simulation → content, kerne
 | 4 | `thrusterSystem` | throttles, fuel | body force and torque, fuel |
 | 5 | `integrationSystem` | force, torque, mass | velocity, position, angle |
 | 6 | `collisionSystem` | colliders, bodies | velocity, angular velocity, position (push-out), ship hull, the spatial index; collision and destruction events |
-| 7 | `weaponSystem` | commands, weapon mounts, spatial index | projectiles, beams, heat, energy, shields; shot and hit events |
+| 7 | `weaponSystem` | commands, weapon mounts, spatial index | projectiles, beams, mining (ore extraction and chunks), heat, energy, shields; shot and hit events |
 | 8 | `projectileSystem` | projectiles, spatial index | hits (swept ray), expiry |
-| 9 | `encounterSystem` | encounters | respawned pirate groups |
+| 9 | `pickupSystem` | pickups, tractors, holds | pickup motion, hold contents; collected and hold-full events |
+| 10 | `scanExpirySystem` | scan readings | expired readings removed |
+| 11 | `encounterSystem` | encounters | respawned pirate groups |
 
 Later systems (mining, inventory, missions, economy) slot in following the order in the specification, section 14.4.
 
@@ -58,7 +60,8 @@ The collision system also publishes its grid as `world.spatial`; weapons, projec
 - `combat.ts`: weapon mounts (cooldown, heat, overheat, gimbal), projectile spawning with velocity inheritance and seeded spread, beam raycasts, `leadPoint` (intercept solver) and `hostilesNear`.
 - `damage.ts`: shield → armour → hull with per-weapon multipliers; `destroyShip` credits kills and removes the wreck's collider.
 - `ai.ts`: pirate pilots (patrol, engage, retreat, avoidance) that only write ShipCommands, plus encounter spawning and respawn.
-- Gameplay randomness (spread, spawn headings) comes from `world.rng`, seeded from the sector, so fights replay exactly.
+- `mining.ts`: ore extraction, rock resizing and break-up, pickups, tractor, scanner, jettison and pirate salvage. Ship mass includes the hold, so mining feeds straight into flight.
+- Gameplay randomness (spread, spawn headings, chunk scatter) comes from `world.rng`, seeded from the sector, so fights replay exactly.
 
 Only `integrationSystem` writes motion. Assists compute the force that would cancel a velocity component in one step and clamp it to what the thrusters can deliver.
 
@@ -77,6 +80,7 @@ The simulation avoids `Math.sin`, `Math.cos`, `Math.atan2` and friends because e
 - Shadows: one directional sun with a 720 m shadow frustum that follows the camera focus.
 - Particles: one pooled additive system (6000 points) for engine and RCS exhaust, impact sparks and dust, and explosions; plus a shockwave ring and a flash light per explosion.
 - Combat effects (`combatFx.ts`): instanced tracers, beam meshes, a fresnel shield bubble per ship that flares at the hit direction, muzzle flashes and sparks through the particle system.
-- Targeting overlay (`apps/game/src/targeting.ts`): a 2D canvas over the scene with brackets, lead marker, off-screen arrow and hit marker, drawn each frame from `worldToScreen`.
+- Mining effects (`mining.ts` in view3d): instanced glowing ore chunks tinted by resource and tractor lines; the renderer adds the scanner wave, cutting sparks and rock break-up.
+- Targeting overlay (`apps/game/src/targeting.ts`): a 2D canvas over the scene with brackets, lead marker, off-screen arrow, hit marker and scanner tags, drawn each frame from `worldToScreen`.
 - Quality levels: high, medium and low adjust resolution, shadow map size, shadows and bloom (see `docs/DECISIONS.md` 013).
 - Camera (`camera.ts`): perspective, 50° FOV, 55° tilt, 120 m base distance, exponential smoothing (0.15 s), velocity look-ahead and speed-based pull-back.

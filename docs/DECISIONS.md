@@ -72,4 +72,16 @@ Pirate AI never touches bodies. It decides a desired velocity (patrol, engage, r
 
 ## 018. Combat camera framing
 
-With a target within 900 m, the camera eases back and shifts toward the midpoint so both ships stay on screen. Without it, the preferred pirate range (230 m) put most fights off screen at the default zoom.
+With a target within 650 m, the camera eases back and shifts toward the midpoint so both ships stay on screen. Without it, the preferred pirate range (230 m) put most fights off screen at the default zoom.
+
+## 019. Ore leaves the rock as chunks the tractor collects
+
+Mining could have added ore straight to the hold. Ejecting chunks from the cut and pulling them in with a short-range tractor keeps mining physical: you have to stay close, chunks drift if you leave, a full hold leaves ore floating, and jettisoned cargo is a real object. It also gives pirates' salvage the same path.
+
+## 020. Hold mass is the binding limit
+
+Ore units are dense (70–100 kg for 0.03 m³), so the Kestrel's 6 t mass limit fills long before its 20 m³ volume. A full hold drops main acceleration from 18.8 to about 11 m/s², which is the "ships are machines" pillar made concrete. Volume will matter for bulky trade goods later.
+
+## 021. R scans, and relaunches only when destroyed
+
+The specification puts the scanner on R. Relaunch moved to the same key because it is only meaningful when the ship is gone; the old test-cargo key (L) is retired now that real cargo exists.

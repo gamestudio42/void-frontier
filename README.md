@@ -30,13 +30,17 @@
 1. **Thrust and coast.** `W` fires the main engine. Let go and the ship keeps its speed forever. `S` fires the reverse thrusters, `A` and `D` the lateral ones.
 2. **Point anywhere.** The nose follows the mouse (toggle with `V`, or turn with `Q` and `E`). Turning never changes where you are going: the blue line is your nose, the amber line is your path.
 3. **Stop on purpose.** Hold `Space` to fire every thruster against your motion. The red ring shows where you would stop.
-4. **Feel the load.** Press `L` to take on 5 t of test cargo and compare how the ship accelerates and turns.
+4. **Mine.** Press `R` to scan nearby rocks, then cut ore with the mining laser (middle mouse or `X`). The tractor pulls the chunks into your hold, and every tonne you carry makes the ship slower to accelerate and turn.
 5. **Ask for help.** `C` switches on flight assist, which cancels drift and spin for you, using the same thrusters and the same fuel.
 6. **Fight.** Pirates patrol the sector. Left mouse fires the autocannons, right mouse the laser, `Tab` picks a target. Burn shields with the laser, break the hull with the guns, and lead your shots: the guns swivel onto the yellow marker when it is close to your nose.
 7. **Mind the rocks.** Asteroids and the station are solid. Bump them gently and you bounce; hit them fast and the hull gives way. The radar, the nearest-object readout and the collision warning help you thread the field. `R` relaunches a lost ship.
 
 <p align="center">
   <img src="docs/screenshots/combat.jpg" alt="The scout burns a pirate raider's shield with its laser while autocannon tracers close in; the target panel and lead marker are on the HUD" width="920">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/mining.jpg" alt="The scout cuts a copper-rich rock with its amber mining laser while scanner tags label nearby rocks and the hold fills on the HUD" width="920">
 </p>
 
 <p align="center">
@@ -47,7 +51,7 @@ The game opens in Portuguese for Portuguese-language browsers and in English oth
 
 ## Status
 
-**Milestone 3 of 7: combat.** Autocannons and a laser with heat and energy, predictive aim, shields, armour and hull, and pirate raiders whose AI flies with the same thrusters as you. Earlier milestones built the flight model and Outpost Alpha: the station, three asteroid fields and collisions. Mining, docking, the economy and missions follow; see the [roadmap](docs/ROADMAP.md).
+**Milestone 4 of 7: mining.** Scanner, mining laser, ore chunks pulled in by a tractor, a hold limited by mass and volume that weighs the ship down, rocks that shrink and crumble, and salvage from pirate wrecks. Earlier milestones built the flight model, Outpost Alpha (station, asteroid fields, collisions) and combat (autocannons, laser, shields, pirate AI). Docking, the economy and missions follow; see the [roadmap](docs/ROADMAP.md).
 
 ## Develop
 
