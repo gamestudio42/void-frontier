@@ -10,7 +10,7 @@ The plan follows section 19 of the specification. Each milestone ends with a bui
 | 4 | Mining: scanner, mining laser, cargo, variable mass from ore | Done |
 | 5 | Station and economy: docking, market, repair, refuel, upgrades | Done |
 | 6 | Missions: delivery, mining and bounty contracts, reputation | Done |
-| 7 | Polish and release: menus, settings, audio, saves, tutorial | Next |
+| 7 | Polish and release: menus, settings, audio, saves, tutorial | Done |
 
 Milestone 1 merges phases 1 and 2 of the specification, as its "First Milestone" brief asks.
 
@@ -104,6 +104,18 @@ Known limits: one station, so trade routes wait for more sectors; no saves until
 
 Known limits: one faction and one station; no escort or salvage contracts yet.
 
-## Milestone 7: polish and release (next)
+## Milestone 7: polish and release (done)
 
-Main menu and settings, audio (engines, weapons, impacts, UI), local saves with versioned migrations, a short guided tutorial for the first flight, bug fixes and performance work on real hardware.
+- [x] Main menu over the live scene: continue, new game (with or without the guided first flight), load, settings, controls
+- [x] Pause menu (Esc): resume, save, load, settings, controls, main menu
+- [x] Saves: versioned, deterministic snapshot of the player, economy, rocks, loose ore and contracts; FNV-1a checksum; migration chain; IndexedDB with a localStorage fallback; autosave on docking and every two minutes; three manual slots; export and import as JSON files
+- [x] Settings: graphics quality (automatic or fixed), master, effects and music volume, camera shake, mouse steering, language; remembered per browser
+- [x] Procedural audio with Web Audio: engine rumble, RCS hiss, guns, laser and mining beams, shield and hull hits, collisions, explosions, rock break-up, scanner ping, pickups, docking clamps, contract jingles and an ambient pad score
+- [x] Guided first flight: ten steps from undocking to selling ore, each checked against the live simulation, skippable
+- [x] HUD tidy-ups: docking checklist waits until you have left the bay, menus hide the HUD
+
+Known limits: performance has been checked with software rendering only; it still needs a pass on real low-end GPUs. Audio is synthesised, not recorded.
+
+## MVP 0.1 status
+
+All seven milestones are complete: the vertical slice from section 18 of the specification is playable end to end. Next steps follow the specification's 0.2 plan (several sectors and jump navigation) once the slice has been playtested.

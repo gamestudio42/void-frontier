@@ -1,6 +1,6 @@
 # Void Frontier: game design
 
-Status: contracts in Outpost Alpha (milestone 6). The full vision and the original Portuguese specification are in `docs/reference/void-frontier-spec-v0.1-pt.md`.
+Status: MVP 0.1 vertical slice complete (milestone 7). The full vision and the original Portuguese specification are in `docs/reference/void-frontier-spec-v0.1-pt.md`.
 
 ## Fantasy
 
@@ -62,7 +62,7 @@ Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kes
 | F | Dock (when the approach checks are green) / undock |
 | G | Graphics quality (high, medium, low) |
 | F3 | Debug overlay |
-| Esc / P | Pause |
+| Esc / P | Pause menu (save, load, settings) |
 | H | Controls panel |
 
 ## Outpost Alpha (milestone 2)
@@ -105,6 +105,12 @@ Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kes
 - **Bounty.** Destroy one to three pirates after accepting, then hand in.
 - **Deadlines and reputation.** Every contract has a time limit. Completing raises outpost reputation (+3 to +6); failing (-6) or abandoning (-4) lowers it. Each point is +0.5% pay; from +20, elite contracts appear (bigger and better paid).
 - **Readability.** The Contracts tab opens first when docked; in flight a tracker lists objectives and timers, delivery relays get a waypoint, an edge arrow and a radar ring, and a notice confirms each outcome.
+
+## First session (milestone 7)
+
+- The game opens on the main menu over the live station scene. New game starts docked with the guided first flight switched on.
+- The tutorial teaches one verb per step and moves on only when it has happened: undock, accelerate, coast, turn without changing course, brake, flight assist, scan, mine 8 units, dock, sell.
+- Progress is saved automatically on every docking and every two minutes, and manually to three slots from the pause menu. Continue loads the most recent save.
 
 ## Not yet
 

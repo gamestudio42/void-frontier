@@ -10,6 +10,14 @@ packages/kernel      Math, deterministic trig, RNG, fixed-step clock
 
 Dependencies point down only: `game → view3d → simulation → content, kernel`. The three deterministic packages (`kernel`, `content`, `simulation`) have no DOM and no clock, so they run the same in the browser, in Vitest and in future headless tools.
 
+## App shell
+
+- `App.tsx` holds the settings, locale and which menu is open; the game runs underneath and pauses while a menu or the controls panel is shown.
+- `saves.ts`: slots in IndexedDB (localStorage fallback), file export and import. `packages/simulation/src/save.ts` does the pure work: `serialize`, `restore`, `encodeSave`/`decodeSave` (checksum) and `migrate`.
+- `audio.ts`: the Web Audio engine. `update()` drives continuous sounds from the player's ship each frame; `handle()` turns simulation events into one-shots, panned and attenuated by distance.
+- `tutorial.ts`: tutorial steps as predicates over telemetry and events.
+- `settings.ts`: persisted player settings applied to the game, renderer and audio.
+
 ## Frame loop
 
 `apps/game/src/game.ts` runs on `requestAnimationFrame`:

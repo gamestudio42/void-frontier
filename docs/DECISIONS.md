@@ -113,3 +113,19 @@ Sealed crates weigh 120 kg a unit, so a delivery loads 1–3 t and changes how t
 ## 028. Reputation as one number
 
 The specification keeps factions for later. Reputation with the outpost is a single number from -100 to +100: +0.5% payout per point, elite contracts (bigger, +60% pay) from +20. One number is enough to make failing a contract cost something without a faction system.
+
+## 029. Saves rebuild the sector, then apply a delta
+
+A save stores the sector id and seed plus what the player changed: the ship, credits, markets, every surviving rock's motion and ore, loose ore, contracts and the gameplay RNG state. Loading regenerates the sector from its seed and applies the snapshot. Pirates and rounds in flight are not saved; pirate groups start fresh. Saves are small (tens of kB), and a test checks that save → load → save gives the same data.
+
+## 030. Integrity and migrations from day one
+
+Every save file carries a format tag, a version and an FNV-1a checksum of its payload. Loading verifies the checksum, refuses files from a newer version and runs a migration chain for older ones. The chain is empty at version 1, but the slot exists so the next format change is a function, not a rewrite.
+
+## 031. Synthesised audio
+
+The game ships no audio files: every sound is built with Web Audio from noise and oscillators. That keeps the build small, avoids licensing third-party sound, and lets sounds follow the simulation (engine pitch tracks throttle, beams hum while they fire). Recorded or composed audio can replace individual sounds later without changing the event wiring.
+
+## 032. Tutorial checks the simulation, not the keys
+
+Each tutorial step watches the game state (speed, heading, flight mode, scan events, hold contents, docking, credits) instead of listening for key presses. The player can use any control scheme, and a step completes only when the thing it teaches has actually happened.

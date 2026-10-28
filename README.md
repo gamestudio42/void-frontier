@@ -21,6 +21,12 @@
 
 <p align="center">
   <a href="https://gamestudio42.github.io/void-frontier/">
+    <img src="docs/screenshots/menu.jpg" alt="The Void Frontier main menu over the scout docked in Outpost Alpha's bay" width="920">
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://gamestudio42.github.io/void-frontier/">
     <img src="docs/screenshots/field.jpg" alt="A scout ship burns through an asteroid field past a banded gas giant, with the compass, hull, radar and a collision warning on the HUD" width="920">
   </a>
 </p>
@@ -57,11 +63,11 @@
   <img src="docs/screenshots/station.jpg" alt="The scout approaches Outpost Alpha's docking bay, with its habitat ring, trusses and green approach lights" width="920">
 </p>
 
-The game opens in Portuguese for Portuguese-language browsers and in English otherwise; switch on the controls panel (`H`).
+New players get a guided first flight that teaches each of these by doing it. Progress saves automatically when you dock; `Esc` opens the pause menu with three save slots, export and import, and settings for graphics, audio, camera shake and language. The game opens in Portuguese for Portuguese-language browsers and in English otherwise.
 
 ## Status
 
-**Milestone 6 of 7: contracts.** The specification's full loop is playable: start docked, pick a delivery, mining or bounty contract, undock, do the job, come back, get paid, upgrade, repeat, with deadlines and a reputation that unlocks better work. Earlier milestones built the flight model, Outpost Alpha, combat, mining and the station economy. The polish pass (menus, audio, saves, tutorial) follows; see the [roadmap](docs/ROADMAP.md).
+**MVP 0.1: the vertical slice is complete.** Newtonian flight, Outpost Alpha with its station and asteroid belt, combat against pirate raiders, mining, a station economy with upgrades, contracts with reputation, and a finished shell: main menu, guided first flight, local saves, settings and synthesised audio. Next comes playtesting and the specification's 0.2 plan (more sectors and jump navigation); see the [roadmap](docs/ROADMAP.md).
 
 ## Develop
 
