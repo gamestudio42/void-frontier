@@ -1,4 +1,4 @@
-import type { ShipDefinition } from '@void-frontier/content';
+import type { AsteroidType, ShipDefinition, StationDefinition } from '@void-frontier/content';
 import type { Vec2 } from '@void-frontier/kernel';
 
 export type EntityId = number;
@@ -54,6 +54,9 @@ export interface ThrusterOutput {
 export interface Ship {
   definition: ShipDefinition;
   mode: FlightMode;
+  /** Hull integrity points; the ship is destroyed at 0. */
+  hull: number;
+  destroyed: boolean;
   /** kg remaining */
   fuel: number;
   /** kg */
@@ -66,3 +69,36 @@ export interface Ship {
 
 export const idleCommand = (): ShipCommand => ({ thrust: 0, strafe: 0, turn: 0, aim: null, brake: false, boost: false });
 export const idleOutput = (): ThrusterOutput => ({ main: 0, reverse: 0, lateral: 0, rotation: 0, boosting: false });
+
+/** Collision shape: circles in body-local axes (x along the body's angle). */
+export interface Collider {
+  circles: { x: number; y: number; r: number }[];
+  /** Radius of a circle around the body centre that contains every shape. */
+  bound: number;
+}
+
+export interface Asteroid {
+  type: AsteroidType;
+  radius: number;
+  /** Stable per-rock value the renderer uses to pick a shape and tilt. */
+  look: number;
+}
+
+export interface Station {
+  definition: StationDefinition;
+  name: string;
+}
+
+export type SimEvent =
+  | {
+      type: 'collision';
+      a: EntityId;
+      b: EntityId;
+      point: { x: number; y: number };
+      normal: { x: number; y: number };
+      /** closing speed along the contact normal, m/s */
+      speed: number;
+      /** hull points removed from ships in the pair */
+      damage: number;
+    }
+  | { type: 'shipDestroyed'; id: EntityId; position: { x: number; y: number } };

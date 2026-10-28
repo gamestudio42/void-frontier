@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PROVING_GROUND, SHIPS, getShip, shipDefinitionSchema } from '../src/index.ts';
+import { ASTEROID_TYPES, OUTPOST_ALPHA, SHIPS, STATIONS, getShip, shipDefinitionSchema, validateSector } from '../src/index.ts';
 
 describe('content', () => {
   it('ships two valid ship definitions for the vertical slice', () => {
@@ -8,8 +8,20 @@ describe('content', () => {
     expect(getShip('mule').class).toBe('hauler');
   });
 
-  it('starts the player in a ship that exists', () => {
-    expect(SHIPS.has(PROVING_GROUND.playerShip)).toBe(true);
+  it('defines three asteroid types for the three slice minerals', () => {
+    expect([...ASTEROID_TYPES.values()].map((t) => t.resource).sort()).toEqual(['copper_ore', 'iron_ore', 'titanium_ore']);
+  });
+
+  it('has one station with a docking bay', () => {
+    expect(STATIONS.size).toBe(1);
+    expect([...STATIONS.values()][0].modules.some((m) => m.kind === 'dock')).toBe(true);
+  });
+
+  it('references only existing definitions from the sector', () => {
+    expect(() => validateSector(OUTPOST_ALPHA)).not.toThrow();
+    const broken = structuredClone(OUTPOST_ALPHA);
+    broken.asteroidFields[0].types = { unobtainium: 1 };
+    expect(() => validateSector(broken)).toThrow();
   });
 
   it('rejects a definition with negative thrust', () => {

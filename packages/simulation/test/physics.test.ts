@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PROVING_GROUND, getShip } from '@void-frontier/content';
+import { OUTPOST_ALPHA, getShip } from '@void-frontier/content';
 import { Simulation, readTelemetry } from '../src/index.ts';
 import { body, createTestSim, seconds, ship } from './helpers.ts';
 
@@ -191,7 +191,7 @@ describe('mouse steering', () => {
 
 describe('determinism', () => {
   function scriptedRun(): string {
-    const sim = Simulation.fromSector(PROVING_GROUND);
+    const sim = Simulation.fromSector(OUTPOST_ALPHA);
     const id = sim.playerId;
     const script = [
       { thrust: 1 }, { thrust: 1, turn: 1 }, { strafe: -1 }, { aim: { x: 300, y: -200 } },
@@ -222,9 +222,9 @@ describe('telemetry', () => {
     expect(t.speed).toBeCloseTo(10, 9);
   });
 
-  it('starts the proving ground player at the sector heading', () => {
-    const sim = Simulation.fromSector(PROVING_GROUND);
-    expect(readTelemetry(sim.world, sim.playerId)!.heading).toBeCloseTo(PROVING_GROUND.playerStart.heading, 6);
-    expect(sim.world.beacons.size).toBe(PROVING_GROUND.beacons.length);
+  it('starts the Outpost Alpha player at the sector heading', () => {
+    const sim = Simulation.fromSector(OUTPOST_ALPHA);
+    expect(readTelemetry(sim.world, sim.playerId)!.heading).toBeCloseTo(OUTPOST_ALPHA.playerStart.heading, 6);
+    expect(sim.world.beacons.size).toBe(OUTPOST_ALPHA.beacons.length);
   });
 });

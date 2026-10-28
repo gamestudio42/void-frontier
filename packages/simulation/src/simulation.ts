@@ -1,11 +1,13 @@
-import { getShip, type SectorDefinition } from '@void-frontier/content';
-import { FIXED_DT, toRadians } from '@void-frontier/kernel';
+import { COLLISION_RULES, getShip, type CollisionRules, type SectorDefinition } from '@void-frontier/content';
+import { FIXED_DT, Rng, toRadians } from '@void-frontier/kernel';
 import { spawnShip } from './ship.ts';
+import { collisionSystem } from './systems/collision.ts';
 import { flightControlSystem } from './systems/flightControl.ts';
 import { integrationSystem } from './systems/integration.ts';
 import { massSystem } from './systems/mass.ts';
 import { thrusterSystem } from './systems/thrusters.ts';
-import { idleCommand, type EntityId, type FlightMode, type ShipCommand } from './types.ts';
+import { idleCommand, type EntityId, type FlightMode, type ShipCommand, type SimEvent } from './types.ts';
+import { generateAsteroidField, spawnStation } from './universe.ts';
 import { World } from './world.ts';
 
 /**
@@ -17,12 +19,21 @@ export class Simulation {
   readonly dt: number;
   playerId: EntityId = 0;
 
+  rules: CollisionRules = COLLISION_RULES;
+
   constructor(dt = FIXED_DT) {
     this.dt = dt;
   }
 
   static fromSector(sector: SectorDefinition, dt = FIXED_DT): Simulation {
     const sim = new Simulation(dt);
+    const rng = new Rng(sector.seed);
+    const occupied = sector.clearZones.map((zone) => ({ ...zone }));
+    for (const station of sector.stations) {
+      const id = spawnStation(sim.world, station.definition, station.id, { x: station.x, y: station.y }, toRadians(station.angle));
+      occupied.push({ x: station.x, y: station.y, radius: sim.world.colliders.get(id)!.bound });
+    }
+    for (const field of sector.asteroidFields) generateAsteroidField(sim.world, field, rng, occupied);
     // The sector heading is a compass bearing; the sim angle is counter-clockwise from +X.
     sim.playerId = spawnShip(sim.world, getShip(sector.playerShip), {
       position: { x: sector.playerStart.x, y: sector.playerStart.y },
@@ -40,7 +51,13 @@ export class Simulation {
     flightControlSystem(this.world, this.dt);
     thrusterSystem(this.world, this.dt);
     integrationSystem(this.world, this.dt);
+    collisionSystem(this.world, this.rules);
     this.world.tick++;
+  }
+
+  /** Events since the last drain, oldest first. */
+  drainEvents(): SimEvent[] {
+    return this.world.events.splice(0, this.world.events.length);
   }
 
   run(steps: number): void {

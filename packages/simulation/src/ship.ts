@@ -1,6 +1,6 @@
 import type { ShipDefinition } from '@void-frontier/content';
 import { cos, sin, type Vec2 } from '@void-frontier/kernel';
-import { idleCommand, idleOutput, type Body, type EntityId, type FlightMode, type Ship } from './types.ts';
+import { idleCommand, idleOutput, type Body, type Collider, type EntityId, type FlightMode, type Ship } from './types.ts';
 import type { World } from './world.ts';
 
 export interface SpawnShipOptions {
@@ -27,6 +27,8 @@ export function spawnShip(world: World, definition: ShipDefinition, options: Spa
   const ship: Ship = {
     definition,
     mode: options.mode ?? 'newtonian',
+    hull: definition.hull.integrity,
+    destroyed: false,
     fuel: options.fuel ?? definition.fuel.capacity,
     cargoMass: options.cargoMass ?? 0,
     equipmentMass: 0,
@@ -50,7 +52,15 @@ export function spawnShip(world: World, definition: ShipDefinition, options: Spa
   };
   world.ships.set(id, ship);
   world.bodies.set(id, body);
+  world.colliders.set(id, shipCollider(definition));
   return id;
+}
+
+/** Three circles along the hull: close to the silhouette without a polygon solver. */
+export function shipCollider(definition: ShipDefinition): Collider {
+  const r = definition.hull.collisionRadius * 0.5;
+  const offset = definition.hull.length * 0.3;
+  return { circles: [-offset, 0, offset].map((x) => ({ x, y: 0, r })), bound: offset + r };
 }
 
 export const forwardOf = (angle: number): Vec2 => ({ x: cos(angle), y: sin(angle) });

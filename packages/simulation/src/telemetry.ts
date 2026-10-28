@@ -16,6 +16,9 @@ export interface FlightTelemetry {
   turnRate: number;
   fuel: number;
   fuelCapacity: number;
+  hull: number;
+  hullMax: number;
+  destroyed: boolean;
   /** kg */
   mass: number;
   cargoMass: number;
@@ -63,6 +66,9 @@ export function readTelemetry(world: World, id: EntityId): FlightTelemetry | nul
     turnRate: -toDegrees(body.angularVelocity),
     fuel: ship.fuel,
     fuelCapacity: ship.definition.fuel.capacity,
+    hull: ship.hull,
+    hullMax: ship.definition.hull.integrity,
+    destroyed: ship.destroyed,
     mass: body.mass,
     cargoMass: ship.cargoMass,
     mainAcceleration: movement.mainThrust / body.mass,

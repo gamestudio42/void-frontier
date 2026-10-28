@@ -1,0 +1,6 @@
+{
+  "restitution": 0.3,
+  "friction": 0.25,
+  "safeImpactSpeed": 3,
+  "hullDamagePerKilojoule": 0.22
+}

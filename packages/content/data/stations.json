@@ -1,0 +1,23 @@
+[
+  {
+    "id": "outpost",
+    "modules": [
+      { "kind": "core", "x": 0, "y": 0, "r": 38 },
+      { "kind": "ring", "r": 118, "thickness": 14 },
+      { "kind": "truss", "from": [30, 0], "to": [112, 0], "width": 9 },
+      { "kind": "truss", "from": [-30, 0], "to": [-112, 0], "width": 9 },
+      { "kind": "truss", "from": [0, 30], "to": [0, 112], "width": 9 },
+      { "kind": "truss", "from": [0, -30], "to": [0, -112], "width": 9 },
+      { "kind": "truss", "from": [124, 0], "to": [176, 0], "width": 12 },
+      { "kind": "dock", "x": 214, "y": 0, "angle": 0, "width": 44, "depth": 34 },
+      { "kind": "truss", "from": [0, 124], "to": [0, 300], "width": 7 },
+      { "kind": "truss", "from": [0, -124], "to": [0, -300], "width": 7 },
+      { "kind": "panel", "from": [0, 160], "to": [0, 290], "width": 64 },
+      { "kind": "panel", "from": [0, -160], "to": [0, -290], "width": 64 },
+      { "kind": "tank", "x": -150, "y": 40, "r": 16 },
+      { "kind": "tank", "x": -150, "y": -40, "r": 16 },
+      { "kind": "truss", "from": [-124, 0], "to": [-176, 0], "width": 10 },
+      { "kind": "tank", "x": -186, "y": 0, "r": 20 }
+    ]
+  }
+]
