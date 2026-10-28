@@ -238,5 +238,6 @@
         "units": 16
       }
     }
-  ]
+  ],
+  "controllingFaction": "outpost_authority"
 }

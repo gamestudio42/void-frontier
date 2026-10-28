@@ -232,5 +232,6 @@
     }
   ],
   "startDocked": false,
-  "startingCredits": 0
+  "startingCredits": 0,
+  "controllingFaction": "free_pirates"
 }

@@ -376,6 +376,7 @@ export class SpaceRenderer {
       toScene(lerp2(body.previousPosition, body.position, alpha), 0, model.root.position);
       model.root.rotation.y = lerpAngle(body.previousAngle, body.angle, alpha);
       model.update(ship.output, this.time);
+      this.damageSmoke(model, ship.subsystems, toScene(body.velocity), frameDt);
       this.shields.get(id)?.update(ship.shield / Math.max(1, ship.definition.shield.capacity), frameDt);
       model.root.updateMatrixWorld();
       this.exhaust(id, model, ship.output, toScene(body.velocity), frameDt);
@@ -388,6 +389,22 @@ export class SpaceRenderer {
         this.shields.get(id)?.dispose();
         this.shields.delete(id);
       }
+    }
+  }
+
+  /** Smoke from damaged sections and sparks from wrecked ones, emitted where the system sits. */
+  private damageSmoke(model: ShipModel, systems: Record<string, number>, velocity: Vector3, dt: number): void {
+    const half = model.length / 2;
+    const zones: [string, number][] = [['engines', -0.7], ['reactor', -0.1], ['shieldGenerator', 0], ['cargoHold', 0.2], ['sensors', 0.7]];
+    for (const [id, along] of zones) {
+      const health = systems[id];
+      if (health >= 0.5) continue;
+      const rate = (0.5 - health) * 40;
+      if (Math.random() > rate * dt) continue;
+      this.emitPosition.set(along * half, 1.5, (Math.random() - 0.5) * 3).applyMatrix4(model.root.matrixWorld);
+      const p = this.emitPosition;
+      this.particles.emit(p.x, p.y, p.z, velocity.x + (Math.random() - 0.5) * 3, 2 + Math.random() * 2, velocity.z + (Math.random() - 0.5) * 3, DUST, DUST_END, 3 + Math.random() * 4, 1.2 + Math.random(), 0.3);
+      if (health === 0 && Math.random() < 0.5) this.particles.emit(p.x, p.y, p.z, velocity.x + (Math.random() - 0.5) * 20, Math.random() * 6, velocity.z + (Math.random() - 0.5) * 20, SPARK, SPARK_END, 0.7, 0.3 + Math.random() * 0.3, 1);
     }
   }
 

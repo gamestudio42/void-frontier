@@ -1,4 +1,4 @@
-import { CONTRACT_RULES, SECTORS, getResource, getStation, type ContractRules } from '@void-frontier/content';
+import { CONTRACT_RULES, FACTIONS, SECTORS, getFaction, getResource, getStation, type ContractRules } from '@void-frontier/content';
 import { holdSpaceFor } from './ship.ts';
 import type { EntityId } from './types.ts';
 import type { World } from './world.ts';
@@ -15,6 +15,8 @@ export interface DropPoint {
 /** A friendly station that issues contracts and accepts station deliveries. */
 export interface ContractStation {
   key: string;
+  /** Faction that owns the station and pays its contracts. */
+  faction: string;
   sector: string;
   position: { x: number; y: number };
 }
@@ -22,8 +24,9 @@ export interface ContractStation {
 export interface Contract {
   id: number;
   kind: ContractKind;
-  /** Station that issued the contract. */
+  /** Station that issued the contract, and its faction (whose reputation it moves). */
   issuer: string;
+  faction: string;
   reward: number;
   repGain: number;
   /** Seconds allowed once accepted. */
@@ -47,7 +50,8 @@ export interface MissionBoard {
   offers: Record<string, Contract[]>;
   active: Contract[];
   history: { id: number; kind: ContractKind; outcome: ContractOutcome; reward: number }[];
-  reputation: number;
+  /** Player reputation by faction id, -100..100. */
+  reputation: Record<string, number>;
   nextId: number;
   /** Tick of the next automatic board refresh. */
   refreshTick: number;
@@ -63,10 +67,12 @@ export function createBoard(rules: ContractRules = CONTRACT_RULES): MissionBoard
       drops.push({ id: d.id, sector: sector.id, position: { x: beacon.x, y: beacon.y }, risk: d.risk });
     }
     for (const s of sector.stations) {
-      if (getStation(s.definition).faction === 'outpost') stations.push({ key: s.id, sector: sector.id, position: { x: s.x, y: s.y } });
+      const faction = getStation(s.definition).faction;
+      if (!getFaction(faction).hostile) stations.push({ key: s.id, faction, sector: sector.id, position: { x: s.x, y: s.y } });
     }
   }
-  return { rules, drops, stations, offers: {}, active: [], history: [], reputation: 0, nextId: 1, refreshTick: 0 };
+  const reputation = Object.fromEntries([...FACTIONS.values()].map((f) => [f.id, f.hostile ? rules.reputation.min : 0]));
+  return { rules, drops, stations, offers: {}, active: [], history: [], reputation, nextId: 1, refreshTick: 0 };
 }
 
 /** Jumps between two sectors along the gate network (breadth-first). */
@@ -101,8 +107,10 @@ function travel(from: ContractStation, sector: string, position: { x: number; y:
   return hops * 3500;
 }
 
-function rewardScale(board: MissionBoard): number {
-  return 1 + board.reputation * board.rules.reputation.rewardPerPoint;
+const standing = (board: MissionBoard, faction: string): number => board.reputation[faction] ?? 0;
+
+function rewardScale(board: MissionBoard, faction: string): number {
+  return 1 + standing(board, faction) * board.rules.reputation.rewardPerPoint;
 }
 
 function pickWeighted(world: World, weights: Record<string, number>): string {
@@ -121,11 +129,11 @@ const int = (world: World, min: number, max: number) => min + Math.floor(world.r
 /** A new offer for a station's board; elite contracts appear once reputation is high enough. */
 export function generateOffer(world: World, board: MissionBoard, issuer: ContractStation): Contract {
   const rules = board.rules;
-  const elite = board.reputation >= rules.reputation.eliteThreshold && world.rng.next() < 0.5;
+  const elite = standing(board, issuer.faction) >= rules.reputation.eliteThreshold && world.rng.next() < 0.5;
   const unitsScale = elite ? rules.elite.unitsMultiplier : 1;
   const rewardMultiplier = elite ? rules.elite.rewardMultiplier : 1;
   const roll = world.rng.next();
-  const base = { id: board.nextId++, issuer: issuer.key, elite, deadlineTick: 0 };
+  const base = { id: board.nextId++, issuer: issuer.key, faction: issuer.faction, elite, deadlineTick: 0 };
 
   if (roll < 0.45) {
     const r = rules.delivery;
@@ -170,10 +178,11 @@ export function fillOffers(world: World, board: MissionBoard): void {
 }
 
 /** Reward actually paid for a contract at the current reputation. */
-export const payout = (board: MissionBoard, contract: Contract): number => Math.round(contract.reward * rewardScale(board));
+export const payout = (board: MissionBoard, contract: Contract): number => Math.round(contract.reward * rewardScale(board, contract.faction));
 
-function adjustReputation(board: MissionBoard, delta: number): void {
-  board.reputation = Math.max(board.rules.reputation.min, Math.min(board.rules.reputation.max, board.reputation + delta));
+/** Changes reputation in place: the world's `standing` is the same object. */
+function adjustReputation(board: MissionBoard, faction: string, delta: number): void {
+  board.reputation[faction] = Math.max(board.rules.reputation.min, Math.min(board.rules.reputation.max, standing(board, faction) + delta));
 }
 
 function close(world: World, board: MissionBoard, contract: Contract, outcome: ContractOutcome): void {
@@ -182,9 +191,9 @@ function close(world: World, board: MissionBoard, contract: Contract, outcome: C
   if (outcome === 'completed') {
     reward = payout(board, contract);
     world.credits += reward;
-    adjustReputation(board, contract.repGain);
+    adjustReputation(board, contract.faction, contract.repGain);
   } else {
-    adjustReputation(board, -(outcome === 'failed' ? board.rules.penalty.failed : board.rules.penalty.abandoned));
+    adjustReputation(board, contract.faction, -(outcome === 'failed' ? board.rules.penalty.failed : board.rules.penalty.abandoned));
   }
   board.history.unshift({ id: contract.id, kind: contract.kind, outcome, reward });
   board.history.length = Math.min(board.history.length, 12);
@@ -313,7 +322,7 @@ export function carryBoard(board: MissionBoard, oldKills: number): MissionBoard 
   next.active = [];
   for (const contract of board.active) {
     if (contract.delivery) {
-      next.reputation = Math.max(next.rules.reputation.min, next.reputation - next.rules.penalty.failed);
+      adjustReputation(next, contract.faction, -next.rules.penalty.failed);
       next.history.unshift({ id: contract.id, kind: contract.kind, outcome: 'failed', reward: 0 });
       continue;
     }

@@ -4,7 +4,7 @@ import { applyPlayer, applySectorSnapshot, captureSector, capturePlayer, markDis
 import { Simulation } from './simulation.ts';
 
 /** Bump when the save shape changes, and add a migration below. */
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 /** The parts of the contract board that change; drops and stations come from content. */
 export type SavedBoard = Pick<MissionBoard, 'offers' | 'active' | 'history' | 'reputation' | 'nextId' | 'refreshTick'>;
@@ -72,6 +72,26 @@ export function restore(data: SaveData): GameState {
 
 /** Upgrades older saves step by step. Each entry turns version n into n + 1. */
 const MIGRATIONS: Record<number, (data: Record<string, unknown>) => Record<string, unknown>> = {
+  // 2 → 3: reputation splits by faction (the old single score was the outpost's), ships
+  // gain subsystems and weapon-mount health, contracts learn their issuer's faction.
+  2: (v2) => {
+    const missions = v2.missions as (Record<string, unknown> & { reputation: number; offers: Record<string, Record<string, unknown>[]>; active: Record<string, unknown>[] }) | null;
+    const factionOf = (issuer: unknown) => (issuer === 'ferrum_refinery' ? 'ferrum_combine' : 'outpost_authority');
+    const tag = (c: Record<string, unknown>) => ({ ...c, faction: factionOf(c.issuer) });
+    const player = v2.player as Record<string, unknown>;
+    return {
+      ...v2,
+      player: { ...player, subsystems: { engines: 1, reactor: 1, sensors: 1, shieldGenerator: 1, cargoHold: 1 }, mounts: [] },
+      missions: missions
+        ? {
+            ...missions,
+            reputation: { outpost_authority: missions.reputation, ferrum_combine: 0, free_pirates: -100 },
+            offers: Object.fromEntries(Object.entries(missions.offers).map(([k, list]) => [k, list.map(tag)])),
+            active: missions.active.map(tag),
+          }
+        : null,
+    };
+  },
   // 1 → 2: one sector became many. The single sector's state moves under `sectors`,
   // contracts learn which station issued them and which sector they deliver to.
   1: (v1) => {

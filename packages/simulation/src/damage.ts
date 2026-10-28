@@ -1,4 +1,6 @@
+import { FACTIONS } from '@void-frontier/content';
 import { dropSalvage } from './mining.ts';
+import { damageSubsystems } from './subsystems.ts';
 import type { EntityId } from './types.ts';
 import type { World } from './world.ts';
 
@@ -18,6 +20,13 @@ export function destroyShip(world: World, id: EntityId, by: EntityId | null): vo
   if (by !== null) {
     const killer = world.ships.get(by);
     if (killer) killer.kills++;
+    // Lawful factions thank whoever thins out the pirates.
+    if (killer?.faction === 'player' && ship.faction === 'pirate') {
+      for (const faction of FACTIONS.values()) {
+        if (faction.hostile || faction.killReward <= 0) continue;
+        world.standing[faction.id] = Math.min(100, (world.standing[faction.id] ?? 0) + faction.killReward);
+      }
+    }
   }
 }
 
@@ -53,6 +62,7 @@ export function applyWeaponDamage(
   }
   const hullDamage = raw * multipliers.hull * (1 - ship.definition.hull.armor);
   ship.hull = Math.max(0, ship.hull - hullDamage);
+  damageSubsystems(world, targetId, point, hullDamage);
   world.events.push({ type: 'hit', target: targetId, attacker: attackerId, point: { ...point }, shieldDamage, hullDamage, beam });
   if (ship.hull === 0) destroyShip(world, targetId, attackerId);
 }

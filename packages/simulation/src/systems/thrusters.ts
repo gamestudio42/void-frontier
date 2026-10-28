@@ -1,5 +1,5 @@
 import { localToWorld } from '@void-frontier/kernel';
-import { forwardOf } from '../ship.ts';
+import { engineFactor, forwardOf } from '../ship.ts';
 import type { World } from '../world.ts';
 
 /** Converts throttles into force and torque on the body and burns fuel for them. */
@@ -12,10 +12,12 @@ export function thrusterSystem(world: World, dt: number): void {
 
     const boost = output.boosting ? movement.boostMultiplier : 1;
     const boostFuel = output.boosting ? movement.boostFuelMultiplier : 1;
-    const mainForce = output.main * movement.mainThrust * boost;
-    const reverseForce = output.reverse * movement.reverseThrust;
-    const lateralForce = output.lateral * movement.lateralThrust;
-    const torque = output.rotation * movement.rotationalTorque;
+    // Damaged engines deliver less of every thruster's rated force.
+    const power = engineFactor(ship);
+    const mainForce = output.main * movement.mainThrust * boost * power;
+    const reverseForce = output.reverse * movement.reverseThrust * power;
+    const lateralForce = output.lateral * movement.lateralThrust * power;
+    const torque = output.rotation * movement.rotationalTorque * power;
     // Rotation thrusters sit near the nose and tail, half a hull length from the centre.
     const rotationForce = Math.abs(torque) / (ship.definition.hull.length / 2);
 

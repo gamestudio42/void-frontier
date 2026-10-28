@@ -211,13 +211,14 @@
       "engine_tuning",
       "reinforced_hull",
       "cargo_frame",
-      "shield_capacitor"
+      "shield_capacitor",
+      "deep_scanner"
     ],
-    "faction": "outpost"
+    "faction": "outpost_authority"
   },
   {
     "id": "refinery",
-    "faction": "outpost",
+    "faction": "ferrum_combine",
     "modules": [
       {
         "kind": "core",
@@ -386,12 +387,17 @@
     ],
     "upgrades": [
       "engine_tuning",
-      "cargo_frame"
+      "cargo_frame",
+      "tractor_mk2",
+      "armor_plating",
+      "repair_drones",
+      "afterburner",
+      "combat_computer"
     ]
   },
   {
     "id": "pirate_den",
-    "faction": "pirate",
+    "faction": "free_pirates",
     "modules": [
       {
         "kind": "core",

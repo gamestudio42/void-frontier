@@ -196,5 +196,6 @@
     }
   ],
   "startDocked": false,
-  "startingCredits": 0
+  "startingCredits": 0,
+  "controllingFaction": "ferrum_combine"
 }

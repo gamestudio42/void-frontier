@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ASTEROID_TYPES, OUTPOST_ALPHA, RESOURCES, SECTORS, SHIPS, STATIONS, getResource, getShip, getUpgrade, getWeapon, shipDefinitionSchema, validateSector } from '../src/index.ts';
+import { ASTEROID_TYPES, FACTIONS, OUTPOST_ALPHA, RESOURCES, SECTORS, SHIPS, STATIONS, UPGRADES, getResource, getShip, getUpgrade, getWeapon, shipDefinitionSchema, validateSector } from '../src/index.ts';
 
 describe('content', () => {
   it('ships two player ships and two pirate types', () => {
@@ -40,11 +40,23 @@ describe('content', () => {
     expect(RESOURCES.has('salvage')).toBe(true);
   });
 
-  it('offers four upgrades and a market that trades every slice resource', () => {
+  it('offers five modules and a market that trades every slice resource', () => {
     const station = STATIONS.get('outpost')!;
     expect(station.upgrades.map((u) => getUpgrade(u).cost).every((c) => c > 0)).toBe(true);
-    expect(station.upgrades).toHaveLength(4);
+    expect(station.upgrades).toHaveLength(5);
     expect(station.market.map((m) => m.resource).sort()).toEqual(['copper_ore', 'iron_ore', 'machine_parts', 'salvage', 'titanium_ore']);
+  });
+
+  it('defines three factions, one hostile, and gives every station an owner', () => {
+    expect(FACTIONS.size).toBe(3);
+    expect([...FACTIONS.values()].filter((f) => f.hostile).map((f) => f.id)).toEqual(['free_pirates']);
+    for (const station of STATIONS.values()) expect(FACTIONS.has(station.faction)).toBe(true);
+  });
+
+  it('puts every module in a slot the starter ship has', () => {
+    const slots = getShip('kestrel').slots;
+    for (const upgrade of UPGRADES.values()) expect(slots[upgrade.slot]).toBeGreaterThan(0);
+    expect(UPGRADES.size).toBe(10);
   });
 
   it('gives every station a docking bay', () => {

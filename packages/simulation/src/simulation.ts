@@ -6,8 +6,9 @@ import { projectileSystem, weaponSystem } from './combat.ts';
 import { jettison, pickupSystem, scan, scanExpirySystem } from './mining.ts';
 import { gravitySystem, explorationSystem } from './exploration.ts';
 import { abandonContract, acceptContract, createBoard, fillOffers, handInContract, missionSystem, type MissionBoard } from './missions.ts';
-import { buyUpgrade, dockShip, marketSystem, requestDock, service, trade, undock } from './station.ts';
+import { buyUpgrade, sellUpgrade, dockShip, marketSystem, requestDock, service, trade, undock } from './station.ts';
 import { collisionSystem } from './systems/collision.ts';
+import { subsystemSystem } from './subsystems.ts';
 import { flightControlSystem } from './systems/flightControl.ts';
 import { integrationSystem } from './systems/integration.ts';
 import { massSystem } from './systems/mass.ts';
@@ -72,6 +73,8 @@ export class Simulation {
     }
     sim.world.credits = sector.startingCredits;
     sim.missions = options.board ?? createBoard();
+    // Standing lives on the board (it survives jumps); the world reads the same object.
+    sim.world.standing = sim.missions.reputation;
     fillOffers(sim.world, sim.missions);
     if (options.startDocked ?? sector.startDocked) {
       const first = [...sim.world.stations.keys()][0];
@@ -92,6 +95,7 @@ export class Simulation {
     collisionSystem(this.world, this.rules);
     weaponSystem(this.world, this.dt);
     projectileSystem(this.world, this.dt);
+    subsystemSystem(this.world, this.dt);
     pickupSystem(this.world, this.dt);
     scanExpirySystem(this.world);
     encounterSystem(this.world, this.dt);
@@ -139,6 +143,10 @@ export class Simulation {
 
   buyUpgrade(id: EntityId, upgrade: string) {
     return buyUpgrade(this.world, id, upgrade);
+  }
+
+  sellUpgrade(id: EntityId, upgrade: string): boolean {
+    return sellUpgrade(this.world, id, upgrade);
   }
 
   acceptContract(offerId: number) {

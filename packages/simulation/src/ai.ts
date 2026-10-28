@@ -2,7 +2,7 @@ import { getShip, type EncounterDefinition } from '@void-frontier/content';
 import { atan2, clamp, cos, length, sin, toRadians, worldToLocal, wrapAngle, type Vec2 } from '@void-frontier/kernel';
 import { hostilesNear, leadPoint, muzzlePosition } from './combat.ts';
 import { nearestObstacle } from './proximity.ts';
-import { forwardOf, spawnShip } from './ship.ts';
+import { forwardOf, sensorRange, spawnShip } from './ship.ts';
 import { raycast } from './spatial.ts';
 import { idleCommand, type AiPilot, type Body, type EntityId, type Ship } from './types.ts';
 import type { World } from './world.ts';
@@ -44,7 +44,7 @@ export function aiSystem(world: World): void {
 }
 
 function think(world: World, id: EntityId, ship: Ship, body: Body, pilot: AiPilot): void {
-  const range = ship.definition.sensors.range;
+  const range = sensorRange(ship);
 
   // Keep a target while it stays inside the leash; otherwise take the nearest hostile in sensor range.
   if (pilot.target !== null) {

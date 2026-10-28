@@ -1,7 +1,7 @@
 import { atan2, length, toDegrees, worldToLocal } from '@void-frontier/kernel';
 import { forwardOf, holdMass, holdVolume, shipMass } from './ship.ts';
 import { leadPoint, muzzlePosition } from './combat.ts';
-import type { EntityId, FlightMode, ThrusterOutput } from './types.ts';
+import type { EntityId, FlightMode, SubsystemId, ThrusterOutput } from './types.ts';
 import type { World } from './world.ts';
 
 export interface FlightTelemetry {
@@ -25,6 +25,9 @@ export interface FlightTelemetry {
   energyMax: number;
   weapons: { id: string; group: 'primary' | 'secondary' | 'mining'; kind: 'projectile' | 'beam' | 'mining'; heat: number; overheated: boolean }[];
   kills: number;
+  subsystems: Record<SubsystemId, number>;
+  /** Health of each weapon mount, in hardpoint order. */
+  mounts: { id: string; health: number }[];
   /** Hold contents and capacity. */
   hold: { resource: string; units: number }[];
   holdMass: number;
@@ -102,6 +105,8 @@ export function readTelemetry(world: World, id: EntityId): FlightTelemetry | nul
       overheated: w.overheated,
     })),
     kills: ship.kills,
+    subsystems: { ...ship.subsystems },
+    mounts: ship.weapons.map((w) => ({ id: w.hardpoint.id, health: w.health })),
     hold: [...ship.cargo.entries()].filter(([, units]) => units > 0).map(([resource, units]) => ({ resource, units })),
     holdMass: ship.cargoMass + holdMass(ship),
     holdVolume: holdVolume(ship),
@@ -139,6 +144,7 @@ export interface TargetInfo {
   shieldMax: number;
   hull: number;
   hullMax: number;
+  subsystems: Record<SubsystemId, number>;
   /** Where to aim the primary guns, if they can reach it. */
   lead: { x: number; y: number } | null;
 }
@@ -172,6 +178,7 @@ export function readTarget(world: World, viewer: EntityId, target: EntityId | nu
     shieldMax: ship.definition.shield.capacity,
     hull: ship.hull,
     hullMax: ship.definition.hull.integrity,
+    subsystems: { ...ship.subsystems },
     lead,
   };
 }

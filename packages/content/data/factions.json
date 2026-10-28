@@ -1,0 +1,23 @@
+[
+  {
+    "id": "outpost_authority",
+    "hostile": false,
+    "color": "#6fd3ff",
+    "dockingThreshold": -25,
+    "killReward": 1
+  },
+  {
+    "id": "ferrum_combine",
+    "hostile": false,
+    "color": "#e0b24a",
+    "dockingThreshold": -25,
+    "killReward": 0.5
+  },
+  {
+    "id": "free_pirates",
+    "hostile": true,
+    "color": "#ff5a4a",
+    "dockingThreshold": 101,
+    "killReward": 0
+  }
+]

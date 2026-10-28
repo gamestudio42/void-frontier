@@ -1,5 +1,7 @@
 import { atan2, clamp, cos, sin, toRadians, wrapAngle, type Vec2 } from '@void-frontier/kernel';
 import { applyWeaponDamage } from './damage.ts';
+import { moduleModifiers } from './station.ts';
+import { sensorRange, shieldCapacity } from './ship.ts';
 import { extractOre } from './mining.ts';
 import { raycast } from './spatial.ts';
 import type { Body, EntityId, Ship, WeaponMount } from './types.ts';
@@ -52,7 +54,7 @@ export function leadPoint(
 }
 
 /** Aim point for one mount: the target's lead if selected, otherwise the pilot's aim point. */
-function desiredAim(world: World, body: Body, ship: Ship, mount: WeaponMount, muzzle: Vec2): Vec2 | null {
+function desiredAim(world: World, body: Body, ship: Ship, mount: WeaponMount, muzzle: Vec2, gimbalBonus = 0): Vec2 | null {
   const target = ship.command.target;
   if (target !== null) {
     const targetBody = world.bodies.get(target);
@@ -63,7 +65,7 @@ function desiredAim(world: World, body: Body, ship: Ship, mount: WeaponMount, mu
       const lead = leadPoint(muzzle, body.velocity, targetBody.position, targetBody.velocity, def.projectileSpeed, def.velocityInheritance);
       if (lead) {
         const offset = wrapAngle(atan2(lead.point.y - muzzle.y, lead.point.x - muzzle.x) - body.angle);
-        if (Math.abs(offset) <= toRadians(def.gimbal)) return lead.point;
+        if (Math.abs(offset) <= toRadians(def.gimbal + gimbalBonus)) return lead.point;
       }
     }
   }
@@ -86,11 +88,14 @@ export function weaponSystem(world: World, dt: number): void {
     const body = world.bodies.get(id);
     if (!body) continue;
     const reactor = ship.definition.reactor;
-    ship.energy = Math.min(reactor.capacity, ship.energy + reactor.rechargeRate * dt);
+    ship.energy = Math.min(reactor.capacity, ship.energy + reactor.rechargeRate * ship.subsystems.reactor * dt);
     const shieldDef = ship.definition.shield;
     if (!ship.destroyed && (world.tick - ship.lastDamageTick) * dt >= shieldDef.rechargeDelay) {
-      ship.shield = Math.min(shieldDef.capacity, ship.shield + shieldDef.rechargeRate * dt);
+      ship.shield = Math.min(shieldCapacity(ship), ship.shield + shieldDef.rechargeRate * ship.subsystems.shieldGenerator * dt);
     }
+    // A damaged generator cannot hold its full charge.
+    ship.shield = Math.min(ship.shield, shieldCapacity(ship));
+    const gimbalBonus = moduleModifiers(ship.upgrades).gimbal;
 
     for (const mount of ship.weapons) {
       const def = mount.definition;
@@ -101,10 +106,10 @@ export function weaponSystem(world: World, dt: number): void {
       if (ship.destroyed || ship.docked !== null) continue;
       const group = mount.hardpoint.group;
       const triggered = group === 'primary' ? ship.command.firePrimary : group === 'secondary' ? ship.command.fireSecondary : ship.command.fireMining;
-      if (!triggered || mount.overheated) continue;
+      if (!triggered || mount.overheated || mount.health <= 0.05) continue;
 
       const muzzle = muzzlePosition(body, mount);
-      const angle = firingAngle(body, muzzle, desiredAim(world, body, ship, mount, muzzle), def.gimbal);
+      const angle = firingAngle(body, muzzle, desiredAim(world, body, ship, mount, muzzle, gimbalBonus), def.gimbal + gimbalBonus);
 
       if (def.kind === 'projectile') {
         if (mount.cooldown > 0 || ship.energy < def.energyPerShot) continue;
@@ -179,6 +184,8 @@ export function projectileSystem(world: World, dt: number): void {
     round.position = to;
   }
 }
+
+export { sensorRange };
 
 /** Living ships of other factions within `range`, nearest first. */
 export function hostilesNear(world: World, id: EntityId, range: number): EntityId[] {

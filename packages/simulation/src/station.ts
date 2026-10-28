@@ -1,8 +1,8 @@
-import { getResource, getUpgrade, type ShipDefinition } from '@void-frontier/content';
+import { getFaction, getResource, getUpgrade, type ShipDefinition } from '@void-frontier/content';
 import { PI, atan2, cos, length, sin, toDegrees, wrapAngle, type Vec2 } from '@void-frontier/kernel';
 import { hostilesNear } from './combat.ts';
 import { holdSpaceFor, shipCollider } from './ship.ts';
-import { idleCommand, type EntityId, type MarketItem } from './types.ts';
+import { SUBSYSTEMS, idleCommand, type EntityId, type MarketItem, type Ship } from './types.ts';
 import type { World } from './world.ts';
 
 export interface Bay {
@@ -39,7 +39,7 @@ export function bayOf(world: World, stationId: EntityId): Bay | null {
   };
 }
 
-export type DockRefusal = 'tooFar' | 'tooFast' | 'misaligned' | 'hostiles' | 'destroyed' | 'hostileStation';
+export type DockRefusal = 'tooFar' | 'tooFast' | 'misaligned' | 'hostiles' | 'destroyed' | 'hostileStation' | 'reputation';
 
 export interface DockingStatus {
   station: EntityId;
@@ -71,7 +71,9 @@ export function dockingStatus(world: World, shipId: EntityId, range = 600): Dock
     const rules = station.definition.docking;
     const refusals: DockRefusal[] = [];
     if (ship.destroyed) refusals.push('destroyed');
-    if (station.definition.faction === 'pirate') refusals.push('hostileStation');
+    const faction = getFaction(station.definition.faction);
+    if (faction.hostile) refusals.push('hostileStation');
+    else if ((world.standing[faction.id] ?? 0) <= faction.dockingThreshold) refusals.push('reputation');
     if (distance > rules.maxDistance) refusals.push('tooFar');
     if (speed > rules.maxRelativeSpeed) refusals.push('tooFast');
     if (angleError > rules.maxAngle) refusals.push('misaligned');
@@ -195,18 +197,40 @@ export function trade(world: World, shipId: EntityId, resource: string, units: n
   return { ok: true, units: count, credits };
 }
 
-/** Repairs or refuels as much as the player can afford; returns credits spent. */
+/** Credits to restore a fully wrecked subsystem, and a wrecked weapon mount. */
+const SUBSYSTEM_REPAIR = 250;
+const MOUNT_REPAIR = 120;
+
+function repairBill(ship: Ship, perHull: number) {
+  const hull = Math.max(0, ship.definition.hull.integrity - ship.hull);
+  const systems = SUBSYSTEMS.reduce((sum, id) => sum + (1 - ship.subsystems[id]), 0);
+  const mounts = ship.weapons.reduce((sum, m) => sum + (1 - m.health), 0);
+  return { hull, systems, mounts, total: hull * perHull + systems * SUBSYSTEM_REPAIR + mounts * MOUNT_REPAIR };
+}
+
+/**
+ * Repairs (hull, subsystems and weapon mounts together) or refuels as much as the
+ * player can afford; returns credits spent.
+ */
 export function service(world: World, shipId: EntityId, kind: 'repair' | 'refuel'): number {
   const ship = world.ships.get(shipId);
   if (!ship || ship.docked === null) return 0;
   const prices = world.stations.get(ship.docked)!.definition.services;
-  const missing = kind === 'repair' ? ship.definition.hull.integrity - ship.hull : ship.definition.fuel.capacity - ship.fuel;
-  const price = kind === 'repair' ? prices.repairPerHull : prices.fuelPerKg;
-  const amount = Math.min(missing, world.credits / price);
-  if (amount <= 0) return 0;
-  const cost = Math.ceil(amount * price);
-  if (kind === 'repair') ship.hull += amount;
-  else ship.fuel += amount;
+  if (kind === 'refuel') {
+    const amount = Math.min(ship.definition.fuel.capacity - ship.fuel, world.credits / prices.fuelPerKg);
+    if (amount <= 0) return 0;
+    const cost = Math.ceil(amount * prices.fuelPerKg);
+    ship.fuel += amount;
+    world.credits = Math.max(0, world.credits - cost);
+    return cost;
+  }
+  const bill = repairBill(ship, prices.repairPerHull);
+  if (bill.total <= 0 || world.credits <= 0) return 0;
+  const share = Math.min(1, world.credits / bill.total);
+  ship.hull += bill.hull * share;
+  for (const id of SUBSYSTEMS) ship.subsystems[id] += (1 - ship.subsystems[id]) * share;
+  for (const mount of ship.weapons) mount.health += (1 - mount.health) * share;
+  const cost = Math.ceil(bill.total * share);
   world.credits = Math.max(0, world.credits - cost);
   return cost;
 }
@@ -215,13 +239,13 @@ export function serviceCost(world: World, shipId: EntityId, kind: 'repair' | 're
   const ship = world.ships.get(shipId);
   if (!ship || ship.docked === null) return 0;
   const prices = world.stations.get(ship.docked)!.definition.services;
-  const missing = kind === 'repair' ? ship.definition.hull.integrity - ship.hull : ship.definition.fuel.capacity - ship.fuel;
-  return Math.ceil(Math.max(0, missing) * (kind === 'repair' ? prices.repairPerHull : prices.fuelPerKg));
+  if (kind === 'refuel') return Math.ceil(Math.max(0, ship.definition.fuel.capacity - ship.fuel) * prices.fuelPerKg);
+  return Math.ceil(repairBill(ship, prices.repairPerHull).total);
 }
 
 // --- Upgrades -----------------------------------------------------------------
 
-/** The base ship with every installed upgrade applied. */
+/** The base ship with every installed module applied. */
 export function applyUpgrades(base: ShipDefinition, upgrades: string[]): ShipDefinition {
   const def = structuredClone(base);
   for (const id of upgrades) {
@@ -237,11 +261,39 @@ export function applyUpgrades(base: ShipDefinition, upgrades: string[]): ShipDef
     if (e.cargoVolumeBonus) def.cargo.maxVolume += e.cargoVolumeBonus;
     if (e.shieldBonus) def.shield.capacity += e.shieldBonus;
     if (e.shieldRechargeBonus) def.shield.rechargeRate += e.shieldRechargeBonus;
+    if (e.boostBonus) def.movement.boostMultiplier += e.boostBonus;
+    if (e.scanRangeBonus) def.sensors.scanRange += e.scanRangeBonus;
+    if (e.sensorRangeBonus) def.sensors.range += e.sensorRangeBonus;
+    if (e.tractorMultiplier) def.tractor.range *= e.tractorMultiplier;
   }
   return def;
 }
 
-export type UpgradeResult = { ok: true } | { ok: false; reason: 'notDocked' | 'notOffered' | 'installed' | 'noCredits' };
+/** Module effects that are not ship stats: gun gimbal and in-flight repair. */
+export function moduleModifiers(upgrades: string[]): { gimbal: number; repairRate: number } {
+  let gimbal = 0;
+  let repairRate = 0;
+  for (const id of upgrades) {
+    const e = getUpgrade(id).effects;
+    gimbal += e.gimbalBonus ?? 0;
+    repairRate += e.repairRate ?? 0;
+  }
+  return { gimbal, repairRate };
+}
+
+/** Slots in use and available, by kind. */
+export function slotUsage(ship: Ship): Record<'engine' | 'utility' | 'defense', { used: number; total: number }> {
+  const total = ship.baseDefinition.slots;
+  const used = { engine: 0, utility: 0, defense: 0 };
+  for (const id of ship.upgrades) used[getUpgrade(id).slot]++;
+  return {
+    engine: { used: used.engine, total: total.engine },
+    utility: { used: used.utility, total: total.utility },
+    defense: { used: used.defense, total: total.defense },
+  };
+}
+
+export type UpgradeResult = { ok: true } | { ok: false; reason: 'notDocked' | 'notOffered' | 'installed' | 'noCredits' | 'noSlot' | 'reputation' };
 
 export function buyUpgrade(world: World, shipId: EntityId, upgradeId: string): UpgradeResult {
   const ship = world.ships.get(shipId);
@@ -250,6 +302,9 @@ export function buyUpgrade(world: World, shipId: EntityId, upgradeId: string): U
   if (!station.definition.upgrades.includes(upgradeId)) return { ok: false, reason: 'notOffered' };
   if (ship.upgrades.includes(upgradeId)) return { ok: false, reason: 'installed' };
   const upgrade = getUpgrade(upgradeId);
+  const slots = slotUsage(ship)[upgrade.slot];
+  if (slots.used >= slots.total) return { ok: false, reason: 'noSlot' };
+  if (upgrade.requires && (world.standing[upgrade.requires.faction] ?? 0) < upgrade.requires.reputation) return { ok: false, reason: 'reputation' };
   if (world.credits < upgrade.cost) return { ok: false, reason: 'noCredits' };
   world.credits -= upgrade.cost;
   ship.upgrades.push(upgradeId);
@@ -259,6 +314,23 @@ export function buyUpgrade(world: World, shipId: EntityId, upgradeId: string): U
   ship.hull += upgrade.effects.hullBonus ?? 0;
   ship.shield += upgrade.effects.shieldBonus ?? 0;
   return { ok: true };
+}
+
+/** Share of the price refunded when a module is removed. */
+export const RESALE = 0.5;
+
+/** Removes a module at a station for half its price, freeing the slot. */
+export function sellUpgrade(world: World, shipId: EntityId, upgradeId: string): boolean {
+  const ship = world.ships.get(shipId);
+  if (!ship || ship.docked === null || !ship.upgrades.includes(upgradeId)) return false;
+  const upgrade = getUpgrade(upgradeId);
+  ship.upgrades = ship.upgrades.filter((id) => id !== upgradeId);
+  ship.equipmentMass = Math.max(0, ship.equipmentMass - upgrade.equipmentMass);
+  ship.definition = applyUpgrades(ship.baseDefinition, ship.upgrades);
+  ship.hull = Math.min(ship.hull, ship.definition.hull.integrity);
+  ship.shield = Math.min(ship.shield, ship.definition.shield.capacity);
+  world.credits += Math.round(upgrade.cost * RESALE);
+  return true;
 }
 
 /** Markets drift back toward their base stock: about 3% of the gap per minute. */

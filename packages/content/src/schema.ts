@@ -70,6 +70,8 @@ export const shipDefinitionSchema = z.object({
     /** metres: ore this close goes into the hold */
     collectRadius: positive,
   }),
+  /** Equipment slots by kind. */
+  slots: z.object({ engine: z.number().int().min(0), utility: z.number().int().min(0), defense: z.number().int().min(0) }),
   hardpoints: z.array(
     z.object({
       id: z.string(),
@@ -203,8 +205,8 @@ export type StationModule = z.infer<typeof stationModuleSchema>;
 
 export const stationDefinitionSchema = z.object({
   id: z.string(),
-  /** Pirate stations refuse docking. */
-  faction: z.enum(['outpost', 'pirate']),
+  /** Owning faction id; hostile factions refuse docking. */
+  faction: z.string(),
   modules: z.array(stationModuleSchema).min(1),
   docking: z.object({
     /** metres from the bay centre */
@@ -239,7 +241,11 @@ export const stationDefinitionSchema = z.object({
 
 export const upgradeSchema = z.object({
   id: z.string().regex(/^[a-z][a-z0-9_]*$/),
+  /** Which kind of slot the module occupies. */
+  slot: z.enum(['engine', 'utility', 'defense']),
   cost: positive,
+  /** Sold only to pilots in good standing with a faction. */
+  requires: z.object({ faction: z.string(), reputation: z.number() }).optional(),
   /** kg the upgrade adds to the ship */
   equipmentMass: z.number().min(0),
   effects: z.object({
@@ -250,8 +256,29 @@ export const upgradeSchema = z.object({
     cargoVolumeBonus: z.number().min(0).optional(),
     shieldBonus: z.number().min(0).optional(),
     shieldRechargeBonus: z.number().min(0).optional(),
+    /** added to the boost multiplier */
+    boostBonus: z.number().min(0).optional(),
+    scanRangeBonus: z.number().min(0).optional(),
+    sensorRangeBonus: z.number().min(0).optional(),
+    tractorMultiplier: z.number().min(1).optional(),
+    /** degrees added to every gun's gimbal */
+    gimbalBonus: z.number().min(0).optional(),
+    /** subsystem health restored per second in flight (0.012 = 1.2%/s) */
+    repairRate: z.number().min(0).optional(),
   }),
 });
+
+export const factionSchema = z.object({
+  id: z.string(),
+  hostile: z.boolean(),
+  color: hexColor,
+  /** Stations of this faction refuse docking at or below this reputation. */
+  dockingThreshold: z.number(),
+  /** Reputation gained per pirate destroyed. */
+  killReward: z.number().min(0),
+});
+
+export type FactionDefinition = z.infer<typeof factionSchema>;
 
 export type UpgradeDefinition = z.infer<typeof upgradeSchema>;
 
@@ -342,6 +369,8 @@ export const sectorDefinitionSchema = z.object({
   clearZones: z.array(z.object({ x: z.number(), y: z.number(), radius: positive })),
   beacons: z.array(z.object({ id: z.string(), x: z.number(), y: z.number() })),
   encounters: z.array(encounterSchema),
+  /** Faction that holds the sector, or null for open space. */
+  controllingFaction: z.string().nullable(),
   /** Delivery destinations: a beacon plus a risk multiplier on the reward. */
   dropPoints: z.array(z.object({ id: z.string(), beacon: z.string(), risk: z.number().min(1) })),
   /** The player begins docked at the first station. */

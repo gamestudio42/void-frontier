@@ -68,11 +68,18 @@ export interface WeaponMount {
   heat: number;
   /** Locked out after reaching max heat until it cools to 30%. */
   overheated: boolean;
+  /** 0..1; a mount at 0 cannot fire. */
+  health: number;
   /** Current beam segment while a beam weapon fires, for hits and visuals. */
   beam: { from: { x: number; y: number }; to: { x: number; y: number }; hit: EntityId | null } | null;
 }
 
+export type SubsystemId = 'engines' | 'reactor' | 'sensors' | 'shieldGenerator' | 'cargoHold';
+export const SUBSYSTEMS: SubsystemId[] = ['engines', 'reactor', 'sensors', 'shieldGenerator', 'cargoHold'];
+
 export interface Ship {
+  /** Health of each internal system, 0..1. */
+  subsystems: Record<SubsystemId, number>;
   /** Effective stats: the base definition with installed upgrades applied. */
   definition: ShipDefinition;
   baseDefinition: ShipDefinition;
@@ -169,6 +176,7 @@ export type SimEvent =
     }
   | { type: 'shipDestroyed'; id: EntityId; position: { x: number; y: number }; by: EntityId | null }
   | { type: 'contract'; id: number; kind: 'delivery' | 'mining' | 'bounty'; outcome: 'completed' | 'failed' | 'abandoned'; reward: number }
+  | { type: 'subsystemDamaged'; ship: EntityId; system: SubsystemId | 'weapon'; health: number }
   | { type: 'discovered'; id: string; kind: 'derelict' | 'deposit' | 'cache'; credits: number }
   | { type: 'docked'; ship: EntityId; station: EntityId }
   | { type: 'undocked'; ship: EntityId; station: EntityId }

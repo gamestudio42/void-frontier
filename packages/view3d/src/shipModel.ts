@@ -31,6 +31,8 @@ export interface Emitter {
 
 export interface ShipModel {
   root: Group;
+  /** Hull length in metres, for placing effects along the ship. */
+  length: number;
   emitters: Emitter[];
   update(output: ThrusterOutput, time: number): void;
   dispose(): void;
@@ -191,6 +193,7 @@ export function buildShipModel(definition: ShipDefinition, faction: 'player' | '
 
   return {
     root,
+    length: L,
     emitters,
     update(output, time) {
       const flicker = 0.9 + 0.1 * Math.sin(time * 61) * Math.sin(time * 23);

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import asteroidData from '../data/asteroids.json';
 import contractData from '../data/contracts.json';
+import factionData from '../data/factions.json';
 import anomalyZoneData from '../data/anomaly-zone.json';
 import industrialBeltData from '../data/industrial-belt.json';
 import outpostAlphaData from '../data/outpost-alpha.json';
@@ -15,6 +16,7 @@ import {
   asteroidTypeSchema,
   collisionRulesSchema,
   contractRulesSchema,
+  factionSchema,
   resourceSchema,
   sectorDefinitionSchema,
   shipDefinitionSchema,
@@ -24,6 +26,7 @@ import {
   type AsteroidType,
   type CollisionRules,
   type ContractRules,
+  type FactionDefinition,
   type ResourceDefinition,
   type SectorDefinition,
   type ShipDefinition,
@@ -43,6 +46,7 @@ export const STATIONS: ReadonlyMap<string, StationDefinition> = byId(z.array(sta
 export const RESOURCES: ReadonlyMap<string, ResourceDefinition> = byId(z.array(resourceSchema).parse(resourceData));
 export const UPGRADES: ReadonlyMap<string, UpgradeDefinition> = byId(z.array(upgradeSchema).parse(upgradeData));
 export const WEAPONS: ReadonlyMap<string, WeaponDefinition> = byId(z.array(weaponDefinitionSchema).parse(weaponData));
+export const FACTIONS: ReadonlyMap<string, FactionDefinition> = byId(z.array(factionSchema).parse(factionData));
 export const CONTRACT_RULES: ContractRules = contractRulesSchema.parse(contractData);
 export const COLLISION_RULES: CollisionRules = collisionRulesSchema.parse(physicsData);
 export const OUTPOST_ALPHA: SectorDefinition = sectorDefinitionSchema.parse(outpostAlphaData);
@@ -64,12 +68,15 @@ export const getShip = (id: string): ShipDefinition => lookup(SHIPS, 'ship', id)
 export const getAsteroidType = (id: string): AsteroidType => lookup(ASTEROID_TYPES, 'asteroid type', id);
 export const getStation = (id: string): StationDefinition => lookup(STATIONS, 'station', id);
 export const getResource = (id: string): ResourceDefinition => lookup(RESOURCES, 'resource', id);
+export const getFaction = (id: string): FactionDefinition => lookup(FACTIONS, 'faction', id);
 export const getUpgrade = (id: string): UpgradeDefinition => lookup(UPGRADES, 'upgrade', id);
 export const getWeapon = (id: string): WeaponDefinition => lookup(WEAPONS, 'weapon', id);
 
 for (const ship of SHIPS.values()) for (const hardpoint of ship.hardpoints) getWeapon(hardpoint.weapon);
 for (const type of ASTEROID_TYPES.values()) getResource(type.resource);
+for (const upgrade of UPGRADES.values()) if (upgrade.requires) getFaction(upgrade.requires.faction);
 for (const station of STATIONS.values()) {
+  getFaction(station.faction);
   for (const item of station.market) getResource(item.resource);
   for (const upgrade of station.upgrades) getUpgrade(upgrade);
   if (!station.modules.some((m) => m.kind === 'dock')) throw new Error(`Station ${station.id} has no docking bay`);
@@ -85,6 +92,7 @@ export function validateSector(sector: SectorDefinition): void {
   }
   for (const encounter of sector.encounters) getShip(encounter.ship);
   for (const poi of sector.pointsOfInterest) getResource(poi.reward.resource);
+  if (sector.controllingFaction) getFaction(sector.controllingFaction);
   for (const drop of sector.dropPoints) {
     if (!sector.beacons.some((b) => b.id === drop.beacon)) throw new Error(`Drop point ${drop.id} names unknown beacon ${drop.beacon}`);
   }

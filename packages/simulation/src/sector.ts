@@ -4,7 +4,7 @@ import { resizeRock, spawnPickup } from './mining.ts';
 import type { MissionBoard } from './missions.ts';
 import { Simulation } from './simulation.ts';
 import { dockShip, installUpgrades, undock } from './station.ts';
-import type { FlightMode } from './types.ts';
+import type { FlightMode, SubsystemId } from './types.ts';
 
 type Pair = [number, number];
 
@@ -36,6 +36,9 @@ export interface PlayerState {
   angle: number;
   angularVelocity: number;
   scanReadyTick: number;
+  subsystems: Record<SubsystemId, number>;
+  /** Weapon mount health, in hardpoint order. */
+  mounts: number[];
 }
 
 export function captureSector(sim: Simulation): SectorSnapshot {
@@ -113,6 +116,8 @@ export function capturePlayer(sim: Simulation): PlayerState {
     angle: body.angle,
     angularVelocity: body.angularVelocity,
     scanReadyTick: ship.scanReadyTick,
+    subsystems: { ...ship.subsystems },
+    mounts: ship.weapons.map((w) => w.health),
   };
 }
 
@@ -132,7 +137,9 @@ export function applyPlayer(sim: Simulation, player: PlayerState, placeAt?: { po
     kills: player.kills,
     mode: player.mode,
     scanReadyTick: player.scanReadyTick,
+    subsystems: { ...player.subsystems },
   });
+  ship.weapons.forEach((mount, i) => (mount.health = player.mounts[i] ?? 1));
   const stationIds = [...world.stations.keys()];
   if (!placeAt && player.dockedAt !== null && stationIds[player.dockedAt] !== undefined) {
     if (ship.docked !== stationIds[player.dockedAt]) {

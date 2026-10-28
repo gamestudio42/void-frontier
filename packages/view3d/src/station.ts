@@ -1,4 +1,4 @@
-import type { StationDefinition, StationModule } from '@void-frontier/content';
+import { getFaction, type StationDefinition, type StationModule } from '@void-frontier/content';
 import {
   AdditiveBlending,
   BoxGeometry,
@@ -36,7 +36,7 @@ interface Blinker {
 }
 
 export function buildStationModel(definition: StationDefinition, seed: number): StationModel {
-  const pirate = definition.faction === 'pirate';
+  const pirate = getFaction(definition.faction).hostile;
   const root = new Group();
   const plating = platingTexture(seed);
   const darkPlating = platingTexture(seed + 1, '#4a5058');

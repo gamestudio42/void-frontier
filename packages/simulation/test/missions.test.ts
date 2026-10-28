@@ -70,8 +70,8 @@ describe('delivery', () => {
     body(sim, id).velocity = { x: 1, y: 0 };
     sim.step();
     expect(board.active).toHaveLength(0);
-    expect(sim.world.credits).toBe(credits + payout({ ...board, reputation: 0 }, offer));
-    expect(board.reputation).toBe(CONTRACT_RULES.delivery.repGain);
+    expect(sim.world.credits).toBe(credits + payout({ ...board, reputation: { outpost_authority: 0 } }, offer));
+    expect(board.reputation.outpost_authority).toBe(CONTRACT_RULES.delivery.repGain);
     expect(ship(sim, id).cargo.has(CONTRACT_RULES.delivery.cargo)).toBe(false);
   });
 
@@ -89,7 +89,7 @@ describe('delivery', () => {
     sim.step();
     expect(board.active).toHaveLength(0);
     expect(board.history[0].outcome).toBe('failed');
-    expect(board.reputation).toBe(-CONTRACT_RULES.penalty.failed);
+    expect(board.reputation.outpost_authority).toBe(-CONTRACT_RULES.penalty.failed);
   });
 });
 
@@ -132,7 +132,7 @@ describe('reputation', () => {
     const { sim, board } = sector();
     const offer = local(sim)[0];
     const base = payout(board, offer);
-    board.reputation = 40;
+    board.reputation.outpost_authority = 40;
     expect(payout(board, offer)).toBeGreaterThan(base);
     const elites = [];
     for (let i = 0; i < 60; i++) {
@@ -149,7 +149,7 @@ describe('reputation', () => {
     const offer = offerOf(sim, 'mining');
     sim.acceptContract(offer.id);
     sim.abandonContract(offer.id);
-    expect(board.reputation).toBe(-CONTRACT_RULES.penalty.abandoned);
+    expect(board.reputation.outpost_authority).toBe(-CONTRACT_RULES.penalty.abandoned);
     expect(board.history[0]).toMatchObject({ id: offer.id, outcome: 'abandoned' });
   });
 });
@@ -169,6 +169,6 @@ describe('losing the ship', () => {
     const fresh = Simulation.fromSector(OUTPOST_ALPHA);
     fresh.missions = next;
     expect(contractProgress(fresh.world, next, fresh.playerId, next.active[0]).current).toBe(1);
-    expect(next.reputation).toBe(-CONTRACT_RULES.penalty.failed);
+    expect(next.reputation.outpost_authority).toBe(-CONTRACT_RULES.penalty.failed);
   });
 });

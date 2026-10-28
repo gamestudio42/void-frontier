@@ -2,6 +2,7 @@ import type { CollisionRules } from '@void-frontier/content';
 import { cos, sin } from '@void-frontier/kernel';
 import type { Body, Collider, EntityId } from '../types.ts';
 import { destroyShip } from '../damage.ts';
+import { damageSubsystems } from '../subsystems.ts';
 import { SpatialIndex } from '../spatial.ts';
 import type { World } from '../world.ts';
 
@@ -216,6 +217,8 @@ function resolve(world: World, rules: CollisionRules, a: Entry, b: Entry, contac
       const ship = world.ships.get(id);
       if (!ship || ship.destroyed || damage <= 0) continue;
       ship.hull = Math.max(0, ship.hull - damage);
+      ship.lastDamageTick = world.tick;
+      damageSubsystems(world, id, { x: contact.px, y: contact.py }, damage);
       if (ship.hull === 0) destroyShip(world, id, null);
     }
     if (closing > 0.5) {

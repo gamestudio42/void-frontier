@@ -59,7 +59,7 @@ describe('saves', () => {
     expect(() => decodeSave({ hello: 'world' })).toThrow(/Not a Void Frontier save/);
   });
 
-  it('migrates a version 1 save from the single-sector game', () => {
+  it('migrates a version 1 save from the single-sector game through every step', () => {
     const state = played();
     const v2 = serialize(state);
     const v1 = {
@@ -69,15 +69,15 @@ describe('saves', () => {
       tick: v2.tick,
       credits: v2.credits,
       rng: v2.sectors.outpost_alpha.rng,
-      player: v2.player,
+      player: (({ subsystems: _s, mounts: _m, ...p }) => p)(v2.player),
       asteroids: v2.sectors.outpost_alpha.asteroids,
       markets: v2.sectors.outpost_alpha.markets,
       pickups: v2.sectors.outpost_alpha.pickups,
       missions: {
-        offers: v2.missions!.offers.outpost_alpha_station.map(({ issuer: _issuer, ...c }) => c),
-        active: v2.missions!.active.map(({ issuer: _issuer, ...c }) => ({ ...c, ...(c.delivery ? { delivery: { drop: c.delivery.drop, units: c.delivery.units } } : {}) })),
+        offers: v2.missions!.offers.outpost_alpha_station.map(({ issuer: _issuer, faction: _faction, ...c }) => c),
+        active: v2.missions!.active.map(({ issuer: _issuer, faction: _faction, ...c }) => ({ ...c, ...(c.delivery ? { delivery: { drop: c.delivery.drop, units: c.delivery.units } } : {}) })),
         history: v2.missions!.history,
-        reputation: v2.missions!.reputation,
+        reputation: v2.missions!.reputation.outpost_authority,
         nextId: v2.missions!.nextId,
         refreshTick: v2.missions!.refreshTick,
       },

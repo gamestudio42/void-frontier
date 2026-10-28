@@ -53,6 +53,7 @@ export function spawnShip(world: World, definition: ShipDefinition, options: Spa
     upgrades: [],
     docked: null,
     faction: options.faction ?? 'player',
+    subsystems: { engines: 1, reactor: 1, sensors: 1, shieldGenerator: 1, cargoHold: 1 },
     mode: options.mode ?? 'newtonian',
     shield: definition.shield.capacity,
     energy: definition.reactor.capacity,
@@ -61,6 +62,7 @@ export function spawnShip(world: World, definition: ShipDefinition, options: Spa
       hardpoint,
       definition: getWeapon(hardpoint.weapon),
       cooldown: 0,
+      health: 1,
       heat: 0,
       overheated: false,
       beam: null,
@@ -105,3 +107,12 @@ export function shipCollider(definition: ShipDefinition): Collider {
 }
 
 export const forwardOf = (angle: number): Vec2 => ({ x: cos(angle), y: sin(angle) });
+
+/** Thrust left with damaged engines: never below 35%, so a crippled ship can still limp home. */
+export const engineFactor = (ship: Ship): number => 0.35 + 0.65 * ship.subsystems.engines;
+
+/** Sensor reach with damaged sensors. */
+export const sensorRange = (ship: Ship): number => ship.definition.sensors.range * (0.3 + 0.7 * ship.subsystems.sensors);
+
+/** Shield capacity the generator can hold. */
+export const shieldCapacity = (ship: Ship): number => ship.definition.shield.capacity * ship.subsystems.shieldGenerator;

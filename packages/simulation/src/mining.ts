@@ -122,8 +122,9 @@ export function pickupSystem(world: World, dt: number): void {
 export function scan(world: World, shipId: EntityId, dt: number): boolean {
   const ship = world.ships.get(shipId);
   const body = world.bodies.get(shipId);
-  if (!ship || !body || ship.destroyed || world.tick < ship.scanReadyTick) return false;
-  const range = ship.definition.sensors.scanRange;
+  // A wrecked sensor array cannot pulse; a damaged one reaches less far.
+  if (!ship || !body || ship.destroyed || world.tick < ship.scanReadyTick || ship.subsystems.sensors < 0.15) return false;
+  const range = ship.definition.sensors.scanRange * (0.4 + 0.6 * ship.subsystems.sensors);
   ship.scanReadyTick = world.tick + Math.round(ship.definition.sensors.scanCooldown / dt);
   const until = world.tick + Math.round(SCAN_DURATION / dt);
   let found = 0;

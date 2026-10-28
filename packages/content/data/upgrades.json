@@ -5,7 +5,8 @@
     "effects": {
       "thrustMultiplier": 1.15
     },
-    "equipmentMass": 150
+    "equipmentMass": 150,
+    "slot": "engine"
   },
   {
     "id": "reinforced_hull",
@@ -14,7 +15,8 @@
       "hullBonus": 400,
       "armorBonus": 0.05
     },
-    "equipmentMass": 600
+    "equipmentMass": 600,
+    "slot": "defense"
   },
   {
     "id": "cargo_frame",
@@ -23,7 +25,8 @@
       "cargoMassBonus": 3000,
       "cargoVolumeBonus": 10
     },
-    "equipmentMass": 400
+    "equipmentMass": 400,
+    "slot": "utility"
   },
   {
     "id": "shield_capacitor",
@@ -32,6 +35,67 @@
       "shieldBonus": 150,
       "shieldRechargeBonus": 10
     },
-    "equipmentMass": 200
+    "equipmentMass": 200,
+    "slot": "defense"
+  },
+  {
+    "id": "afterburner",
+    "slot": "engine",
+    "cost": 1600,
+    "equipmentMass": 250,
+    "effects": {
+      "boostBonus": 0.5
+    }
+  },
+  {
+    "id": "deep_scanner",
+    "slot": "utility",
+    "cost": 900,
+    "equipmentMass": 120,
+    "effects": {
+      "scanRangeBonus": 700,
+      "sensorRangeBonus": 400
+    }
+  },
+  {
+    "id": "tractor_mk2",
+    "slot": "utility",
+    "cost": 800,
+    "equipmentMass": 150,
+    "effects": {
+      "tractorMultiplier": 2
+    }
+  },
+  {
+    "id": "armor_plating",
+    "slot": "defense",
+    "cost": 1300,
+    "equipmentMass": 900,
+    "effects": {
+      "armorBonus": 0.1,
+      "hullBonus": 150
+    }
+  },
+  {
+    "id": "repair_drones",
+    "slot": "utility",
+    "cost": 2200,
+    "equipmentMass": 180,
+    "effects": {
+      "repairRate": 0.012
+    }
+  },
+  {
+    "id": "combat_computer",
+    "slot": "utility",
+    "cost": 2600,
+    "equipmentMass": 100,
+    "effects": {
+      "gimbalBonus": 5
+    },
+    "requires": {
+      "faction": "ferrum_combine",
+      "reputation": 20
+    }
   }
 ]
