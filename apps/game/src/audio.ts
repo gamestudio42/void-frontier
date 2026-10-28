@@ -205,11 +205,22 @@ export class AudioEngine {
             this.chime(e.type === 'docked' ? [660, 880] : [880, 660], 0.05, 0.2);
           }
           break;
+        case 'discovered':
+          this.chime([392, 523, 659, 784, 1047], 0.06);
+          break;
         case 'contract':
           this.chime(e.outcome === 'completed' ? [523, 659, 784, 1047] : [440, 349, 294], 0.07);
           break;
       }
     }
+  }
+
+  /** Jump-gate transit: a rising whoosh into a low boom. */
+  jump(): void {
+    if (!this.ctx) return;
+    this.burst({ duration: 1.2, freq: 200, type: 'bandpass', gain: 0.4, pan: 0, sweepTo: 4000 });
+    this.sweep(80, 900, 1.0, 0.18, 0, 'sawtooth');
+    this.thump(45, 1.4, 0.5, 0);
   }
 
   /** Soft interface click. */

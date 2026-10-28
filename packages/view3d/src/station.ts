@@ -36,12 +36,13 @@ interface Blinker {
 }
 
 export function buildStationModel(definition: StationDefinition, seed: number): StationModel {
+  const pirate = definition.faction === 'pirate';
   const root = new Group();
   const plating = platingTexture(seed);
   const darkPlating = platingTexture(seed + 1, '#4a5058');
-  const hull = new MeshStandardMaterial({ color: 0xd2d6db, map: plating, metalness: 0.55, roughness: 0.5 });
+  const hull = new MeshStandardMaterial({ color: pirate ? 0x6b6460 : 0xd2d6db, map: plating, metalness: 0.55, roughness: 0.5 });
   const dark = new MeshStandardMaterial({ color: 0xffffff, map: darkPlating, metalness: 0.65, roughness: 0.55 });
-  const accent = new MeshStandardMaterial({ color: 0xc8892c, metalness: 0.3, roughness: 0.55 });
+  const accent = new MeshStandardMaterial({ color: pirate ? 0xa2271e : 0xc8892c, metalness: 0.3, roughness: 0.55 });
   const strut = new MeshStandardMaterial({ color: 0x5b6168, metalness: 0.7, roughness: 0.45 });
   const solar = new MeshStandardMaterial({ map: solarTexture(), metalness: 0.7, roughness: 0.25, color: 0xffffff });
   const hazard = new MeshStandardMaterial({ map: hazardTexture(), metalness: 0.3, roughness: 0.6 });

@@ -67,7 +67,7 @@ export class DustField {
     const geometry = new BufferGeometry();
     geometry.setAttribute('position', new BufferAttribute(positions, 3));
     this.material = new ShaderMaterial({
-      uniforms: { uFocus: { value: [0, 0, 0] }, uSize: { value: DustField.SIZE } },
+      uniforms: { uFocus: { value: [0, 0, 0] }, uSize: { value: DustField.SIZE }, uFade: { value: 1 } },
       vertexShader: /* glsl */ `
         uniform vec3 uFocus;
         uniform float uSize;
@@ -83,8 +83,10 @@ export class DustField {
         }`,
       fragmentShader: /* glsl */ `
         varying float vFade;
+        uniform float uFade;
         void main() {
-          gl_FragColor = vec4(vec3(0.6, 0.68, 0.78) * vFade, 1.0);
+          if (uFade <= 0.0) discard;
+          gl_FragColor = vec4(vec3(0.6, 0.68, 0.78) * vFade * uFade, 1.0);
         }`,
       transparent: true,
       blending: AdditiveBlending,
@@ -94,8 +96,10 @@ export class DustField {
     this.points.frustumCulled = false;
   }
 
-  setFocus(focus: Vector3): void {
+  /** Dust only reads up close; zoomed far out its box would show as a cloud, so it fades. */
+  setFocus(focus: Vector3, cameraDistance = 0): void {
     this.material.uniforms.uFocus.value = [focus.x, focus.y, focus.z];
+    this.material.uniforms.uFade.value = Math.max(0, Math.min(1, 1 - (cameraDistance - 260) / 220));
   }
 }
 
@@ -125,30 +129,40 @@ export class PlaneGrid {
   }
 }
 
+export interface PlanetLook {
+  /** 0..1 hue of the main bands */
+  hue: number;
+  x: number;
+  y: number;
+  z: number;
+  radius: number;
+}
+
 /** A banded gas giant far below the plane: a landmark that gives the scene depth and scale. */
-export function createPlanet(seed: number): Mesh {
+export function createPlanet(seed: number, look: PlanetLook = { hue: 0.58, x: 9000, y: -12000, z: -9500, radius: 2300 }): Mesh {
   const rng = new Rng(seed);
   const canvas = document.createElement('canvas');
   canvas.width = 512;
   canvas.height = 256;
   const ctx = canvas.getContext('2d')!;
   const gradient = ctx.createLinearGradient(0, 0, 0, 256);
-  gradient.addColorStop(0, '#2b3a4a');
-  gradient.addColorStop(1, '#1a2430');
+  const h = Math.round(look.hue * 360);
+  gradient.addColorStop(0, `hsl(${h}, 28%, 23%)`);
+  gradient.addColorStop(1, `hsl(${h}, 30%, 14%)`);
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, 512, 256);
   for (let i = 0; i < 70; i++) {
     const y = rng.range(0, 256);
     const h = rng.range(2, 14);
-    const hue = rng.next() < 0.3 ? 28 : 205;
+    const hue = rng.next() < 0.3 ? (h + 180) % 360 : h;
     ctx.fillStyle = `hsla(${hue}, ${rng.range(15, 40)}%, ${rng.range(25, 55)}%, ${rng.range(0.15, 0.45)})`;
     ctx.fillRect(0, y, 512, h);
   }
   const texture = new CanvasTexture(canvas);
   texture.colorSpace = SRGBColorSpace;
   const planet = new Mesh(new SphereGeometry(1, 64, 32), new MeshStandardMaterial({ map: texture, roughness: 1, metalness: 0 }));
-  planet.scale.setScalar(2300);
-  planet.position.set(9000, -12000, -9500);
+  planet.scale.setScalar(look.radius);
+  planet.position.set(look.x, look.y, look.z);
   // Tip the pole toward the camera so the bands read side-on instead of as rings.
   planet.rotation.set(-1.15, 0, 0.3);
   return planet;

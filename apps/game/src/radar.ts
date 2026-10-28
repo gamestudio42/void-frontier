@@ -90,9 +90,27 @@ export function drawRadar(canvas: HTMLCanvasElement, sim: Simulation, time: numb
     ctx.fillRect(sx - 4, sy - 4, 8, 8);
   }
 
+  // Jump gates: cyan rings. Points of interest: violet, faint until found.
+  for (const gate of sim.world.gates.values()) {
+    const [sx, sy] = toScreen(gate.position.x, gate.position.y);
+    ctx.strokeStyle = '#6fd3ff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(sx, sy, 5, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  for (const poi of sim.world.pointsOfInterest.values()) {
+    if (!poi.found && poi.kind === 'deposit') continue;
+    const [sx, sy] = toScreen(poi.position.x, poi.position.y);
+    ctx.fillStyle = poi.found ? '#c77dff' : 'rgba(199, 125, 255, 0.45)';
+    ctx.beginPath();
+    ctx.arc(sx, sy, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   // Active delivery destinations: a pulsing ring.
   for (const contract of sim.missions?.active ?? []) {
-    if (!contract.delivery) continue;
+    if (!contract.delivery?.drop || contract.delivery.sector !== sim.world.sectorId) continue;
     const drop = sim.missions!.drops.find((d) => d.id === contract.delivery!.drop)!;
     const [sx, sy] = toScreen(drop.position.x, drop.position.y);
     ctx.strokeStyle = '#ffd27a';

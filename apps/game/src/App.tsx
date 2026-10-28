@@ -6,6 +6,7 @@ import { LOCALES, detectLocale, saveLocale, translator, type Locale, type Messag
 import { HudStore, initialHudState } from './store.ts';
 import { ControlsPanel } from './ui/ControlsPanel.tsx';
 import { MainMenu, PauseMenu, TutorialCard } from './ui/menus.tsx';
+import { SectorMap } from './ui/SectorMap.tsx';
 import { loadSettings, saveSettings, type Settings } from './settings.ts';
 import { DebugOverlay } from './ui/DebugOverlay.tsx';
 import { FlightHud } from './ui/FlightHud.tsx';
@@ -50,7 +51,12 @@ export function App() {
   };
 
   useEffect(() => {
-    if (game) game.labels = { drop: (id) => t(`drop.${id}` as MessageKey) };
+    if (game)
+      game.labels = {
+        drop: (id) => t(`drop.${id}` as MessageKey),
+        station: (id) => t(`station.${id}` as MessageKey),
+        sector: (id) => t(`sector.${id}` as MessageKey),
+      };
   }, [game, t]);
 
   function chooseLocale(next: Locale) {
@@ -66,6 +72,10 @@ export function App() {
       {hud.menu !== 'main' && <FlightHud hud={hud} t={t} locale={locale} />}
       {hud.contracts && !hud.station && <ContractTracker active={hud.contracts.active} t={t} />}
       <Notices notices={hud.notices} t={t} locale={locale} />
+      <div key={`jump-${hud.jumpedAt}`} className={hud.jumpedAt > 0 ? 'jump-flash' : ''} aria-hidden="true" />
+      {hud.mapOpen && hud.menu === null && (
+        <SectorMap current={hud.sectorId} visited={hud.visited} discovered={hud.discovered} contracts={hud.contracts} t={t} onClose={() => store.update({ mapOpen: false })} />
+      )}
       <figure className="radar" aria-label={t('hud.radar')} hidden={hud.menu === 'main'}>
         <canvas ref={radarRef} data-testid="radar" />
       </figure>

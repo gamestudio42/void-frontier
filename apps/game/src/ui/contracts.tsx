@@ -12,6 +12,11 @@ const clock = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.fl
 
 /** One sentence that says what to do, in the player's language. */
 export function objective(c: ContractView, t: Translate): string {
+  if (c.kind === 'delivery' && c.station)
+    return t('contract.station.objective')
+      .replace('{units}', String(c.units))
+      .replace('{station}', t(`station.${c.station}` as MessageKey))
+      .replace('{sector}', t(`sector.${c.sector}` as MessageKey));
   if (c.kind === 'delivery') return t('contract.delivery.objective').replace('{units}', String(c.units)).replace('{drop}', t(`drop.${c.drop}` as MessageKey));
   if (c.kind === 'mining') return t('contract.mining.objective').replace('{units}', String(c.units)).replace('{resource}', t(`resource.${c.resource}` as MessageKey));
   return t('contract.bounty.objective').replace('{count}', String(c.units));
@@ -127,6 +132,11 @@ export function Notices({ notices, t, locale }: { notices: { id: number; kind: s
         <div key={`${n.id}-${n.outcome}`} className={`notice ${n.outcome}`} data-testid="notice">
           {n.kind === 'tutorial' ? (
             <strong>{t('tutorial.done')}</strong>
+          ) : n.kind.startsWith('poi:') ? (
+            <>
+              <strong>{t(`poi.${n.kind.slice(4)}` as MessageKey)}</strong>
+              {n.reward > 0 && <span> +{formatNumber(locale, n.reward)} cr</span>}
+            </>
           ) : (
             <>
               <strong>{t(`contract.outcome.${n.outcome}` as MessageKey)}</strong> · {t(`contract.kind.${n.kind}` as MessageKey)}

@@ -88,7 +88,9 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
       <header className="hud-top">
         <div className="brand">
           <strong>{t('app.title')}</strong>
-          <span>{t('app.subtitle')}</span>
+          <span data-testid="sector" data-value={hud.sectorId}>
+            {t(`sector.${hud.sectorId}` as MessageKey)}
+          </span>
         </div>
         <div className={`mode mode-${tel.mode}`} data-testid="flight-mode" data-mode={tel.mode}>
           <span className="label">{t('hud.mode')}</span>
@@ -223,6 +225,23 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
       </section>
 
       <TargetPanel hud={hud} t={t} locale={locale} />
+      {hud.gate && !hud.docking && (
+        <section className={`panel gate-panel ${hud.gate.ready ? 'ready' : ''}`} data-testid="gate">
+          <span className="label">{t('gate.title')}</span>
+          <strong>
+            {t('gate.to')} {t(`sector.${hud.gate.to}` as MessageKey)}
+          </strong>
+          <span>
+            {formatDistance(locale, hud.gate.distance)} · {formatNumber(locale, hud.gate.speed)} {t('unit.speed')}
+          </span>
+          <em>{hud.gate.ready ? t('gate.ready') : t('gate.hint')}</em>
+        </section>
+      )}
+      {hud.gravity > 0.2 && (
+        <div className="gravity" data-testid="gravity">
+          {t('hud.gravity')}: <strong>{formatNumber(locale, hud.gravity, 1)} {t('unit.accel')}</strong>
+        </div>
+      )}
       {hud.docking && <DockingPanel docking={hud.docking} refused={hud.dockRefused} t={t} locale={locale} />}
 
       <section className="mining-status">

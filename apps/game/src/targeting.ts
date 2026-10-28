@@ -15,6 +15,7 @@ export function drawTargeting(
   hitFlash: number,
   pointer: { x: number; y: number } | null,
   waypoints: { label: string; position: { x: number; y: number } }[] = [],
+  markers: { label: string; position: { x: number; y: number }; colour: string }[] = [],
 ): void {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
@@ -29,6 +30,16 @@ export function drawTargeting(
   ctx.clearRect(0, 0, width, height);
   const me = sim.world.ships.get(sim.playerId);
   if (!me || me.destroyed || me.docked !== null) return;
+
+  // Gates and signals: a label when on screen only, so they never crowd the edges.
+  ctx.font = '600 11px ui-monospace, Menlo, Consolas, monospace';
+  ctx.textAlign = 'center';
+  for (const marker of markers) {
+    const s = renderer.worldToScreen(marker.position, width, height);
+    if (!s.onScreen) continue;
+    ctx.fillStyle = marker.colour;
+    ctx.fillText(marker.label, s.x, s.y - 62);
+  }
 
   // Contract waypoints: a diamond on screen, an edge chevron when off screen.
   for (const waypoint of waypoints) {

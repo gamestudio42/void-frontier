@@ -40,6 +40,8 @@ export interface ContractView {
   units: number;
   resource: string | null;
   drop: string | null;
+  station: string | null;
+  sector: string | null;
 }
 
 export interface ActiveContractView extends ContractView {
@@ -80,6 +82,15 @@ export interface HudState {
   /** Which menu is open over the game, if any. */
   menu: 'main' | 'pause' | null;
   tutorial: { index: number; total: number; title: string; hint: string } | null;
+  sectorId: string;
+  gate: { to: string; distance: number; speed: number; ready: boolean } | null;
+  /** m/s^2 of pull from gravity wells where the ship is */
+  gravity: number;
+  /** Game clock of the last jump, for the transition effect. */
+  jumpedAt: number;
+  discovered: string[];
+  visited: string[];
+  mapOpen: boolean;
   /** Increments on every damaging hit, so the HUD can flash. */
   hits: number;
   stats: DebugStats;
@@ -126,6 +137,13 @@ export const initialHudState = (): HudState => ({
   notices: [],
   menu: 'main',
   tutorial: null,
+  sectorId: 'outpost_alpha',
+  gate: null,
+  gravity: 0,
+  jumpedAt: -100,
+  discovered: [],
+  visited: ['outpost_alpha'],
+  mapOpen: false,
   hits: 0,
   stats: { fps: 0, frameMs: 0, tick: 0, stepsPerFrame: 0, droppedSeconds: 0, entities: 0, drawCalls: 0, triangles: 0, zoom: 1, quality: 'high', autoQuality: true },
 });

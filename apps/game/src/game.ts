@@ -1,7 +1,7 @@
-import { OUTPOST_ALPHA } from '@void-frontier/content';
+import { OUTPOST_ALPHA, getSector } from '@void-frontier/content';
 import { FIXED_DT, FixedStepper, type Vec2 } from '@void-frontier/kernel';
 import { getUpgrade } from '@void-frontier/content';
-import { Simulation, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, installUpgrades, hostilesNear, nearestObstacle, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
+import { Simulation, applySectorSnapshot, captureSector, gateStatus, gravityAt, jump, markDiscovered, nextGate, dockedStationKey, type SectorSnapshot, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, installUpgrades, hostilesNear, nearestObstacle, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
 import { SpaceRenderer, type Quality } from '@void-frontier/view3d';
 import { AudioEngine } from './audio.ts';
 import { InputController } from './input.ts';
@@ -50,13 +50,18 @@ export class Game {
   /** The docking checklist stays hidden right after leaving the bay. */
   private undockedAt = -100;
   private frameErrorReported = false;
+  /** Sectors the player has left, as they were when left. */
+  private memory: Record<string, SectorSnapshot> = {};
+  /** Points of interest found anywhere. */
+  private discovered = new Set<string>();
+  private jumpedAt = -100;
   /** Index into TUTORIAL, or null when no tutorial is running. */
   private tutorialStep: number | null = null;
   private tutorialStarted = 0;
   private tutorialStart = { heading: 0, credits: 0 };
 
   constructor(private readonly canvas: HTMLCanvasElement, private readonly store: HudStore) {
-    this.renderer = new SpaceRenderer(canvas, this.sim, OUTPOST_ALPHA.seed);
+    this.renderer = this.createRenderer();
     // ?quality=low|medium|high pins the graphics level (handy on weak machines and in tests).
     const requested = new URLSearchParams(window.location.search).get('quality') as Quality | null;
     if (requested && QUALITIES.includes(requested)) {
@@ -100,10 +105,13 @@ export class Game {
         else this.target = hostiles[(hostiles.indexOf(this.target ?? -1) + 1) % hostiles.length];
         this.publish();
       },
+      toggleMap: () => this.store.update({ mapOpen: !this.store.getSnapshot().mapOpen }),
       dockOrUndock: () => {
         const ship = this.sim.world.ships.get(this.sim.playerId);
         if (!ship || ship.destroyed) return;
+        const gate = gateStatus(this.sim.world, this.sim.playerId);
         if (ship.docked !== null) this.undock();
+        else if (gate?.ready) this.jumpThrough(gate.id);
         else {
           const result = this.sim.requestDock(this.sim.playerId);
           this.dockRefused = result.ok ? null : { refusals: result.refusals, at: this.clock };
@@ -187,16 +195,25 @@ export class Game {
     const oldShip = this.sim.world.ships.get(this.sim.playerId);
     const upgrades = oldShip ? [...oldShip.upgrades] : [];
     const credits = Math.floor(this.sim.world.credits * 0.9);
-    const board = this.sim.missions ? carryBoard(this.sim.missions, this.sim.world.tick, oldShip?.kills ?? 0) : null;
-    const sim = Simulation.fromSector(OUTPOST_ALPHA);
+    const board = this.sim.missions ? carryBoard(this.sim.missions, oldShip?.kills ?? 0) : undefined;
+    // The insurer always relaunches you at Outpost Alpha; the clock and every sector's memory carry on.
+    this.memory[this.sim.world.sectorId] = captureSector(this.sim);
+    const tick = this.sim.world.tick;
+    const sim = Simulation.fromSector(OUTPOST_ALPHA, undefined, { board, startDocked: true });
+    sim.world.tick = tick;
+    const home = this.memory[OUTPOST_ALPHA.id];
+    if (home) applySectorSnapshot(sim, home);
+    delete this.memory[OUTPOST_ALPHA.id];
+    markDiscovered(sim, this.discovered);
     sim.world.credits = credits;
     installUpgrades(sim.world, sim.playerId, upgrades);
-    if (board) sim.missions = board;
     this.replaceSim(sim);
   }
 
   /** A brand-new game, optionally with the guided first flight. */
   newGame(tutorial: boolean): void {
+    this.memory = {};
+    this.discovered = new Set();
     this.replaceSim(Simulation.fromSector(OUTPOST_ALPHA));
     this.tutorialStep = tutorial ? 0 : null;
     this.beginTutorialStep();
@@ -205,20 +222,23 @@ export class Game {
 
   /** Saves the current game into a slot. Saves only happen between steps, so the state is consistent. */
   async saveTo(slot: SlotId): Promise<void> {
-    const file = encodeSave(serialize(this.sim, OUTPOST_ALPHA));
+    const file = encodeSave(serialize({ sim: this.sim, memory: this.memory, discovered: this.discovered }));
     await saveStore.put({ slot, savedAt: Date.now(), playtime: this.sim.world.tick / 60, credits: this.sim.world.credits, file });
   }
 
   /** Loads a save file (from a slot or an imported file). Throws a readable error when it is damaged. */
   load(file: unknown): void {
     const data = decodeSave(file);
-    this.replaceSim(restore(OUTPOST_ALPHA, data));
+    const state = restore(data);
+    this.memory = state.memory;
+    this.discovered = state.discovered;
+    this.replaceSim(state.sim);
     this.tutorialStep = null;
     this.store.update({ menu: null });
   }
 
   exportCurrent() {
-    return encodeSave(serialize(this.sim, OUTPOST_ALPHA));
+    return encodeSave(serialize({ sim: this.sim, memory: this.memory, discovered: this.discovered }));
   }
 
   applySettings(settings: Settings): void {
@@ -244,12 +264,30 @@ export class Game {
     this.tutorialStart = { heading: t?.heading ?? 0, credits: t?.credits ?? 0 };
   }
 
+  private createRenderer(): SpaceRenderer {
+    const sector = getSector(this.sim.world.sectorId);
+    return new SpaceRenderer(this.canvas, this.sim, sector.environment.nebulaSeed, sector.environment.planet);
+  }
+
+  /** Through the gate: the sector left behind is remembered, the destination restored. */
+  jumpThrough(gateId: string): void {
+    const from = this.sim.world.sectorId;
+    const { sim, left } = jump(this.sim, gateId, this.memory, this.discovered);
+    this.memory[from] = left;
+    delete this.memory[sim.world.sectorId];
+    this.replaceSim(sim);
+    this.jumpedAt = this.clock;
+    this.audio.jump();
+    this.publish();
+    void this.saveTo('auto').catch(() => undefined);
+  }
+
   private replaceSim(sim: Simulation): void {
     const zoom = this.renderer.rig.zoomLevel;
     const quality = this.renderer.currentQuality;
     this.renderer.dispose();
     this.sim = sim;
-    this.renderer = new SpaceRenderer(this.canvas, this.sim, OUTPOST_ALPHA.seed);
+    this.renderer = this.createRenderer();
     this.renderer.rig.zoomBy(zoom);
     this.renderer.rig.shakeEnabled = this.shakeEnabled;
     this.renderer.setQuality(quality);
@@ -282,7 +320,7 @@ export class Game {
     this.clock += elapsed;
     const snapshot = this.store.getSnapshot();
     const help = snapshot.help;
-    const paused = snapshot.paused || snapshot.menu !== null;
+    const paused = snapshot.paused || snapshot.menu !== null || snapshot.mapOpen;
 
     // The camera from the last frame is close enough to turn the cursor into a world point.
     this.aim = this.input.pointer ? this.renderer.screenToWorld(this.input.pointer.x, this.input.pointer.y) : null;
@@ -310,6 +348,10 @@ export class Game {
           if (mine && event.type === 'collision' && event.damage > 0) this.hits++;
           if (event.type === 'shipDestroyed' && event.id === this.sim.playerId) this.hits++;
           if (event.type === 'hit' && event.attacker === this.sim.playerId && this.sim.world.ships.has(event.target)) this.hitFlash = 1;
+          if (event.type === 'discovered') {
+            this.discovered.add(event.id);
+            this.notices.push({ text: `poi:${event.kind}`, kind: 'completed', reward: event.credits, at: this.clock, id: -2 - this.discovered.size });
+          }
           if (event.type === 'contract') {
             this.notices.push({ text: event.kind, kind: event.outcome, reward: event.reward, at: this.clock, id: event.id });
           }
@@ -331,7 +373,7 @@ export class Game {
     const stats = this.renderer.render(this.sim, alpha, frameDt, { aim: this.input.steering ? this.aim : null, frame: frameTarget });
     if (this.radar) drawRadar(this.radar, this.sim, this.clock, this.target);
     this.hitFlash = Math.max(0, this.hitFlash - elapsed * 6);
-    if (this.overlay) drawTargeting(this.overlay, this.sim, this.renderer, this.target, this.hitFlash, this.input.pointer, this.waypoints());
+    if (this.overlay) drawTargeting(this.overlay, this.sim, this.renderer, this.target, this.hitFlash, this.input.pointer, this.waypoints(), this.markers());
 
     this.fpsFrames++;
     this.fpsTime += elapsed;
@@ -399,20 +441,48 @@ export class Game {
     const ship = this.sim.world.ships.get(this.sim.playerId);
     if (!ship || ship.docked !== null || ship.destroyed || this.clock - this.undockedAt < 10) return null;
     const status = dockingStatus(this.sim.world, this.sim.playerId, 400);
+    if (status?.refusals.includes('hostileStation')) return null;
     return status ? { distance: status.distance, speed: status.speed, angleError: status.angleError, refusals: status.refusals, limits: status.limits } : null;
   }
 
-  /** Drop points of active deliveries, labelled for the overlay. */
+  /**
+   * Where active deliveries lead: the drop or station when it is in this sector,
+   * otherwise the first gate on the route there.
+   */
   private waypoints(): { label: string; position: { x: number; y: number } }[] {
     const board = this.sim.missions;
     if (!board) return [];
-    return board.active
-      .filter((c) => c.delivery)
-      .map((c) => ({ label: this.labels.drop(c.delivery!.drop), position: board.drops.find((d) => d.id === c.delivery!.drop)!.position }));
+    const here = this.sim.world.sectorId;
+    const points: { label: string; position: { x: number; y: number } }[] = [];
+    for (const c of board.active) {
+      const d = c.delivery;
+      if (!d) continue;
+      const label = d.drop ? this.labels.drop(d.drop) : this.labels.station(d.station!);
+      if (d.sector === here) {
+        const position = d.drop ? board.drops.find((p) => p.id === d.drop)!.position : board.stations.find((s) => s.key === d.station)!.position;
+        points.push({ label, position });
+      } else {
+        const gateId = nextGate(here, d.sector);
+        const gate = gateId ? this.sim.world.gates.get(gateId) : undefined;
+        if (gate) points.push({ label: `${label} → ${this.labels.sector(gate.to)}`, position: gate.position });
+      }
+    }
+    return points;
+  }
+
+  /** On-screen labels for gates and points of interest. */
+  private markers(): { label: string; position: { x: number; y: number }; colour: string }[] {
+    const list: { label: string; position: { x: number; y: number }; colour: string }[] = [];
+    for (const gate of this.sim.world.gates.values()) list.push({ label: `⟶ ${this.labels.sector(gate.to)}`, position: gate.position, colour: '#6fd3ff' });
+    for (const poi of this.sim.world.pointsOfInterest.values()) {
+      if (poi.kind === 'deposit' && !poi.found) continue;
+      list.push({ label: poi.found ? '✓' : '?', position: poi.position, colour: '#c77dff' });
+    }
+    return list;
   }
 
   /** Set by the UI so canvas labels follow the chosen language. */
-  labels = { drop: (id: string) => id };
+  labels = { drop: (id: string) => id, station: (id: string) => id, sector: (id: string) => id };
 
   private contractsView() {
     const board = this.sim.missions;
@@ -420,7 +490,8 @@ export class Game {
     const world = this.sim.world;
     const id = this.sim.playerId;
     const docked = world.ships.get(id)?.docked !== null;
-    const describe = (c: (typeof board.offers)[number]) => ({
+    const stationKey = dockedStationKey(world, id);
+    const describe = (c: (typeof board.active)[number]) => ({
       id: c.id,
       kind: c.kind,
       elite: c.elite,
@@ -429,11 +500,13 @@ export class Game {
       units: c.delivery?.units ?? c.mining?.units ?? c.bounty?.count ?? 0,
       resource: c.mining?.resource ?? null,
       drop: c.delivery?.drop ?? null,
+      station: c.delivery?.station ?? null,
+      sector: c.delivery?.sector ?? null,
     });
     return {
       reputation: board.reputation,
       maxActive: board.rules.maxActive,
-      offers: board.offers.map(describe),
+      offers: (stationKey ? (board.offers[stationKey] ?? []) : []).map(describe),
       active: board.active.map((c) => {
         const progress = contractProgress(world, board, id, c);
         return {
@@ -442,7 +515,7 @@ export class Game {
           current: progress.current,
           target: progress.target,
           canHandIn: docked && !c.delivery && progress.current >= progress.target,
-          dropPosition: c.delivery ? board.drops.find((d) => d.id === c.delivery!.drop)!.position : null,
+          dropPosition: null,
         };
       }),
       history: board.history.slice(0, 6),
@@ -490,6 +563,18 @@ export class Game {
       gains: [...this.gains.entries()].filter(([, g]) => this.clock - g.at < 2.5).map(([resource, g]) => ({ resource, units: g.units })),
       jettisonArmed: this.clock - this.jettisonArmedAt < 1,
       docking: this.dockingView(),
+      sectorId: this.sim.world.sectorId,
+      gate: (() => {
+        const g = gateStatus(this.sim.world, this.sim.playerId, 400);
+        return g ? { to: g.to, distance: g.distance, speed: g.speed, ready: g.ready } : null;
+      })(),
+      gravity: (() => {
+        const me = this.sim.world.bodies.get(this.sim.playerId);
+        return me ? gravityAt(this.sim.world, me.position) : 0;
+      })(),
+      jumpedAt: this.jumpedAt,
+      discovered: [...this.discovered],
+      visited: [...new Set([...Object.keys(this.memory), this.sim.world.sectorId])],
       dockRefused: this.dockRefused && this.clock - this.dockRefused.at < 3 ? this.dockRefused.refusals : null,
       station: this.stationView(),
       contracts: this.contractsView(),

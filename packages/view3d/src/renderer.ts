@@ -24,11 +24,12 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { AsteroidRenderer } from './asteroids.ts';
+import { createCache, createDerelict, createGate, createWell, type Landmark } from './landmarks.ts';
 import { BeamRenderer, ShieldBubble, TracerRenderer } from './combatFx.ts';
 import { PickupRenderer } from './mining.ts';
 import { CameraRig } from './camera.ts';
 import { fromScene, toScene } from './coords.ts';
-import { DustField, PlaneGrid, createBeacon, createPlanet, createStarfield } from './environment.ts';
+import { DustField, PlaneGrid, createBeacon, createPlanet, createStarfield, type PlanetLook } from './environment.ts';
 import { createNebula } from './nebula.ts';
 import { FlightOverlay } from './overlay.ts';
 import { PALETTE } from './palette.ts';
@@ -89,6 +90,7 @@ export class SpaceRenderer {
   private readonly ships = new Map<EntityId, ShipModel>();
   private readonly stations: StationModel[] = [];
   private readonly beacons: { update(time: number): void }[] = [];
+  private readonly landmarks: Landmark[] = [];
   private readonly asteroids: AsteroidRenderer;
   private readonly particles = new ParticleSystem();
   private readonly blasts: Blast[] = [];
@@ -113,7 +115,7 @@ export class SpaceRenderer {
   private quality: Quality = 'high';
   private size = { width: 1, height: 1, pixelRatio: 1 };
 
-  constructor(canvas: HTMLCanvasElement, sim: Simulation, seed: number) {
+  constructor(canvas: HTMLCanvasElement, sim: Simulation, seed: number, planet?: PlanetLook) {
     this.renderer = new WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
     this.renderer.toneMapping = ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.05;
@@ -141,7 +143,7 @@ export class SpaceRenderer {
     this.nebula = createNebula(seed);
     this.starfield = createStarfield(seed);
     this.dust = new DustField(seed + 1);
-    this.scene.add(this.nebula, this.starfield, this.dust.points, this.grid.lines, createPlanet(seed + 2), this.overlay.root, this.particles.points);
+    this.scene.add(this.nebula, this.starfield, this.dust.points, this.grid.lines, createPlanet(seed + 2, planet), this.overlay.root, this.particles.points);
 
     for (const beacon of sim.world.beacons.values()) {
       const model = createBeacon();
@@ -158,6 +160,17 @@ export class SpaceRenderer {
       this.stations.push(model);
     }
     this.asteroids = new AsteroidRenderer(this.scene, sim.world);
+    const place = (landmark: Landmark, position: Vec2) => {
+      toScene(position, 0, landmark.root.position);
+      this.scene.add(landmark.root);
+      this.landmarks.push(landmark);
+    };
+    for (const gate of sim.world.gates.values()) place(createGate(), gate.position);
+    for (const well of sim.world.anomalies) place(createWell(well.radius * 0.55), well.position);
+    for (const poi of sim.world.pointsOfInterest.values()) {
+      if (poi.kind === 'derelict') place(createDerelict(), poi.position);
+      else if (poi.kind === 'cache') place(createCache(), poi.position);
+    }
     this.tracers = new TracerRenderer(this.scene);
     this.pickups = new PickupRenderer(this.scene);
     this.beams = new BeamRenderer(this.scene);
@@ -265,6 +278,7 @@ export class SpaceRenderer {
     this.asteroids.update(sim.world, alpha);
     for (const station of this.stations) station.update(this.time);
     for (const beacon of this.beacons) beacon.update(this.time);
+    for (const landmark of this.landmarks) landmark.update(this.time);
 
     const body = sim.world.bodies.get(sim.playerId);
     const ship = sim.world.ships.get(sim.playerId);
@@ -272,7 +286,7 @@ export class SpaceRenderer {
       const position = toScene(lerp2(body.previousPosition, body.position, alpha));
       const velocity = toScene(body.velocity);
       const focus = this.rig.update(position, velocity, frameDt, options.frame ? toScene(options.frame) : null);
-      this.dust.setFocus(focus);
+      this.dust.setFocus(focus, this.rig.camera.position.distanceTo(focus));
       this.grid.setFocus(focus);
       this.starfield.position.copy(this.rig.camera.position);
       this.nebula.position.copy(this.rig.camera.position);
@@ -335,6 +349,7 @@ export class SpaceRenderer {
     this.pickups.dispose();
     this.beams.dispose();
     for (const station of this.stations) station.dispose();
+    for (const landmark of this.landmarks) landmark.dispose();
     this.asteroids.dispose();
     this.particles.dispose();
     this.composer.dispose();

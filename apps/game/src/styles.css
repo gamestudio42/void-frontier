@@ -1523,3 +1523,161 @@ button {
   background: var(--green);
   border-radius: 2px;
 }
+
+.gate-panel {
+  top: 186px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border-top: 2px solid var(--blue);
+  font-size: 12px;
+}
+
+.gate-panel strong {
+  font-size: 15px;
+}
+
+.gate-panel span {
+  font-family: var(--mono);
+  color: var(--muted);
+}
+
+.gate-panel em {
+  font-style: normal;
+  color: var(--blue);
+}
+
+.gate-panel.ready {
+  border-top-color: var(--green);
+}
+
+.gate-panel.ready em {
+  color: var(--green);
+  font-weight: 700;
+}
+
+.gravity {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 12px;
+  border-radius: 4px;
+  background: rgba(60, 20, 80, 0.75);
+  border: 1px solid rgba(199, 125, 255, 0.5);
+  color: #e2c6ff;
+  font-size: 12px;
+}
+
+.gravity strong {
+  font-family: var(--mono);
+}
+
+.jump-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at center, rgba(220, 245, 255, 0.95), rgba(80, 160, 255, 0.6) 40%, rgba(5, 7, 11, 0.9));
+  animation: jump 1.1s ease-out forwards;
+}
+
+@keyframes jump {
+  0% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+.map-backdrop {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(5, 7, 11, 0.78);
+}
+
+.map {
+  width: min(820px, 100%);
+  padding: 18px 22px;
+  background: rgba(10, 14, 20, 0.94);
+  border: 1px solid var(--panel-edge);
+  border-top: 2px solid var(--blue);
+  border-radius: 10px;
+}
+
+.map header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.map h2 {
+  margin: 0;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.map svg {
+  width: 100%;
+  height: auto;
+}
+
+.map-link {
+  stroke: rgba(111, 211, 255, 0.45);
+  stroke-width: 2;
+  stroke-dasharray: 6 6;
+}
+
+.map-node circle {
+  fill: rgba(20, 30, 42, 0.95);
+  stroke: rgba(138, 160, 180, 0.6);
+  stroke-width: 2;
+}
+
+.map-node.here circle:first-child {
+  stroke: var(--green);
+  stroke-width: 3;
+}
+
+.map-node.danger-high circle:first-child {
+  fill: rgba(60, 16, 14, 0.95);
+}
+
+.map-node.unseen {
+  opacity: 0.55;
+}
+
+.map-target {
+  fill: none !important;
+  stroke: #ffd27a !important;
+  stroke-dasharray: 4 4;
+}
+
+.map-station {
+  fill: var(--blue);
+}
+
+.map-station.pirate {
+  fill: var(--red);
+}
+
+.map-name {
+  fill: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  text-anchor: middle;
+}
+
+.map-meta {
+  fill: var(--muted);
+  font-size: 11.5px;
+  text-anchor: middle;
+}

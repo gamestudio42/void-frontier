@@ -1,16 +1,17 @@
 import { expect, test } from '@playwright/test';
 
-interface DevBody {
-  position: { x: number; y: number };
-  previousPosition: { x: number; y: number };
-  velocity: { x: number; y: number };
+interface Contract {
+  id: number;
+  delivery?: { drop?: string; sector: string };
 }
 interface DevGame {
   sim: {
     playerId: number;
-    world: { bodies: Map<number, DevBody>; credits: number };
-    missions: { active: { delivery?: { drop: string } }[]; drops: { id: string; position: { x: number; y: number } }[] };
+    step(): void;
+    world: { bodies: Map<number, { position: { x: number; y: number }; previousPosition: { x: number; y: number }; velocity: { x: number; y: number } }>; credits: number };
+    missions: { offers: Record<string, Contract[]>; active: Contract[]; refreshTick: number; drops: { id: string; position: { x: number; y: number } }[] };
   };
+  acceptContract(id: number): void;
 }
 
 test('takes a delivery contract, flies the crates to the relay and gets paid', async ({ page }) => {
@@ -18,8 +19,19 @@ test('takes a delivery contract, flies the crates to the relay and gets paid', a
   await page.getByTestId('tutorial-toggle').uncheck();
   await page.getByTestId('start').click();
   await expect(page.getByTestId('station')).toBeVisible();
-  const offer = page.getByTestId('offer-delivery').first();
-  await offer.getByRole('button').click();
+  // Find (or wait for) a delivery to a relay in this sector, and take it.
+  await page.evaluate(() => {
+    const game = (window as unknown as { voidFrontier: DevGame }).voidFrontier;
+    const board = game.sim.missions;
+    const local = () => board.offers.outpost_alpha_station;
+    const pick = () => local().find((c) => c.delivery?.drop && c.delivery.sector === 'outpost_alpha');
+    for (let i = 0; i < 400 && !pick(); i++) {
+      local().shift();
+      board.refreshTick = 0;
+      game.sim.step();
+    }
+    game.acceptContract(pick()!.id);
+  });
   await expect(page.locator('[data-testid^="active-"]')).toHaveCount(1);
   await page.getByTestId('undock').click();
   await expect(page.getByTestId('tracker')).toBeVisible();
