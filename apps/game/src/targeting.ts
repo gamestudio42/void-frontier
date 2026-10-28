@@ -14,6 +14,7 @@ export function drawTargeting(
   target: number | null,
   hitFlash: number,
   pointer: { x: number; y: number } | null,
+  waypoints: { label: string; position: { x: number; y: number } }[] = [],
 ): void {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
@@ -28,6 +29,54 @@ export function drawTargeting(
   ctx.clearRect(0, 0, width, height);
   const me = sim.world.ships.get(sim.playerId);
   if (!me || me.destroyed || me.docked !== null) return;
+
+  // Contract waypoints: a diamond on screen, an edge chevron when off screen.
+  for (const waypoint of waypoints) {
+    const s = renderer.worldToScreen(waypoint.position, width, height);
+    const myPos = sim.world.bodies.get(sim.playerId)!.position;
+    const distance = Math.hypot(waypoint.position.x - myPos.x, waypoint.position.y - myPos.y);
+    const label = `${waypoint.label} · ${distance >= 1000 ? `${(distance / 1000).toFixed(2)} km` : `${Math.round(distance)} m`}`;
+    ctx.font = '600 11px ui-monospace, Menlo, Consolas, monospace';
+    ctx.fillStyle = '#ffd27a';
+    ctx.strokeStyle = '#ffd27a';
+    if (s.onScreen) {
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(s.x, s.y - 11);
+      ctx.lineTo(s.x + 11, s.y);
+      ctx.lineTo(s.x, s.y + 11);
+      ctx.lineTo(s.x - 11, s.y);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.textAlign = 'center';
+      ctx.fillText(label, s.x, s.y - 18);
+    } else {
+      const cx = width / 2;
+      const cy = height / 2;
+      let dx = s.x - cx;
+      let dy = s.y - cy;
+      if (s.behind) {
+        dx = -dx;
+        dy = -dy;
+      }
+      const angle = Math.atan2(dy, dx);
+      const scale = Math.min((cx - 60) / Math.abs(Math.cos(angle) || 1e-6), (cy - 60) / Math.abs(Math.sin(angle) || 1e-6));
+      const ax = cx + Math.cos(angle) * scale;
+      const ay = cy + Math.sin(angle) * scale;
+      ctx.save();
+      ctx.translate(ax, ay);
+      ctx.rotate(angle);
+      ctx.beginPath();
+      ctx.moveTo(12, 0);
+      ctx.lineTo(0, -8);
+      ctx.lineTo(0, 8);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+      ctx.textAlign = 'center';
+      ctx.fillText(label, ax - Math.cos(angle) * 34, ay - Math.sin(angle) * 34 + 4);
+    }
+  }
 
   // Docking guide: approach corridor out of the bay and the target ring inside it.
   const dock = dockingStatus(sim.world, sim.playerId, 400);

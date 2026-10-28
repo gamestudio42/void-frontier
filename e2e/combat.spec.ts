@@ -8,7 +8,7 @@ interface DevBody {
   previousAngle: number;
 }
 interface DevGame {
-  sim: { playerId: number; world: { bodies: Map<number, DevBody>; pilots: Map<number, unknown> } };
+  sim: { playerId: number; world: { bodies: Map<number, DevBody>; pilots: Map<number, unknown> }; setCommand(id: number, command: object): void };
 }
 
 test('locks the nearest pirate and wears its shield down with the guns', async ({ page }) => {
@@ -21,11 +21,18 @@ test('locks the nearest pirate and wears its shield down with the guns', async (
   await page.evaluate(() => {
     const game = (window as unknown as { voidFrontier: DevGame }).voidFrontier;
     const world = game.sim.world;
-    const pirate = world.bodies.get([...world.pilots.keys()][0])!;
+    const pirateId = [...world.pilots.keys()][0];
+    const pirate = world.bodies.get(pirateId)!;
+    // A drifting target with its pilot switched off: this test is about locking and hitting, not dogfighting.
+    for (const id of [...world.pilots.keys()]) {
+      world.pilots.delete(id);
+      game.sim.setCommand(id, {});
+    }
+    pirate.velocity = { x: 0, y: 0 };
     const me = world.bodies.get(game.sim.playerId)!;
     me.position = { x: pirate.position.x - 180, y: pirate.position.y };
     me.previousPosition = { ...me.position };
-    me.velocity = { ...pirate.velocity };
+    me.velocity = { x: 0, y: 0 };
     me.angle = 0;
     me.previousAngle = 0;
   });

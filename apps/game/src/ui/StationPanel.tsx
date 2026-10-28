@@ -1,10 +1,11 @@
 import { getUpgrade } from '@void-frontier/content';
 import { useState } from 'react';
 import type { MessageKey, Translate } from '../i18n.ts';
-import type { StationView } from '../store.ts';
+import type { ContractsView, StationView } from '../store.ts';
+import { ContractsTab, type ContractActions } from './contracts.tsx';
 import { formatNumber } from './format.ts';
 
-export interface StationActions {
+export interface StationActions extends ContractActions {
   undock(): void;
   trade(resource: string, units: number, side: 'buy' | 'sell'): void;
   service(kind: 'repair' | 'refuel'): void;
@@ -13,6 +14,7 @@ export interface StationActions {
 
 interface StationPanelProps {
   view: StationView;
+  contracts: ContractsView | null;
   hull: { value: number; max: number };
   fuel: { value: number; max: number };
   hold: { mass: number; max: number };
@@ -21,7 +23,7 @@ interface StationPanelProps {
   locale: string;
 }
 
-type Tab = 'market' | 'services' | 'upgrades';
+type Tab = 'contracts' | 'market' | 'services' | 'upgrades';
 
 /** Upgrade effects as short, translated lines. */
 function effectLines(id: string, t: Translate, locale: string): string[] {
@@ -37,8 +39,8 @@ function effectLines(id: string, t: Translate, locale: string): string[] {
   return lines;
 }
 
-export function StationPanel({ view, hull, fuel, hold, actions, t, locale }: StationPanelProps) {
-  const [tab, setTab] = useState<Tab>('market');
+export function StationPanel({ view, contracts, hull, fuel, hold, actions, t, locale }: StationPanelProps) {
+  const [tab, setTab] = useState<Tab>('contracts');
   const cr = (n: number) => `${formatNumber(locale, n)} cr`;
   return (
     <div className="station-backdrop">
@@ -53,12 +55,14 @@ export function StationPanel({ view, hull, fuel, hold, actions, t, locale }: Sta
           </div>
         </header>
         <nav className="tabs" role="tablist">
-          {(['market', 'services', 'upgrades'] as Tab[]).map((id) => (
+          {(['contracts', 'market', 'services', 'upgrades'] as Tab[]).map((id) => (
             <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? 'active' : ''} onClick={() => setTab(id)} data-testid={`tab-${id}`}>
               {t(`station.tab.${id}` as MessageKey)}
             </button>
           ))}
         </nav>
+
+        {tab === 'contracts' && contracts && <ContractsTab view={contracts} actions={actions} t={t} locale={locale} />}
 
         {tab === 'market' && (
           <div className="market">

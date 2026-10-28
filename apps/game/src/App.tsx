@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { StationPanel } from './ui/StationPanel.tsx';
+import { ContractTracker, Notices } from './ui/contracts.tsx';
 import { Game } from './game.ts';
-import { LOCALES, detectLocale, saveLocale, translator, type Locale } from './i18n.ts';
+import { LOCALES, detectLocale, saveLocale, translator, type Locale, type MessageKey } from './i18n.ts';
 import { HudStore, initialHudState } from './store.ts';
 import { ControlsPanel } from './ui/ControlsPanel.tsx';
 import { DebugOverlay } from './ui/DebugOverlay.tsx';
@@ -35,6 +36,10 @@ export function App() {
     document.documentElement.lang = locale;
   }, [locale]);
 
+  useEffect(() => {
+    if (game) game.labels = { drop: (id) => t(`drop.${id}` as MessageKey) };
+  }, [game, t]);
+
   const chooseLocale = (next: Locale) => {
     setLocale(next);
     saveLocale(next);
@@ -46,12 +51,15 @@ export function App() {
       <canvas ref={overlayRef} className="targeting" aria-hidden="true" />
       <div key={hud.hits} className={hud.hits > 0 ? 'damage-flash' : ''} aria-hidden="true" />
       <FlightHud hud={hud} t={t} locale={locale} />
+      {hud.contracts && !hud.station && <ContractTracker active={hud.contracts.active} t={t} />}
+      <Notices notices={hud.notices} t={t} locale={locale} />
       <figure className="radar" aria-label={t('hud.radar')}>
         <canvas ref={radarRef} data-testid="radar" />
       </figure>
       {hud.station && hud.telemetry && game && !hud.help && (
         <StationPanel
           view={hud.station}
+          contracts={hud.contracts}
           hull={{ value: hud.telemetry.hull, max: hud.telemetry.hullMax }}
           fuel={{ value: hud.telemetry.fuel, max: hud.telemetry.fuelCapacity }}
           hold={{ mass: hud.telemetry.holdMass, max: hud.telemetry.holdMaxMass }}

@@ -88,6 +88,18 @@ export function drawRadar(canvas: HTMLCanvasElement, sim: Simulation, time: numb
     ctx.fillRect(sx - 4, sy - 4, 8, 8);
   }
 
+  // Active delivery destinations: a pulsing ring.
+  for (const contract of sim.missions?.active ?? []) {
+    if (!contract.delivery) continue;
+    const drop = sim.missions!.drops.find((d) => d.id === contract.delivery!.drop)!;
+    const [sx, sy] = toScreen(drop.position.x, drop.position.y);
+    ctx.strokeStyle = '#ffd27a';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(sx, sy, 6 + (time * 6) % 6, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
   ctx.fillStyle = '#ffd34d';
   for (const beacon of sim.world.beacons.values()) {
     const [sx, sy] = toScreen(beacon.position.x, beacon.position.y);

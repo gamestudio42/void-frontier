@@ -24,6 +24,7 @@ test('starts docked, sells ore, buys an upgrade, undocks and docks again', async
     game.sim.world.ships.get(game.sim.playerId)!.cargo.set('titanium_ore', 40);
     game.publish();
   });
+  await page.getByTestId('tab-market').click();
   await page.getByTestId('sell-all-titanium_ore').click();
   await expect.poll(() => credits(page)).toBeGreaterThan(start + 500);
 

@@ -31,6 +31,33 @@ export interface StationView {
   upgrades: { id: string; cost: number; installed: boolean }[];
 }
 
+export interface ContractView {
+  id: number;
+  kind: 'delivery' | 'mining' | 'bounty';
+  elite: boolean;
+  reward: number;
+  seconds: number;
+  units: number;
+  resource: string | null;
+  drop: string | null;
+}
+
+export interface ActiveContractView extends ContractView {
+  timeLeft: number;
+  current: number;
+  target: number;
+  canHandIn: boolean;
+  dropPosition: { x: number; y: number } | null;
+}
+
+export interface ContractsView {
+  reputation: number;
+  maxActive: number;
+  offers: ContractView[];
+  active: ActiveContractView[];
+  history: { id: number; kind: string; outcome: string; reward: number }[];
+}
+
 export interface HudState {
   telemetry: FlightTelemetry | null;
   braking: boolean;
@@ -48,6 +75,8 @@ export interface HudState {
   /** Refusal reasons from the last docking request, shown for a few seconds. */
   dockRefused: DockRefusal[] | null;
   station: StationView | null;
+  contracts: ContractsView | null;
+  notices: { id: number; kind: string; outcome: string; reward: number }[];
   /** Increments on every damaging hit, so the HUD can flash. */
   hits: number;
   stats: DebugStats;
@@ -90,6 +119,8 @@ export const initialHudState = (): HudState => ({
   docking: null,
   dockRefused: null,
   station: null,
+  contracts: null,
+  notices: [],
   hits: 0,
   stats: { fps: 0, frameMs: 0, tick: 0, stepsPerFrame: 0, droppedSeconds: 0, entities: 0, drawCalls: 0, triangles: 0, zoom: 1, quality: 'high', autoQuality: true },
 });

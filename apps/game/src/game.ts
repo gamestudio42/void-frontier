@@ -1,7 +1,7 @@
 import { OUTPOST_ALPHA } from '@void-frontier/content';
 import { FIXED_DT, FixedStepper, type Vec2 } from '@void-frontier/kernel';
 import { getUpgrade } from '@void-frontier/content';
-import { Simulation, dockingStatus, installUpgrades, hostilesNear, nearestObstacle, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
+import { Simulation, carryBoard, contractProgress, payout, dockingStatus, installUpgrades, hostilesNear, nearestObstacle, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
 import { SpaceRenderer, type Quality } from '@void-frontier/view3d';
 import { InputController } from './input.ts';
 import { drawRadar } from './radar.ts';
@@ -24,6 +24,7 @@ export class Game {
   private hitFlash = 0;
   private jettisonArmedAt = -10;
   private gains = new Map<string, { units: number; at: number }>();
+  private notices: { text: string; kind: 'completed' | 'failed' | 'abandoned'; reward: number; at: number; id: number }[] = [];
   private dockRefused: { refusals: DockRefusal[]; at: number } | null = null;
   private frameHandle = 0;
   private lastTime = 0;
@@ -122,6 +123,21 @@ export class Game {
     this.publish();
   }
 
+  acceptContract(id: number): void {
+    this.sim.acceptContract(id);
+    this.publish();
+  }
+
+  handInContract(id: number): void {
+    this.sim.handInContract(id);
+    this.publish();
+  }
+
+  abandonContract(id: number): void {
+    this.sim.abandonContract(id);
+    this.publish();
+  }
+
   buyUpgrade(id: string): void {
     this.sim.buyUpgrade(this.sim.playerId, id);
     this.publish();
@@ -148,10 +164,12 @@ export class Game {
     const oldShip = this.sim.world.ships.get(this.sim.playerId);
     const upgrades = oldShip ? [...oldShip.upgrades] : [];
     const credits = Math.floor(this.sim.world.credits * 0.9);
+    const board = this.sim.missions ? carryBoard(this.sim.missions, this.sim.world.tick, oldShip?.kills ?? 0) : null;
     this.renderer.dispose();
     this.sim = Simulation.fromSector(OUTPOST_ALPHA);
     this.sim.world.credits = credits;
     installUpgrades(this.sim.world, this.sim.playerId, upgrades);
+    if (board) this.sim.missions = board;
     this.renderer = new SpaceRenderer(this.canvas, this.sim, OUTPOST_ALPHA.seed);
     this.renderer.rig.zoomBy(zoom);
     this.renderer.setQuality(quality);
@@ -159,6 +177,7 @@ export class Game {
     this.target = null;
     this.gains.clear();
     this.dockRefused = null;
+    this.notices = [];
     this.resize();
     this.publish();
   }
@@ -204,6 +223,9 @@ export class Game {
           if (mine && event.type === 'collision' && event.damage > 0) this.hits++;
           if (event.type === 'shipDestroyed' && event.id === this.sim.playerId) this.hits++;
           if (event.type === 'hit' && event.attacker === this.sim.playerId && this.sim.world.ships.has(event.target)) this.hitFlash = 1;
+          if (event.type === 'contract') {
+            this.notices.push({ text: event.kind, kind: event.outcome, reward: event.reward, at: this.clock, id: event.id });
+          }
           if (event.type === 'collected' && event.ship === this.sim.playerId) {
             const gain = this.gains.get(event.resource);
             // Merge pickups into one line while they keep coming.
@@ -221,7 +243,7 @@ export class Game {
     const stats = this.renderer.render(this.sim, alpha, frameDt, { aim: this.input.steering ? this.aim : null, frame: frameTarget });
     if (this.radar) drawRadar(this.radar, this.sim, this.clock, this.target);
     this.hitFlash = Math.max(0, this.hitFlash - elapsed * 6);
-    if (this.overlay) drawTargeting(this.overlay, this.sim, this.renderer, this.target, this.hitFlash, this.input.pointer);
+    if (this.overlay) drawTargeting(this.overlay, this.sim, this.renderer, this.target, this.hitFlash, this.input.pointer, this.waypoints());
 
     this.fpsFrames++;
     this.fpsTime += elapsed;
@@ -267,6 +289,53 @@ export class Game {
     return status ? { distance: status.distance, speed: status.speed, angleError: status.angleError, refusals: status.refusals, limits: status.limits } : null;
   }
 
+  /** Drop points of active deliveries, labelled for the overlay. */
+  private waypoints(): { label: string; position: { x: number; y: number } }[] {
+    const board = this.sim.missions;
+    if (!board) return [];
+    return board.active
+      .filter((c) => c.delivery)
+      .map((c) => ({ label: this.labels.drop(c.delivery!.drop), position: board.drops.find((d) => d.id === c.delivery!.drop)!.position }));
+  }
+
+  /** Set by the UI so canvas labels follow the chosen language. */
+  labels = { drop: (id: string) => id };
+
+  private contractsView() {
+    const board = this.sim.missions;
+    if (!board) return null;
+    const world = this.sim.world;
+    const id = this.sim.playerId;
+    const docked = world.ships.get(id)?.docked !== null;
+    const describe = (c: (typeof board.offers)[number]) => ({
+      id: c.id,
+      kind: c.kind,
+      elite: c.elite,
+      reward: payout(board, c),
+      seconds: c.duration,
+      units: c.delivery?.units ?? c.mining?.units ?? c.bounty?.count ?? 0,
+      resource: c.mining?.resource ?? null,
+      drop: c.delivery?.drop ?? null,
+    });
+    return {
+      reputation: board.reputation,
+      maxActive: board.rules.maxActive,
+      offers: board.offers.map(describe),
+      active: board.active.map((c) => {
+        const progress = contractProgress(world, board, id, c);
+        return {
+          ...describe(c),
+          timeLeft: Math.max(0, (c.deadlineTick - world.tick) / 60),
+          current: progress.current,
+          target: progress.target,
+          canHandIn: docked && !c.delivery && progress.current >= progress.target,
+          dropPosition: c.delivery ? board.drops.find((d) => d.id === c.delivery!.drop)!.position : null,
+        };
+      }),
+      history: board.history.slice(0, 6),
+    };
+  }
+
   private stationView() {
     const world = this.sim.world;
     const ship = world.ships.get(this.sim.playerId);
@@ -310,6 +379,8 @@ export class Game {
       docking: this.dockingView(),
       dockRefused: this.dockRefused && this.clock - this.dockRefused.at < 3 ? this.dockRefused.refusals : null,
       station: this.stationView(),
+      contracts: this.contractsView(),
+      notices: this.notices.filter((n) => this.clock - n.at < 4.5).map((n) => ({ id: n.id, kind: n.text, outcome: n.kind, reward: n.reward })),
       holdFull: (() => {
         const t = readTelemetry(this.sim.world, this.sim.playerId);
         return !!t && t.holdMass >= t.holdMaxMass - 60;
