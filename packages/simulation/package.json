@@ -1,0 +1,11 @@
+{
+  "name": "@void-frontier/simulation",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": {
+    "@void-frontier/content": "workspace:*",
+    "@void-frontier/kernel": "workspace:*"
+  }
+}

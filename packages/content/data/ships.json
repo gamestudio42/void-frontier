@@ -1,0 +1,36 @@
+[
+  {
+    "id": "kestrel",
+    "class": "scout",
+    "hull": { "integrity": 1000, "dryMass": 8000, "length": 16, "collisionRadius": 7 },
+    "movement": {
+      "mainThrust": 160000,
+      "reverseThrust": 80000,
+      "lateralThrust": 50000,
+      "rotationalTorque": 450000,
+      "gyrationRadius": 4,
+      "maxAngularVelocity": 2.0,
+      "boostMultiplier": 1.6,
+      "boostFuelMultiplier": 2.5
+    },
+    "fuel": { "capacity": 500, "consumptionPerMegaNewtonSecond": 15 },
+    "cargo": { "maxMass": 6000, "maxVolume": 20 }
+  },
+  {
+    "id": "mule",
+    "class": "hauler",
+    "hull": { "integrity": 2400, "dryMass": 22000, "length": 26, "collisionRadius": 12 },
+    "movement": {
+      "mainThrust": 300000,
+      "reverseThrust": 120000,
+      "lateralThrust": 70000,
+      "rotationalTorque": 700000,
+      "gyrationRadius": 6,
+      "maxAngularVelocity": 0.9,
+      "boostMultiplier": 1.4,
+      "boostFuelMultiplier": 2.5
+    },
+    "fuel": { "capacity": 1200, "consumptionPerMegaNewtonSecond": 12 },
+    "cargo": { "maxMass": 20000, "maxVolume": 120 }
+  }
+]

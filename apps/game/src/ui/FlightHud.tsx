@@ -1,0 +1,135 @@
+import type { MessageKey, Translate } from '../i18n.ts';
+import type { HudState } from '../store.ts';
+import { Compass } from './Compass.tsx';
+import { formatBearing, formatDistance, formatNumber } from './format.ts';
+
+interface FlightHudProps {
+  hud: HudState;
+  t: Translate;
+  locale: string;
+}
+
+function Bar({ value, max, className }: { value: number; max: number; className?: string }) {
+  const ratio = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0;
+  return (
+    <div className={`bar ${className ?? ''}`}>
+      <div className="bar-fill" style={{ width: `${ratio * 100}%` }} />
+    </div>
+  );
+}
+
+function Thruster({ label, value, signed }: { label: string; value: number; signed?: boolean }) {
+  const magnitude = Math.min(1, Math.abs(value));
+  return (
+    <div className="thruster">
+      <span>{label}</span>
+      <div className={`thruster-track ${signed ? 'signed' : ''}`}>
+        <div
+          className="thruster-fill"
+          style={signed ? { width: `${magnitude * 50}%`, left: value >= 0 ? '50%' : `${50 - magnitude * 50}%` } : { width: `${magnitude * 100}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+export function FlightHud({ hud, t, locale }: FlightHudProps) {
+  const tel = hud.telemetry;
+  if (!tel) return null;
+  const fuelRatio = tel.fuel / tel.fuelCapacity;
+  const modeKey: MessageKey = tel.mode === 'assisted' ? 'hud.mode.assisted' : 'hud.mode.newtonian';
+
+  return (
+    <div className="hud">
+      <header className="hud-top">
+        <div className="brand">
+          <strong>{t('app.title')}</strong>
+          <span>{t('app.subtitle')}</span>
+        </div>
+        <div className={`mode mode-${tel.mode}`} data-testid="flight-mode" data-mode={tel.mode}>
+          <span className="label">{t('hud.mode')}</span>
+          <strong>{t(modeKey)}</strong>
+          <kbd>C</kbd>
+        </div>
+        <div className="flags">
+          {tel.output.boosting && <span className="flag boost">{t('hud.boost')}</span>}
+          {hud.braking && <span className="flag brake">{t('hud.brake')}</span>}
+          {tel.fuel <= 0 && <span className="flag empty">{t('hud.noFuel')}</span>}
+        </div>
+      </header>
+
+      <section className="panel nav" aria-label={t('hud.speed')}>
+        <Compass heading={tel.heading} course={tel.course} />
+        <div className="readouts">
+          <div className="readout big" data-testid="speed" data-value={tel.speed.toFixed(3)}>
+            <span className="label">{t('hud.speed')}</span>
+            <strong>{formatNumber(locale, tel.speed, 1)}</strong>
+            <span className="unit">{t('unit.speed')}</span>
+          </div>
+          <div className="readout heading" data-testid="heading" data-value={tel.heading.toFixed(3)}>
+            <span className="label">{t('hud.heading')}</span>
+            <strong>{formatBearing(tel.heading)}</strong>
+          </div>
+          <div className="readout course">
+            <span className="label">{t('hud.course')}</span>
+            <strong>{tel.course === null ? '—' : formatBearing(tel.course)}</strong>
+          </div>
+          <div className="readout">
+            <span className="label">{t('hud.drift')}</span>
+            <strong>{tel.drift === null ? '—' : `${Math.round(tel.drift) > 0 ? '+' : ''}${formatNumber(locale, tel.drift)}°`}</strong>
+          </div>
+          <div className="readout">
+            <span className="label">{t('hud.turnRate')}</span>
+            <strong>{formatNumber(locale, tel.turnRate)}</strong>
+            <span className="unit">{t('unit.turn')}</span>
+          </div>
+          <div className="readout stop">
+            <span className="label">{t('hud.stop')}</span>
+            <strong>{tel.speed < 0.05 ? t('hud.stopped') : formatDistance(locale, tel.stoppingDistance)}</strong>
+          </div>
+        </div>
+      </section>
+
+      <section className="panel ship">
+        <div className="row">
+          <span className="label">{t('hud.fuel')}</span>
+          <strong data-testid="fuel" data-value={tel.fuel.toFixed(3)}>{formatNumber(locale, fuelRatio * 100)}%</strong>
+        </div>
+        <Bar value={tel.fuel} max={tel.fuelCapacity} className={fuelRatio < 0.2 ? 'low' : ''} />
+        <div className="row">
+          <span className="label">{t('hud.mass')}</span>
+          <strong data-testid="mass" data-value={tel.mass.toFixed(1)}>
+            {formatNumber(locale, tel.mass / 1000, 2)} {t('unit.mass')}
+          </strong>
+        </div>
+        {tel.cargoMass > 0 && (
+          <div className="row dim">
+            <span className="label">{t('hud.cargo')}</span>
+            <strong>{formatNumber(locale, tel.cargoMass / 1000, 1)} {t('unit.mass')}</strong>
+          </div>
+        )}
+        <div className="row">
+          <span className="label">{t('hud.accel')}</span>
+          <strong>{formatNumber(locale, tel.mainAcceleration, 1)} {t('unit.accel')}</strong>
+        </div>
+        <div className="thrusters">
+          <span className="label">{t('hud.thrusters')}</span>
+          <Thruster label={t('hud.thruster.main')} value={tel.output.main} />
+          <Thruster label={t('hud.thruster.reverse')} value={tel.output.reverse} />
+          <Thruster label={t('hud.thruster.lateral')} value={tel.output.lateral} signed />
+          <Thruster label={t('hud.thruster.rotation')} value={-tel.output.rotation} signed />
+        </div>
+      </section>
+
+      <footer className="hud-bottom">
+        <span>{hud.steering ? t('hud.steering.on') : t('hud.steering.off')} <kbd>V</kbd></span>
+        {hud.beacon && (
+          <span>
+            {t('hud.beacon')}: <strong>{hud.beacon.name.toUpperCase()}</strong> {formatDistance(locale, hud.beacon.distance)}
+          </span>
+        )}
+        <span>{t('hud.helpHint')}</span>
+      </footer>
+    </div>
+  );
+}
