@@ -1,5 +1,6 @@
 import { atan2, clamp, cos, sin, toRadians, wrapAngle, type Vec2 } from '@void-frontier/kernel';
 import { applyWeaponDamage } from './damage.ts';
+import { extractOre } from './mining.ts';
 import { raycast } from './spatial.ts';
 import type { Body, EntityId, Ship, WeaponMount } from './types.ts';
 import type { World } from './world.ts';
@@ -58,7 +59,7 @@ function desiredAim(world: World, body: Body, ship: Ship, mount: WeaponMount, mu
     const targetShip = world.ships.get(target);
     if (targetBody && targetShip && !targetShip.destroyed) {
       const def = mount.definition;
-      if (def.kind === 'beam') return targetBody.position;
+      if (def.kind !== 'projectile') return def.kind === 'beam' ? targetBody.position : ship.command.aim;
       const lead = leadPoint(muzzle, body.velocity, targetBody.position, targetBody.velocity, def.projectileSpeed, def.velocityInheritance);
       if (lead) {
         const offset = wrapAngle(atan2(lead.point.y - muzzle.y, lead.point.x - muzzle.x) - body.angle);
@@ -98,7 +99,8 @@ export function weaponSystem(world: World, dt: number): void {
       mount.cooldown = Math.max(0, mount.cooldown - dt);
       mount.beam = null;
       if (ship.destroyed) continue;
-      const triggered = mount.hardpoint.group === 'primary' ? ship.command.firePrimary : ship.command.fireSecondary;
+      const group = mount.hardpoint.group;
+      const triggered = group === 'primary' ? ship.command.firePrimary : group === 'secondary' ? ship.command.fireSecondary : ship.command.fireMining;
       if (!triggered || mount.overheated) continue;
 
       const muzzle = muzzlePosition(body, mount);
@@ -124,6 +126,21 @@ export function weaponSystem(world: World, dt: number): void {
         mount.heat += def.heatPerShot;
         ship.energy -= def.energyPerShot;
         world.events.push({ type: 'shot', owner: id, position: { ...muzzle }, direction: dir });
+      } else if (def.kind === 'mining') {
+        const energy = def.energyPerSecond * dt;
+        if (ship.energy < energy) continue;
+        ship.energy -= energy;
+        mount.heat += def.heatPerSecond * dt;
+        const end = { x: muzzle.x + cos(angle) * def.range, y: muzzle.y + sin(angle) * def.range };
+        const hit = raycast(world, muzzle, end, id);
+        mount.beam = { from: muzzle, to: hit ? hit.point : end, hit: hit ? hit.id : null };
+        if (hit) {
+          const distance = hit.t * def.range;
+          // Full rate inside the optimal range, falling linearly to 25% at maximum range.
+          const falloff = distance <= def.optimalRange ? 1 : 1 - 0.75 * ((distance - def.optimalRange) / (def.range - def.optimalRange));
+          if (world.asteroids.has(hit.id)) extractOre(world, hit.id, def.extractionRate * falloff * dt, hit.point);
+          else if (world.ships.has(hit.id)) applyWeaponDamage(world, hit.id, id, def.damagePerSecond * dt, def.multipliers, hit.point, true);
+        }
       } else {
         const energy = def.energyPerSecond * dt;
         if (ship.energy < energy) continue;

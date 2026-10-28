@@ -1,5 +1,5 @@
 import { atan2, length, toDegrees, worldToLocal } from '@void-frontier/kernel';
-import { forwardOf } from './ship.ts';
+import { forwardOf, holdMass, holdVolume } from './ship.ts';
 import { leadPoint, muzzlePosition } from './combat.ts';
 import type { EntityId, FlightMode, ThrusterOutput } from './types.ts';
 import type { World } from './world.ts';
@@ -23,8 +23,18 @@ export interface FlightTelemetry {
   shieldMax: number;
   energy: number;
   energyMax: number;
-  weapons: { id: string; group: 'primary' | 'secondary'; kind: 'projectile' | 'beam'; heat: number; overheated: boolean }[];
+  weapons: { id: string; group: 'primary' | 'secondary' | 'mining'; kind: 'projectile' | 'beam' | 'mining'; heat: number; overheated: boolean }[];
   kills: number;
+  /** Hold contents and capacity. */
+  hold: { resource: string; units: number }[];
+  holdMass: number;
+  holdVolume: number;
+  holdMaxMass: number;
+  holdMaxVolume: number;
+  /** Seconds until the scanner can pulse again. */
+  scanCooldown: number;
+  /** The rock under the mining laser, if any. */
+  miningTarget: { asteroidType: string; resource: string; ore: number; oreMax: number } | null;
   destroyed: boolean;
   /** kg */
   mass: number;
@@ -87,6 +97,17 @@ export function readTelemetry(world: World, id: EntityId): FlightTelemetry | nul
       overheated: w.overheated,
     })),
     kills: ship.kills,
+    hold: [...ship.cargo.entries()].filter(([, units]) => units > 0).map(([resource, units]) => ({ resource, units })),
+    holdMass: ship.cargoMass + holdMass(ship),
+    holdVolume: holdVolume(ship),
+    holdMaxMass: ship.definition.cargo.maxMass,
+    holdMaxVolume: ship.definition.cargo.maxVolume,
+    scanCooldown: Math.max(0, (ship.scanReadyTick - world.tick) / 60),
+    miningTarget: (() => {
+      const beam = ship.weapons.find((w) => w.definition.kind === 'mining')?.beam;
+      const rock = beam?.hit !== null && beam?.hit !== undefined ? world.asteroids.get(beam.hit) : undefined;
+      return rock ? { asteroidType: rock.type.id, resource: rock.type.resource, ore: rock.ore, oreMax: rock.oreMax } : null;
+    })(),
     destroyed: ship.destroyed,
     mass: body.mass,
     cargoMass: ship.cargoMass,

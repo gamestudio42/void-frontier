@@ -1,4 +1,4 @@
-import { getWeapon, type ShipDefinition } from '@void-frontier/content';
+import { getResource, getWeapon, type ShipDefinition } from '@void-frontier/content';
 import { cos, sin, type Vec2 } from '@void-frontier/kernel';
 import { idleCommand, idleOutput, type Body, type Collider, type EntityId, type Faction, type FlightMode, type Ship } from './types.ts';
 import type { World } from './world.ts';
@@ -14,8 +14,30 @@ export interface SpawnShipOptions {
   faction?: Faction;
 }
 
+/** kg of resources in the hold. */
+export function holdMass(ship: Ship): number {
+  let kg = 0;
+  for (const [resource, units] of ship.cargo) kg += units * getResource(resource).unitMass;
+  return kg;
+}
+
+/** m^3 of resources in the hold. */
+export function holdVolume(ship: Ship): number {
+  let m3 = 0;
+  for (const [resource, units] of ship.cargo) m3 += units * getResource(resource).unitVolume;
+  return m3;
+}
+
+/** Whole units of `resource` the hold can still take, limited by mass and by volume. */
+export function holdSpaceFor(ship: Ship, resource: string): number {
+  const def = getResource(resource);
+  const massLeft = ship.definition.cargo.maxMass - ship.cargoMass - holdMass(ship);
+  const volumeLeft = ship.definition.cargo.maxVolume - holdVolume(ship);
+  return Math.max(0, Math.floor(Math.min(massLeft / def.unitMass, volumeLeft / def.unitVolume) + 1e-9));
+}
+
 export function shipMass(ship: Ship): number {
-  return ship.definition.hull.dryMass + ship.equipmentMass + ship.cargoMass + ship.fuel;
+  return ship.definition.hull.dryMass + ship.equipmentMass + ship.cargoMass + holdMass(ship) + ship.fuel;
 }
 
 export function shipInertia(ship: Ship, mass = shipMass(ship)): number {
@@ -46,6 +68,8 @@ export function spawnShip(world: World, definition: ShipDefinition, options: Spa
     fuel: options.fuel ?? definition.fuel.capacity,
     cargoMass: options.cargoMass ?? 0,
     equipmentMass: 0,
+    cargo: new Map(),
+    scanReadyTick: 0,
     command: idleCommand(),
     output: idleOutput(),
   };

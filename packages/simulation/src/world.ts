@@ -1,6 +1,6 @@
 import { Rng } from '@void-frontier/kernel';
 import type { SpatialIndex } from './spatial.ts';
-import type { AiPilot, Asteroid, Body, Collider, EncounterState, EntityId, Projectile, Ship, SimEvent, Station } from './types.ts';
+import type { AiPilot, Asteroid, Body, Collider, EncounterState, EntityId, Pickup, Projectile, Ship, SimEvent, Station } from './types.ts';
 
 /**
  * Minimal entity store: components live in maps keyed by entity id. Maps iterate in
@@ -16,6 +16,9 @@ export class World {
   readonly stations = new Map<EntityId, Station>();
   readonly projectiles = new Map<EntityId, Projectile>();
   readonly pilots = new Map<EntityId, AiPilot>();
+  readonly pickups = new Map<EntityId, Pickup>();
+  /** Asteroids revealed by a scanner pulse, with the tick the reading expires. */
+  readonly scanned = new Map<EntityId, number>();
   readonly encounters: EncounterState[] = [];
   /** Broad-phase index of colliders, rebuilt by the collision system every step. */
   spatial: SpatialIndex | null = null;
@@ -38,6 +41,8 @@ export class World {
     this.stations.delete(id);
     this.projectiles.delete(id);
     this.pilots.delete(id);
+    this.pickups.delete(id);
+    this.scanned.delete(id);
     this.beacons.delete(id);
   }
 

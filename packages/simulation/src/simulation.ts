@@ -3,6 +3,7 @@ import { FIXED_DT, Rng, toRadians } from '@void-frontier/kernel';
 import { spawnShip } from './ship.ts';
 import { aiSystem, encounterSystem, spawnEncounter } from './ai.ts';
 import { projectileSystem, weaponSystem } from './combat.ts';
+import { jettison, pickupSystem, scan, scanExpirySystem } from './mining.ts';
 import { collisionSystem } from './systems/collision.ts';
 import { flightControlSystem } from './systems/flightControl.ts';
 import { integrationSystem } from './systems/integration.ts';
@@ -61,6 +62,8 @@ export class Simulation {
     collisionSystem(this.world, this.rules);
     weaponSystem(this.world, this.dt);
     projectileSystem(this.world, this.dt);
+    pickupSystem(this.world, this.dt);
+    scanExpirySystem(this.world);
     encounterSystem(this.world, this.dt);
     this.world.tick++;
   }
@@ -83,6 +86,16 @@ export class Simulation {
   setFlightMode(id: EntityId, mode: FlightMode): void {
     const ship = this.world.ships.get(id);
     if (ship) ship.mode = mode;
+  }
+
+  /** Scanner pulse for a ship; false while it recharges. */
+  scan(id: EntityId): boolean {
+    return scan(this.world, id, this.dt);
+  }
+
+  /** Dump a ship's hold into space; returns units dropped. */
+  jettison(id: EntityId): number {
+    return jettison(this.world, id, this.dt);
   }
 
   /** Development hook until mining and trading exist: load test cargo to feel the mass change. */

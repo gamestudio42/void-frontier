@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ASTEROID_TYPES, OUTPOST_ALPHA, SHIPS, STATIONS, getShip, getWeapon, shipDefinitionSchema, validateSector } from '../src/index.ts';
+import { ASTEROID_TYPES, OUTPOST_ALPHA, RESOURCES, SHIPS, STATIONS, getResource, getShip, getWeapon, shipDefinitionSchema, validateSector } from '../src/index.ts';
 
 describe('content', () => {
   it('ships two player ships and one pirate for the vertical slice', () => {
@@ -11,7 +11,7 @@ describe('content', () => {
 
   it('arms the starter ship with an autocannon pair and a laser', () => {
     const weapons = getShip('kestrel').hardpoints.map((h) => getWeapon(h.weapon).kind);
-    expect(weapons.sort()).toEqual(['beam', 'projectile', 'projectile']);
+    expect(weapons.sort()).toEqual(['beam', 'mining', 'projectile', 'projectile']);
   });
 
   it('gives each weapon a reason to exist: lasers strip shields, cannons break hulls', () => {
@@ -23,6 +23,15 @@ describe('content', () => {
 
   it('defines three asteroid types for the three slice minerals', () => {
     expect([...ASTEROID_TYPES.values()].map((t) => t.resource).sort()).toEqual(['copper_ore', 'iron_ore', 'titanium_ore']);
+  });
+
+  it('maps every rock type to a resource with mass and volume', () => {
+    for (const type of ASTEROID_TYPES.values()) {
+      const resource = getResource(type.resource);
+      expect(resource.unitMass).toBeGreaterThan(0);
+      expect(resource.unitVolume).toBeGreaterThan(0);
+    }
+    expect(RESOURCES.has('salvage')).toBe(true);
   });
 
   it('has one station with a docking bay', () => {

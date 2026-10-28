@@ -43,6 +43,8 @@ export interface ShipCommand {
   fireSecondary: boolean;
   /** Selected target: guns swivel toward its lead point when it is inside their gimbal. */
   target: EntityId | null;
+  /** Mining laser group. */
+  fireMining: boolean;
 }
 
 /** Throttle actually applied to each thruster group after fuel limits, for physics and visuals. */
@@ -85,8 +87,12 @@ export interface Ship {
   destroyed: boolean;
   /** kg remaining */
   fuel: number;
-  /** kg */
+  /** kg of ballast or unspecified cargo (tests, future missions) */
   cargoMass: number;
+  /** Units of each resource in the hold. */
+  cargo: Map<string, number>;
+  /** Tick from which the scanner can pulse again. */
+  scanReadyTick: number;
   /** kg */
   equipmentMass: number;
   command: ShipCommand;
@@ -103,6 +109,7 @@ export const idleCommand = (): ShipCommand => ({
   firePrimary: false,
   fireSecondary: false,
   target: null,
+  fireMining: false,
 });
 export const idleOutput = (): ThrusterOutput => ({ main: 0, reverse: 0, lateral: 0, rotation: 0, boosting: false });
 
@@ -115,7 +122,15 @@ export interface Collider {
 
 export interface Asteroid {
   type: AsteroidType;
+  /** Current radius; rocks shrink as they are mined. */
   radius: number;
+  /** Radius when the rock was generated. */
+  baseRadius: number;
+  /** Ore units left and at the start. */
+  ore: number;
+  oreMax: number;
+  /** Extracted but not yet ejected as a chunk. */
+  pendingOre: number;
   /** Stable per-rock value the renderer uses to pick a shape and tilt. */
   look: number;
 }
@@ -138,6 +153,10 @@ export type SimEvent =
       damage: number;
     }
   | { type: 'shipDestroyed'; id: EntityId; position: { x: number; y: number }; by: EntityId | null }
+  | { type: 'scan'; owner: EntityId; position: { x: number; y: number }; range: number; found: number }
+  | { type: 'asteroidDepleted'; id: EntityId; position: { x: number; y: number }; radius: number; asteroidType: string }
+  | { type: 'collected'; ship: EntityId; resource: string; units: number }
+  | { type: 'cargoFull'; ship: EntityId }
   | { type: 'shot'; owner: EntityId; position: { x: number; y: number }; direction: { x: number; y: number } }
   | {
       type: 'hit';
@@ -178,4 +197,16 @@ export interface EncounterState {
   members: EntityId[];
   /** Tick at which a destroyed group returns, or null while any member lives. */
   respawnAt: number | null;
+}
+
+/** Floating ore or salvage that a tractor can pull into a hold. */
+export interface Pickup {
+  resource: string;
+  units: number;
+  position: { x: number; y: number };
+  velocity: { x: number; y: number };
+  /** seconds left before it drifts away for good */
+  life: number;
+  /** Tick before which tractors ignore it (just jettisoned). */
+  freeAfterTick: number;
 }

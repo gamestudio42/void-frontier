@@ -3,21 +3,36 @@
     "id": "ferrous",
     "resource": "iron_ore",
     "density": 3400,
-    "durabilityPerSquareMetre": 40,
-    "look": { "base": "#6b625b", "vein": "#9a5b34", "metalness": 0.15, "roughness": 0.92 }
+    "look": {
+      "base": "#6b625b",
+      "vein": "#9a5b34",
+      "metalness": 0.15,
+      "roughness": 0.92
+    },
+    "oreUnitsPerSquareMetre": 0.6
   },
   {
     "id": "cupric",
     "resource": "copper_ore",
     "density": 3000,
-    "durabilityPerSquareMetre": 32,
-    "look": { "base": "#57524e", "vein": "#2f8f78", "metalness": 0.2, "roughness": 0.85 }
+    "look": {
+      "base": "#57524e",
+      "vein": "#2f8f78",
+      "metalness": 0.2,
+      "roughness": 0.85
+    },
+    "oreUnitsPerSquareMetre": 0.5
   },
   {
     "id": "titanic",
     "resource": "titanium_ore",
     "density": 4200,
-    "durabilityPerSquareMetre": 70,
-    "look": { "base": "#7a7e86", "vein": "#d6e2ee", "metalness": 0.45, "roughness": 0.6 }
+    "look": {
+      "base": "#7a7e86",
+      "vein": "#d6e2ee",
+      "metalness": 0.45,
+      "roughness": 0.6
+    },
+    "oreUnitsPerSquareMetre": 0.35
   }
 ]

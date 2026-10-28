@@ -37,7 +37,9 @@
       "rechargeRate": 12
     },
     "sensors": {
-      "range": 1400
+      "range": 1400,
+      "scanRange": 900,
+      "scanCooldown": 6
     },
     "hardpoints": [
       {
@@ -60,8 +62,19 @@
         "y": 0,
         "weapon": "laser_mk1",
         "group": "secondary"
+      },
+      {
+        "id": "mining_laser",
+        "x": 7.2,
+        "y": 0,
+        "weapon": "mining_laser_mk1",
+        "group": "mining"
       }
-    ]
+    ],
+    "tractor": {
+      "range": 60,
+      "collectRadius": 12
+    }
   },
   {
     "id": "mule",
@@ -101,7 +114,9 @@
       "rechargeRate": 14
     },
     "sensors": {
-      "range": 1200
+      "range": 1200,
+      "scanRange": 600,
+      "scanCooldown": 6
     },
     "hardpoints": [
       {
@@ -110,8 +125,19 @@
         "y": 0,
         "weapon": "autocannon_mk1",
         "group": "primary"
+      },
+      {
+        "id": "mining_laser",
+        "x": 11.700000000000001,
+        "y": 0,
+        "weapon": "mining_laser_mk1",
+        "group": "mining"
       }
-    ]
+    ],
+    "tractor": {
+      "range": 60,
+      "collectRadius": 12
+    }
   },
   {
     "id": "jackal",
@@ -151,7 +177,9 @@
       "rechargeRate": 8
     },
     "sensors": {
-      "range": 950
+      "range": 950,
+      "scanRange": 600,
+      "scanCooldown": 6
     },
     "hardpoints": [
       {
@@ -161,6 +189,10 @@
         "weapon": "pirate_autocannon",
         "group": "primary"
       }
-    ]
+    ],
+    "tractor": {
+      "range": 0,
+      "collectRadius": 12
+    }
   }
 ]

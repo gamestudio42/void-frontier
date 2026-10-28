@@ -1,5 +1,5 @@
 import { getAsteroidType, getStation, type AsteroidFieldDefinition, type StationDefinition, type StationModule } from '@void-frontier/content';
-import { PI, Rng, TAU, cos, sin, type Vec2 } from '@void-frontier/kernel';
+import { PI, Rng, TAU, cbrt, cos, sin, type Vec2 } from '@void-frontier/kernel';
 import type { Body, Collider, EntityId } from './types.ts';
 import type { World } from './world.ts';
 
@@ -112,7 +112,9 @@ export function spawnAsteroid(
     previousAngle: angle,
   });
   world.colliders.set(id, { circles: [{ x: 0, y: 0, r: radius }], bound: radius });
-  world.asteroids.set(id, { type, radius, look });
+  // Ore scales with cross-section, so big rocks are worth the trip.
+  const ore = Math.max(4, Math.round(type.oreUnitsPerSquareMetre * PI * radius * radius));
+  world.asteroids.set(id, { type, radius, baseRadius: radius, ore, oreMax: ore, pendingOre: 0, look });
   return id;
 }
 
@@ -148,7 +150,8 @@ export function generateAsteroidField(world: World, field: AsteroidFieldDefiniti
       const a = 1 / Math.sqrt(minRadius * minRadius * minRadius);
       const b = 1 / Math.sqrt(maxRadius * maxRadius * maxRadius);
       const inv = a - u * (a - b);
-      const radius = 1 / cubeRootSquared(inv);
+      const root = cbrt(inv);
+      const radius = 1 / (root * root);
       const distance = field.radius * Math.sqrt(rng.next());
       const theta = rng.range(0, TAU);
       const x = field.center.x + cos(theta) * distance;
@@ -172,11 +175,4 @@ export function generateAsteroidField(world: World, field: AsteroidFieldDefiniti
     }
   }
   return ids;
-}
-
-/** x^(2/3) by Newton's method on the cube root; only + - * / so it stays deterministic. */
-function cubeRootSquared(x: number): number {
-  let r = x > 1 ? x / 3 : 1;
-  for (let i = 0; i < 40; i++) r = r - (r * r * r - x) / (3 * r * r);
-  return r * r;
 }

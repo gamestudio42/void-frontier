@@ -14,3 +14,4 @@ export * from './combat.ts';
 export * from './damage.ts';
 export * from './spatial.ts';
 export { aiSystem, encounterSystem, spawnEncounter } from './ai.ts';
+export * from './mining.ts';

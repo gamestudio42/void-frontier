@@ -1,3 +1,4 @@
+import { dropSalvage } from './mining.ts';
 import type { EntityId } from './types.ts';
 import type { World } from './world.ts';
 
@@ -13,6 +14,7 @@ export function destroyShip(world: World, id: EntityId, by: EntityId | null): vo
   world.colliders.delete(id);
   const body = world.bodies.get(id)!;
   world.events.push({ type: 'shipDestroyed', id, position: { x: body.position.x, y: body.position.y }, by });
+  if (ship.faction === 'pirate') dropSalvage(world, body.position, body.velocity);
   if (by !== null) {
     const killer = world.ships.get(by);
     if (killer) killer.kills++;

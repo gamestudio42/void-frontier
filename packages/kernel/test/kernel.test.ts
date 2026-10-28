@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FixedStepper, Rng, atan2, cos, localToWorld, sin, worldToLocal, wrapAngle } from '../src/index.ts';
+import { FixedStepper, Rng, atan2, cbrt, cos, localToWorld, sin, worldToLocal, wrapAngle } from '../src/index.ts';
 
 describe('deterministic trig', () => {
   it('matches Math.sin and Math.cos across many turns', () => {
@@ -18,6 +18,11 @@ describe('deterministic trig', () => {
     expect(atan2(0, 0)).toBe(0);
     expect(atan2(1, 0)).toBeCloseTo(Math.PI / 2, 15);
     expect(atan2(0, -1)).toBeCloseTo(Math.PI, 15);
+  });
+
+  it('computes cube roots', () => {
+    for (const x of [0.001, 0.35, 1, 2, 27, 1000, 123456]) expect(cbrt(x)).toBeCloseTo(Math.cbrt(x), 10);
+    expect(cbrt(0)).toBe(0);
   });
 
   it('wraps angles into (-pi, pi]', () => {

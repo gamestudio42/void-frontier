@@ -85,3 +85,15 @@ export function wrapAngle(angle: number): number {
 
 export const toDegrees = (radians: number): number => (radians * 180) / PI;
 export const toRadians = (degrees: number): number => (degrees * PI) / 180;
+
+/** Cube root by Newton iteration (only + - * /), for x >= 0. */
+export function cbrt(x: number): number {
+  if (x <= 0) return 0;
+  let r = x > 1 ? x / 3 : 1;
+  for (let i = 0; i < 60; i++) {
+    const next = r - (r * r * r - x) / (3 * r * r);
+    if (next === r) break;
+    r = next;
+  }
+  return r;
+}

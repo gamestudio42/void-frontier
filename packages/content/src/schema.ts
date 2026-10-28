@@ -59,6 +59,16 @@ export const shipDefinitionSchema = z.object({
   sensors: z.object({
     /** metres: how far this ship notices others */
     range: positive,
+    /** metres: how far a scanner pulse reads rock composition */
+    scanRange: positive,
+    /** seconds between pulses */
+    scanCooldown: positive,
+  }),
+  tractor: z.object({
+    /** metres: ore within this range is pulled in; 0 = no tractor */
+    range: z.number().min(0),
+    /** metres: ore this close goes into the hold */
+    collectRadius: positive,
   }),
   hardpoints: z.array(
     z.object({
@@ -67,7 +77,7 @@ export const shipDefinitionSchema = z.object({
       x: z.number(),
       y: z.number(),
       weapon: z.string(),
-      group: z.enum(['primary', 'secondary']),
+      group: z.enum(['primary', 'secondary', 'mining']),
     }),
   ),
 });
@@ -99,6 +109,23 @@ export const weaponDefinitionSchema = z.discriminatedUnion('kind', [
     /** heat per second */
     coolingRate: positive,
     energyPerShot: z.number().min(0),
+    multipliers: damageMultipliers,
+  }),
+  z.object({
+    id: z.string(),
+    kind: z.literal('mining'),
+    /** ore units per second at the optimal range */
+    extractionRate: positive,
+    range: positive,
+    /** metres: full efficiency up to here, falling to 25% at max range */
+    optimalRange: positive,
+    /** light damage when pointed at a ship */
+    damagePerSecond: z.number().min(0),
+    gimbal: z.number().min(0).max(45),
+    heatPerSecond: z.number().min(0),
+    maxHeat: positive,
+    coolingRate: positive,
+    energyPerSecond: z.number().min(0),
     multipliers: damageMultipliers,
   }),
   z.object({
@@ -142,11 +169,25 @@ export const asteroidTypeSchema = z.object({
   resource: z.string(),
   /** kg/m^3 */
   density: positive,
-  durabilityPerSquareMetre: positive,
+  /** ore units per square metre of cross-section: a 10 m rock of 0.5 holds about 157 units */
+  oreUnitsPerSquareMetre: positive,
   look: z.object({ base: hexColor, vein: hexColor, metalness: z.number().min(0).max(1), roughness: z.number().min(0).max(1) }),
 });
 
 export type AsteroidType = z.infer<typeof asteroidTypeSchema>;
+
+export const resourceSchema = z.object({
+  id: z.string().regex(/^[a-z][a-z0-9_]*$/),
+  /** kg per unit */
+  unitMass: positive,
+  /** m^3 per unit */
+  unitVolume: positive,
+  /** credits per unit at a neutral market (used from the economy milestone) */
+  basePrice: positive,
+  color: hexColor,
+});
+
+export type ResourceDefinition = z.infer<typeof resourceSchema>;
 
 /** Station layout in metres, station-local (x forward, y left). The renderer and the colliders both read it. */
 export const stationModuleSchema = z.discriminatedUnion('kind', [

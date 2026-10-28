@@ -13,7 +13,10 @@
     "maxHeat": 100,
     "coolingRate": 26,
     "energyPerShot": 0,
-    "multipliers": { "shield": 0.6, "hull": 1.2 }
+    "multipliers": {
+      "shield": 0.6,
+      "hull": 1.2
+    }
   },
   {
     "id": "pirate_autocannon",
@@ -29,7 +32,10 @@
     "maxHeat": 100,
     "coolingRate": 22,
     "energyPerShot": 0,
-    "multipliers": { "shield": 0.6, "hull": 1.2 }
+    "multipliers": {
+      "shield": 0.6,
+      "hull": 1.2
+    }
   },
   {
     "id": "laser_mk1",
@@ -41,6 +47,26 @@
     "maxHeat": 100,
     "coolingRate": 18,
     "energyPerSecond": 26,
-    "multipliers": { "shield": 1.4, "hull": 0.7 }
+    "multipliers": {
+      "shield": 1.4,
+      "hull": 0.7
+    }
+  },
+  {
+    "id": "mining_laser_mk1",
+    "kind": "mining",
+    "extractionRate": 6,
+    "range": 160,
+    "optimalRange": 70,
+    "damagePerSecond": 12,
+    "gimbal": 10,
+    "heatPerSecond": 9,
+    "maxHeat": 100,
+    "coolingRate": 14,
+    "energyPerSecond": 7,
+    "multipliers": {
+      "shield": 0.5,
+      "hull": 0.5
+    }
   }
 ]
