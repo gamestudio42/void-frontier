@@ -37,6 +37,9 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
   const tel = hud.telemetry;
   if (!tel) return null;
   const fuelRatio = tel.fuel / tel.fuelCapacity;
+  const p = hud.proximity;
+  // Warn when contact is close in time and fast enough to hurt.
+  const warning = p && p.timeToImpact !== null && p.timeToImpact < 5 && p.closingSpeed > 3 && !tel.destroyed ? p.timeToImpact : null;
   const modeKey: MessageKey = tel.mode === 'assisted' ? 'hud.mode.assisted' : 'hud.mode.newtonian';
 
   return (
@@ -52,6 +55,11 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
           <kbd>C</kbd>
         </div>
         <div className="flags">
+          {warning && (
+            <span className="flag collision" data-testid="collision-warning">
+              {t('hud.collision')} {formatNumber(locale, warning, 1)} s
+            </span>
+          )}
           {tel.output.boosting && <span className="flag boost">{t('hud.boost')}</span>}
           {hud.braking && <span className="flag brake">{t('hud.brake')}</span>}
           {tel.fuel <= 0 && <span className="flag empty">{t('hud.noFuel')}</span>}
@@ -92,6 +100,11 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
 
       <section className="panel ship">
         <div className="row">
+          <span className="label">{t('hud.hull')}</span>
+          <strong data-testid="hull" data-value={tel.hull.toFixed(2)}>{formatNumber(locale, (tel.hull / tel.hullMax) * 100)}%</strong>
+        </div>
+        <Bar value={tel.hull} max={tel.hullMax} className={`hull ${tel.hull / tel.hullMax < 0.35 ? 'low' : tel.hull / tel.hullMax < 0.7 ? 'mid' : ''}`} />
+        <div className="row">
           <span className="label">{t('hud.fuel')}</span>
           <strong data-testid="fuel" data-value={tel.fuel.toFixed(3)}>{formatNumber(locale, fuelRatio * 100)}%</strong>
         </div>
@@ -123,9 +136,14 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
 
       <footer className="hud-bottom">
         <span>{hud.steering ? t('hud.steering.on') : t('hud.steering.off')} <kbd>V</kbd></span>
-        {hud.beacon && (
+        {hud.station && (
           <span>
-            {t('hud.beacon')}: <strong>{hud.beacon.name.toUpperCase()}</strong> {formatDistance(locale, hud.beacon.distance)}
+            {t('hud.station')}: <strong>{t(`station.${hud.station.name}` as MessageKey)}</strong> {formatDistance(locale, hud.station.distance)}
+          </span>
+        )}
+        {hud.proximity && (
+          <span>
+            {t('hud.nearest')}: {t(`hud.kind.${hud.proximity.kind}` as MessageKey)} {formatDistance(locale, hud.proximity.distance)}
           </span>
         )}
         <span>{t('hud.helpHint')}</span>

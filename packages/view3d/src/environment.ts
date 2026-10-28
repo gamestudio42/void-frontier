@@ -147,9 +147,10 @@ export function createPlanet(seed: number): Mesh {
   const texture = new CanvasTexture(canvas);
   texture.colorSpace = SRGBColorSpace;
   const planet = new Mesh(new SphereGeometry(1, 64, 32), new MeshStandardMaterial({ map: texture, roughness: 1, metalness: 0 }));
-  planet.scale.setScalar(3200);
-  planet.position.set(-7000, -11000, -9000);
-  planet.rotation.z = 0.35;
+  planet.scale.setScalar(2300);
+  planet.position.set(9000, -12000, -9500);
+  // Tip the pole toward the camera so the bands read side-on instead of as rings.
+  planet.rotation.set(-1.15, 0, 0.3);
   return planet;
 }
 

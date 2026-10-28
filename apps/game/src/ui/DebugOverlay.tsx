@@ -12,7 +12,9 @@ export function DebugOverlay({ hud, t }: { hud: HudState; t: Translate }) {
     [t('debug.dropped'), `${s.droppedSeconds.toFixed(2)} s`],
     [t('debug.entities'), String(s.entities)],
     [t('debug.draws'), String(s.drawCalls)],
+    [t('debug.triangles'), `${(s.triangles / 1000).toFixed(0)}k`],
     [t('debug.zoom'), `${s.zoom.toFixed(2)}×`],
+    [t('debug.quality'), `${s.quality}${s.autoQuality ? ' (auto)' : ''}`],
     [t('debug.position'), p ? `${p.x.toFixed(0)}, ${p.y.toFixed(0)}` : '—'],
   ];
   return (

@@ -18,9 +18,9 @@ export interface CameraSettings {
 export const DEFAULT_CAMERA: CameraSettings = {
   fov: 50,
   tilt: 55,
-  distance: 120,
+  distance: 170,
   minZoom: 0.5,
-  maxZoom: 2,
+  maxZoom: 3.5,
   smoothing: 0.15,
   lookAhead: 0.6,
   maxLookAhead: 120,
@@ -37,6 +37,9 @@ export class CameraRig {
   private zoom = 1;
   private speedZoom = 1;
   private initialised = false;
+  private trauma = 0;
+  private time = 0;
+  private readonly lookTarget = new Vector3();
 
   constructor(readonly settings: CameraSettings = DEFAULT_CAMERA) {
     this.camera = new PerspectiveCamera(settings.fov, 1, 1, 20000);
@@ -49,6 +52,11 @@ export class CameraRig {
   /** Multiply the zoom (wheel); > 1 moves the camera away. */
   zoomBy(factor: number): void {
     this.zoom = Math.min(this.settings.maxZoom, Math.max(this.settings.minZoom, this.zoom * factor));
+  }
+
+  /** Add camera shake; 0..1, decays over about a second. */
+  shake(amount: number): void {
+    this.trauma = Math.min(1, this.trauma + amount);
   }
 
   setAspect(aspect: number): void {
@@ -73,7 +81,22 @@ export class CameraRig {
     const distance = s.distance * this.zoom * this.speedZoom;
     const tilt = (s.tilt * Math.PI) / 180;
     this.camera.position.set(this.focus.x, this.focus.y + Math.sin(tilt) * distance, this.focus.z + Math.cos(tilt) * distance);
-    this.camera.lookAt(this.focus);
+    this.lookTarget.copy(this.focus);
+
+    // Trauma-based shake: squared so small bumps stay subtle and crashes hit hard.
+    this.time += frameDt;
+    this.trauma = Math.max(0, this.trauma - frameDt * 1.2);
+    if (this.trauma > 0) {
+      const strength = this.trauma * this.trauma * distance * 0.035;
+      const t = this.time * 31;
+      const ox = (Math.sin(t * 1.1) + Math.sin(t * 2.7 + 1.3) * 0.5) * strength;
+      const oz = (Math.sin(t * 1.7 + 2.1) + Math.sin(t * 3.1) * 0.5) * strength;
+      this.camera.position.x += ox;
+      this.camera.position.z += oz;
+      this.lookTarget.x += ox * 0.6;
+      this.lookTarget.z += oz * 0.6;
+    }
+    this.camera.lookAt(this.lookTarget);
     return this.focus;
   }
 }

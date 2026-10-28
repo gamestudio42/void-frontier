@@ -8,6 +8,8 @@ export interface InputActions {
   toggleDebug(): void;
   togglePause(): void;
   toggleCargo(): void;
+  relaunch(): void;
+  cycleQuality(): void;
   zoom(factor: number): void;
 }
 
@@ -39,6 +41,8 @@ export class InputController {
       case 'Escape':
       case 'KeyP': this.actions.togglePause(); break;
       case 'KeyL': this.actions.toggleCargo(); break;
+      case 'KeyR': this.actions.relaunch(); break;
+      case 'KeyG': this.actions.cycleQuality(); break;
       case 'Equal':
       case 'NumpadAdd': this.actions.zoom(1 / 1.15); break;
       case 'Minus':

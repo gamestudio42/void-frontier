@@ -18,6 +18,8 @@ const BINDINGS: [string[], MessageKey][] = [
   [['C'], 'help.mode'],
   [['Wheel', '+', '−'], 'help.zoom'],
   [['L'], 'help.cargo'],
+  [['R'], 'help.relaunch'],
+  [['G'], 'help.quality'],
   [['F3'], 'help.debug'],
   [['Esc'], 'help.pause'],
 ];

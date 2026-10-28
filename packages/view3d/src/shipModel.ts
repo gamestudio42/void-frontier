@@ -10,6 +10,7 @@ import {
   MeshBasicMaterial,
   MeshStandardMaterial,
   PointLight,
+  Vector3,
   type Object3D,
 } from 'three';
 import type { ThrusterOutput } from '@void-frontier/simulation';
@@ -19,8 +20,18 @@ import { PALETTE } from './palette.ts';
  * Procedural ships, built from boxes and cylinders so the look stays original and needs
  * no asset pipeline. The model's nose points along +X and its right side along +Z.
  */
+export type ThrusterGroup = 'main' | 'reverse' | 'pushRight' | 'pushLeft' | 'ccw' | 'cw';
+
+/** A nozzle in model space and the direction its exhaust leaves (unit, model space). */
+export interface Emitter {
+  group: ThrusterGroup;
+  position: Vector3;
+  direction: Vector3;
+}
+
 export interface ShipModel {
   root: Group;
+  emitters: Emitter[];
   update(output: ThrusterOutput, time: number): void;
   dispose(): void;
 }
@@ -126,6 +137,29 @@ export function buildShipModel(definition: ShipDefinition): ShipModel {
   const ccw = [place(root, plume(rcs, rcsLen, PALETTE.rcsPlume, 'z', 1), L * 0.42, 0, W * 0.2), place(root, plume(rcs, rcsLen, PALETTE.rcsPlume, 'z', -1), -L * 0.38, 0, -W * 0.48)];
   const cw = [place(root, plume(rcs, rcsLen, PALETTE.rcsPlume, 'z', -1), L * 0.42, 0, -W * 0.2), place(root, plume(rcs, rcsLen, PALETTE.rcsPlume, 'z', 1), -L * 0.38, 0, W * 0.48)];
 
+  const emitters: Emitter[] = [];
+  const register = (group: ThrusterGroup, plumes: Plume[], direction: Vector3) => {
+    for (const p of plumes) emitters.push({ group, position: p.mesh.position.clone(), direction });
+  };
+  register('main', mains, new Vector3(-1, 0, 0));
+  register('reverse', reverse, new Vector3(1, 0, 0));
+  register('pushRight', pushRight, new Vector3(0, 0, -1));
+  register('pushLeft', pushLeft, new Vector3(0, 0, 1));
+  register('ccw', ccw, new Vector3(0, 0, 0));
+  register('cw', cw, new Vector3(0, 0, 0));
+  // Rotation plumes point along their own cone axis; read it from the mesh orientation.
+  for (const e of emitters) {
+    if (e.group !== 'ccw' && e.group !== 'cw') continue;
+    const plumeMesh = [...ccw, ...cw].find((p) => p.mesh.position.equals(e.position))!.mesh;
+    e.direction = new Vector3(0, 1, 0).applyEuler(plumeMesh.rotation).normalize();
+  }
+  root.traverse((object) => {
+    if (object instanceof Mesh && !(object.material instanceof MeshBasicMaterial)) {
+      object.castShadow = true;
+      object.receiveShadow = true;
+    }
+  });
+
   const drive = (plumes: Plume[], throttle: number, flicker: number) => {
     for (const p of plumes) {
       const on = throttle > 0.02;
@@ -136,6 +170,7 @@ export function buildShipModel(definition: ShipDefinition): ShipModel {
 
   return {
     root,
+    emitters,
     update(output, time) {
       const flicker = 0.9 + 0.1 * Math.sin(time * 61) * Math.sin(time * 23);
       const mainLength = output.main * (output.boosting ? 1.5 : 1);

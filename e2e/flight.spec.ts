@@ -10,7 +10,7 @@ async function hold(page: Page, key: string, ms: number) {
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/?quality=low');
   await expect(page.getByTestId('controls')).toBeVisible();
   await page.getByTestId('start').click();
   await expect(page.getByTestId('controls')).toBeHidden();
@@ -18,7 +18,7 @@ test.beforeEach(async ({ page }) => {
   await page.mouse.move(0, 0);
 });
 
-test('boots into the proving ground with a stationary ship', async ({ page }) => {
+test('boots into Outpost Alpha with a stationary ship', async ({ page }) => {
   await expect(page.getByTestId('viewport')).toBeVisible();
   await expect(page.getByTestId('flight-mode')).toHaveAttribute('data-mode', 'newtonian');
   expect(await value(page, 'speed')).toBe(0);

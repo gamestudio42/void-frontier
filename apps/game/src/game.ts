@@ -1,32 +1,46 @@
-import { PROVING_GROUND } from '@void-frontier/content';
+import { OUTPOST_ALPHA } from '@void-frontier/content';
 import { FIXED_DT, FixedStepper, type Vec2 } from '@void-frontier/kernel';
-import { Simulation, readTelemetry } from '@void-frontier/simulation';
-import { SpaceRenderer } from '@void-frontier/view3d';
+import { Simulation, nearestObstacle, readTelemetry } from '@void-frontier/simulation';
+import { SpaceRenderer, type Quality } from '@void-frontier/view3d';
 import { InputController } from './input.ts';
+import { drawRadar } from './radar.ts';
 import type { HudStore } from './store.ts';
 
 const HUD_INTERVAL = 0.1;
 const TEST_CARGO_KG = 5000;
+const QUALITIES: Quality[] = ['high', 'medium', 'low'];
 
-/** Owns the frame loop: input → fixed simulation steps → interpolated render → HUD. */
+/** Owns the frame loop: input → fixed simulation steps → effects → interpolated render → HUD. */
 export class Game {
-  readonly sim = Simulation.fromSector(PROVING_GROUND);
-  private readonly renderer: SpaceRenderer;
+  sim = Simulation.fromSector(OUTPOST_ALPHA);
+  private renderer: SpaceRenderer;
   private readonly input: InputController;
   private readonly stepper = new FixedStepper({ dt: FIXED_DT, maxFrameTime: 0.25, maxStepsPerFrame: 8 });
   private readonly resizeObserver: ResizeObserver;
+  private radar: HTMLCanvasElement | null = null;
   private frameHandle = 0;
   private lastTime = 0;
+  private clock = 0;
   private hudTimer = 0;
   private fpsFrames = 0;
   private fpsTime = 0;
   private fps = 0;
   private stepsThisWindow = 0;
   private droppedTotal = 0;
+  private hits = 0;
   private aim: Vec2 | null = null;
+  /** Automatic quality: step down after sustained low frame rate, unless the player chose one. */
+  private autoQuality = true;
+  private slowTime = 0;
 
   constructor(private readonly canvas: HTMLCanvasElement, private readonly store: HudStore) {
-    this.renderer = new SpaceRenderer(canvas, this.sim, PROVING_GROUND.seed);
+    this.renderer = new SpaceRenderer(canvas, this.sim, OUTPOST_ALPHA.seed);
+    // ?quality=low|medium|high pins the graphics level (handy on weak machines and in tests).
+    const requested = new URLSearchParams(window.location.search).get('quality') as Quality | null;
+    if (requested && QUALITIES.includes(requested)) {
+      this.autoQuality = false;
+      this.renderer.setQuality(requested);
+    }
     this.input = new InputController(canvas, {
       toggleFlightMode: () => {
         const ship = this.sim.world.ships.get(this.sim.playerId);
@@ -42,11 +56,24 @@ export class Game {
         if (ship) this.sim.setCargoMass(this.sim.playerId, ship.cargoMass > 0 ? 0 : TEST_CARGO_KG);
         this.publish();
       },
+      cycleQuality: () => {
+        const next = QUALITIES[(QUALITIES.indexOf(this.renderer.currentQuality) + 1) % QUALITIES.length];
+        this.autoQuality = false;
+        this.renderer.setQuality(next);
+        this.publish();
+      },
+      relaunch: () => {
+        if (this.sim.world.ships.get(this.sim.playerId)?.destroyed) this.restart();
+      },
       zoom: (factor) => this.renderer.rig.zoomBy(factor),
     });
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(canvas);
     this.resize();
+  }
+
+  attachRadar(canvas: HTMLCanvasElement | null): void {
+    this.radar = canvas;
   }
 
   start(): void {
@@ -56,6 +83,20 @@ export class Game {
       this.frameHandle = requestAnimationFrame(frame);
     };
     this.frameHandle = requestAnimationFrame(frame);
+  }
+
+  /** New sector from the same seed: everything is back where it started. */
+  restart(): void {
+    const zoom = this.renderer.rig.zoomLevel;
+    const quality = this.renderer.currentQuality;
+    this.renderer.dispose();
+    this.sim = Simulation.fromSector(OUTPOST_ALPHA);
+    this.renderer = new SpaceRenderer(this.canvas, this.sim, OUTPOST_ALPHA.seed);
+    this.renderer.rig.zoomBy(zoom);
+    this.renderer.setQuality(quality);
+    this.stepper.reset();
+    this.resize();
+    this.publish();
   }
 
   dispose(): void {
@@ -73,6 +114,7 @@ export class Game {
   private frame(now: number): void {
     const elapsed = Math.max(0, (now - this.lastTime) / 1000);
     this.lastTime = now;
+    this.clock += elapsed;
     const { paused, help } = this.store.getSnapshot();
 
     // The camera from the last frame is close enough to turn the cursor into a world point.
@@ -89,9 +131,20 @@ export class Game {
       alpha = result.alpha;
       this.stepsThisWindow += result.steps;
       this.droppedTotal += result.droppedTime;
+      const events = this.sim.drainEvents();
+      if (events.length) {
+        this.renderer.handleEvents(this.sim, events);
+        for (const event of events) {
+          const mine = event.type === 'collision' && (event.a === this.sim.playerId || event.b === this.sim.playerId);
+          if (mine && event.type === 'collision' && event.damage > 0) this.hits++;
+          if (event.type === 'shipDestroyed' && event.id === this.sim.playerId) this.hits++;
+        }
+      }
     }
 
-    const stats = this.renderer.render(this.sim, alpha, Math.min(elapsed, 0.1), { aim: this.input.steering ? this.aim : null });
+    const frameDt = paused || help ? 0 : Math.min(elapsed, 0.1);
+    const stats = this.renderer.render(this.sim, alpha, frameDt, { aim: this.input.steering ? this.aim : null });
+    if (this.radar) drawRadar(this.radar, this.sim, this.clock);
 
     this.fpsFrames++;
     this.fpsTime += elapsed;
@@ -99,6 +152,7 @@ export class Game {
       this.fps = this.fpsFrames / this.fpsTime;
       this.fpsFrames = 0;
       this.fpsTime = 0;
+      this.adaptQuality(document.visibilityState === 'visible' && !paused && !help);
     }
     this.hudTimer += elapsed;
     if (this.hudTimer >= HUD_INTERVAL) {
@@ -108,25 +162,39 @@ export class Game {
         frameMs: elapsed * 1000,
         stepsPerFrame: this.stepsThisWindow / frames,
         drawCalls: stats.drawCalls,
+        triangles: stats.triangles,
       });
       this.hudTimer = 0;
       this.stepsThisWindow = 0;
     }
   }
 
-  private publish(frameStats?: { fps: number; frameMs: number; stepsPerFrame: number; drawCalls: number }): void {
+  private adaptQuality(measuring: boolean): void {
+    if (!this.autoQuality || !measuring) return;
+    this.slowTime = this.fps < 45 ? this.slowTime + 0.5 : 0;
+    const index = QUALITIES.indexOf(this.renderer.currentQuality);
+    if (this.slowTime >= 3 && index < QUALITIES.length - 1) {
+      this.renderer.setQuality(QUALITIES[index + 1]);
+      this.slowTime = 0;
+    }
+  }
+
+  private publish(frameStats?: { fps: number; frameMs: number; stepsPerFrame: number; drawCalls: number; triangles: number }): void {
     const telemetry = readTelemetry(this.sim.world, this.sim.playerId);
-    let beacon: { name: string; distance: number } | null = null;
+    let station: { name: string; distance: number } | null = null;
     if (telemetry) {
-      for (const candidate of this.sim.world.beacons.values()) {
-        const distance = Math.hypot(candidate.position.x - telemetry.position.x, candidate.position.y - telemetry.position.y);
-        if (!beacon || distance < beacon.distance) beacon = { name: candidate.name, distance };
+      for (const [id, candidate] of this.sim.world.stations) {
+        const p = this.sim.world.bodies.get(id)!.position;
+        const distance = Math.hypot(p.x - telemetry.position.x, p.y - telemetry.position.y);
+        if (!station || distance < station.distance) station = { name: candidate.name, distance };
       }
     }
     const previous = this.store.getSnapshot().stats;
     this.store.update({
       telemetry,
-      beacon,
+      station,
+      proximity: nearestObstacle(this.sim.world, this.sim.playerId),
+      hits: this.hits,
       steering: this.input.steering,
       braking: this.input.isHeld('Space'),
       stats: {
@@ -136,6 +204,8 @@ export class Game {
         droppedSeconds: this.droppedTotal,
         entities: this.sim.world.entityCount,
         zoom: this.renderer.rig.zoomLevel,
+        quality: this.renderer.currentQuality,
+        autoQuality: this.autoQuality,
       },
     });
   }
