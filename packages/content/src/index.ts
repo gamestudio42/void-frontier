@@ -1,7 +1,10 @@
 import { z } from 'zod';
 import asteroidData from '../data/asteroids.json';
 import contractData from '../data/contracts.json';
+import anomalyZoneData from '../data/anomaly-zone.json';
+import industrialBeltData from '../data/industrial-belt.json';
 import outpostAlphaData from '../data/outpost-alpha.json';
+import pirateTerritoryData from '../data/pirate-territory.json';
 import physicsData from '../data/physics.json';
 import resourceData from '../data/resources.json';
 import shipData from '../data/ships.json';
@@ -44,6 +47,13 @@ export const CONTRACT_RULES: ContractRules = contractRulesSchema.parse(contractD
 export const COLLISION_RULES: CollisionRules = collisionRulesSchema.parse(physicsData);
 export const OUTPOST_ALPHA: SectorDefinition = sectorDefinitionSchema.parse(outpostAlphaData);
 
+/** Every sector, keyed by id. Outpost Alpha is where a new game starts. */
+export const SECTORS: ReadonlyMap<string, SectorDefinition> = byId(
+  [outpostAlphaData, industrialBeltData, pirateTerritoryData, anomalyZoneData].map((data) => sectorDefinitionSchema.parse(data)),
+);
+
+export const getSector = (id: string): SectorDefinition => lookup(SECTORS, 'sector', id);
+
 function lookup<T>(map: ReadonlyMap<string, T>, kind: string, id: string): T {
   const item = map.get(id);
   if (!item) throw new Error(`Unknown ${kind} definition: ${id}`);
@@ -74,11 +84,19 @@ export function validateSector(sector: SectorDefinition): void {
     for (const type of Object.keys(field.types)) getAsteroidType(type);
   }
   for (const encounter of sector.encounters) getShip(encounter.ship);
+  for (const poi of sector.pointsOfInterest) getResource(poi.reward.resource);
   for (const drop of sector.dropPoints) {
     if (!sector.beacons.some((b) => b.id === drop.beacon)) throw new Error(`Drop point ${drop.id} names unknown beacon ${drop.beacon}`);
   }
 }
 
-validateSector(OUTPOST_ALPHA);
+for (const sector of SECTORS.values()) {
+  validateSector(sector);
+  // Gates come in pairs: the far end must exist and lead back here.
+  for (const gate of sector.gates) {
+    const far = getSector(gate.to).gates.find((g) => g.id === gate.toGate);
+    if (!far || far.to !== sector.id || far.toGate !== gate.id) throw new Error(`Gate ${gate.id} has no matching gate ${gate.toGate} in ${gate.to}`);
+  }
+}
 getResource(CONTRACT_RULES.delivery.cargo);
 for (const resource of Object.keys(CONTRACT_RULES.mining.resources)) getResource(resource);

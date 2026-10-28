@@ -18,3 +18,5 @@ export * from './mining.ts';
 export * from './station.ts';
 export * from './missions.ts';
 export * from './save.ts';
+export * from './exploration.ts';
+export * from './sector.ts';

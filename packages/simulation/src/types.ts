@@ -169,6 +169,7 @@ export type SimEvent =
     }
   | { type: 'shipDestroyed'; id: EntityId; position: { x: number; y: number }; by: EntityId | null }
   | { type: 'contract'; id: number; kind: 'delivery' | 'mining' | 'bounty'; outcome: 'completed' | 'failed' | 'abandoned'; reward: number }
+  | { type: 'discovered'; id: string; kind: 'derelict' | 'deposit' | 'cache'; credits: number }
   | { type: 'docked'; ship: EntityId; station: EntityId }
   | { type: 'undocked'; ship: EntityId; station: EntityId }
   | { type: 'scan'; owner: EntityId; position: { x: number; y: number }; range: number; found: number }

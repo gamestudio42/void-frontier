@@ -194,5 +194,68 @@
       "range": 0,
       "collectRadius": 12
     }
+  },
+  {
+    "id": "marauder",
+    "class": "frigate",
+    "hull": {
+      "integrity": 1300,
+      "dryMass": 16000,
+      "length": 22,
+      "collisionRadius": 9,
+      "armor": 0.25
+    },
+    "movement": {
+      "mainThrust": 220000,
+      "reverseThrust": 110000,
+      "lateralThrust": 80000,
+      "rotationalTorque": 700000,
+      "gyrationRadius": 5,
+      "maxAngularVelocity": 1.2,
+      "boostMultiplier": 1.3,
+      "boostFuelMultiplier": 2.5
+    },
+    "fuel": {
+      "capacity": 900,
+      "consumptionPerMegaNewtonSecond": 10
+    },
+    "cargo": {
+      "maxMass": 4000,
+      "maxVolume": 20
+    },
+    "shield": {
+      "capacity": 450,
+      "rechargeRate": 25,
+      "rechargeDelay": 5
+    },
+    "reactor": {
+      "capacity": 120,
+      "rechargeRate": 14
+    },
+    "sensors": {
+      "range": 1100,
+      "scanRange": 600,
+      "scanCooldown": 6
+    },
+    "tractor": {
+      "range": 0,
+      "collectRadius": 12
+    },
+    "hardpoints": [
+      {
+        "id": "gun_left",
+        "x": 8,
+        "y": -3,
+        "weapon": "pirate_autocannon",
+        "group": "primary"
+      },
+      {
+        "id": "gun_right",
+        "x": 8,
+        "y": 3,
+        "weapon": "pirate_autocannon",
+        "group": "primary"
+      }
+    ]
   }
 ]

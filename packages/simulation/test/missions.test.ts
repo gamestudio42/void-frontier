@@ -8,14 +8,17 @@ function sector() {
   return { sim, board: sim.missions!, id: sim.playerId };
 }
 
-/** Puts a specific kind of offer on the board (regenerating until one appears). */
-function offerOf(sim: Simulation, kind: Contract['kind']): Contract {
+const HOME = 'outpost_alpha_station';
+const local = (sim: Simulation) => sim.missions!.offers[HOME];
+
+/** Puts a specific kind of offer on the home board (regenerating until one appears). */
+function offerOf(sim: Simulation, kind: Contract['kind'], where: 'drop' | 'station' = 'drop'): Contract {
   const board = sim.missions!;
-  for (let i = 0; i < 200; i++) {
-    const found = board.offers.find((o) => o.kind === kind);
+  for (let i = 0; i < 400; i++) {
+    const found = local(sim).find((o) => o.kind === kind && (kind !== 'delivery' || (where === 'drop' ? !!o.delivery!.drop : !!o.delivery!.station)));
     if (found) return found;
-    board.offers.shift();
-    sim.missions!.refreshTick = 0;
+    local(sim).shift();
+    board.refreshTick = 0;
     sim.step();
   }
   throw new Error(`no ${kind} offer`);
@@ -25,30 +28,35 @@ describe('contract board', () => {
   it('opens with a full board of offers, the same for the same seed', () => {
     const a = sector();
     const b = sector();
-    expect(a.board.offers).toHaveLength(CONTRACT_RULES.offerSlots);
+    expect(a.board.offers[HOME]).toHaveLength(CONTRACT_RULES.offerSlots);
     expect(JSON.stringify(a.board.offers)).toBe(JSON.stringify(b.board.offers));
   });
 
   it('caps active contracts and only accepts while docked', () => {
     const { sim, board } = sector();
     for (let i = 0; i < CONTRACT_RULES.maxActive; i++) {
-      const offer = board.offers.find((o) => o.kind !== 'delivery')!;
+      const offer = offerOf(sim, i % 2 ? 'mining' : 'bounty');
       expect(sim.acceptContract(offer.id)).toEqual({ ok: true });
     }
-    expect(sim.acceptContract(board.offers[0].id)).toEqual({ ok: false, reason: 'tooMany' });
+    expect(sim.acceptContract(local(sim)[0].id)).toEqual({ ok: false, reason: 'tooMany' });
     sim.undock(sim.playerId);
     sim.abandonContract(board.active[0].id);
-    expect(sim.acceptContract(board.offers[0].id)).toEqual({ ok: false, reason: 'notDocked' });
+    expect(sim.acceptContract(local(sim)[0].id)).toEqual({ ok: false, reason: 'notDocked' });
   });
 });
 
 describe('delivery', () => {
   it('loads sealed crates, then pays when the ship stops at the drop point', () => {
     const { sim, board, id } = sector();
-    const offer = offerOf(sim, 'delivery');
+    let offer = offerOf(sim, 'delivery');
+    for (let i = 0; i < 50 && board.drops.find((d) => d.id === offer.delivery!.drop)!.sector !== 'outpost_alpha'; i++) {
+      local(sim).splice(local(sim).indexOf(offer), 1);
+      offer = offerOf(sim, 'delivery');
+    }
     expect(sim.acceptContract(offer.id)).toEqual({ ok: true });
     expect(ship(sim, id).cargo.get(CONTRACT_RULES.delivery.cargo)).toBe(offer.delivery!.units);
     const drop = board.drops.find((d) => d.id === offer.delivery!.drop)!;
+    if (drop.sector !== 'outpost_alpha') return; // cross-sector drops are covered in sector tests
     sim.undock(id);
     const credits = sim.world.credits;
 
@@ -122,16 +130,16 @@ describe('bounties', () => {
 describe('reputation', () => {
   it('raises payouts and unlocks elite contracts', () => {
     const { sim, board } = sector();
-    const offer = board.offers[0];
+    const offer = local(sim)[0];
     const base = payout(board, offer);
     board.reputation = 40;
     expect(payout(board, offer)).toBeGreaterThan(base);
     const elites = [];
     for (let i = 0; i < 60; i++) {
-      board.offers.shift();
+      local(sim).shift();
       board.refreshTick = 0;
       sim.step();
-      elites.push(...board.offers.filter((o) => o.elite));
+      elites.push(...local(sim).filter((o) => o.elite));
     }
     expect(elites.length).toBeGreaterThan(0);
   });
@@ -154,10 +162,10 @@ describe('losing the ship', () => {
     sim.acceptContract(bounty.id);
     ship(sim, id).kills += 1;
     sim.run(600);
-    const remaining = board.active.find((c) => c.id === bounty.id)!.deadlineTick - sim.world.tick;
-    const next = carryBoard(board, sim.world.tick, ship(sim, id).kills);
+    const deadline = board.active.find((c) => c.id === bounty.id)!.deadlineTick;
+    const next = carryBoard(board, ship(sim, id).kills);
     expect(next.active.map((c) => c.kind)).toEqual(['bounty']);
-    expect(next.active[0].deadlineTick).toBe(remaining);
+    expect(next.active[0].deadlineTick).toBe(deadline);
     const fresh = Simulation.fromSector(OUTPOST_ALPHA);
     fresh.missions = next;
     expect(contractProgress(fresh.world, next, fresh.playerId, next.active[0]).current).toBe(1);

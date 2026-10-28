@@ -212,6 +212,278 @@
       "reinforced_hull",
       "cargo_frame",
       "shield_capacitor"
+    ],
+    "faction": "outpost"
+  },
+  {
+    "id": "refinery",
+    "faction": "outpost",
+    "modules": [
+      {
+        "kind": "core",
+        "x": 0,
+        "y": 0,
+        "r": 46
+      },
+      {
+        "kind": "tank",
+        "x": 70,
+        "y": 70,
+        "r": 28
+      },
+      {
+        "kind": "tank",
+        "x": 70,
+        "y": -70,
+        "r": 28
+      },
+      {
+        "kind": "tank",
+        "x": 130,
+        "y": 0,
+        "r": 24
+      },
+      {
+        "kind": "truss",
+        "from": [
+          -40,
+          0
+        ],
+        "to": [
+          -176,
+          0
+        ],
+        "width": 12
+      },
+      {
+        "kind": "dock",
+        "x": -212,
+        "y": 0,
+        "angle": 3.141592653589793,
+        "width": 44,
+        "depth": 34
+      },
+      {
+        "kind": "truss",
+        "from": [
+          0,
+          44
+        ],
+        "to": [
+          0,
+          240
+        ],
+        "width": 10
+      },
+      {
+        "kind": "truss",
+        "from": [
+          0,
+          -44
+        ],
+        "to": [
+          0,
+          -240
+        ],
+        "width": 10
+      },
+      {
+        "kind": "panel",
+        "from": [
+          0,
+          90
+        ],
+        "to": [
+          0,
+          230
+        ],
+        "width": 56
+      },
+      {
+        "kind": "panel",
+        "from": [
+          0,
+          -90
+        ],
+        "to": [
+          0,
+          -230
+        ],
+        "width": 56
+      },
+      {
+        "kind": "truss",
+        "from": [
+          150,
+          0
+        ],
+        "to": [
+          260,
+          0
+        ],
+        "width": 9
+      },
+      {
+        "kind": "tank",
+        "x": 272,
+        "y": 0,
+        "r": 16
+      }
+    ],
+    "docking": {
+      "maxDistance": 12,
+      "maxRelativeSpeed": 3,
+      "maxAngle": 15,
+      "hostileClearance": 450
+    },
+    "services": {
+      "repairPerHull": 1.2,
+      "fuelPerKg": 0.9
+    },
+    "market": [
+      {
+        "resource": "iron_ore",
+        "stock": 120,
+        "baseStock": 500,
+        "buys": true,
+        "sells": false
+      },
+      {
+        "resource": "copper_ore",
+        "stock": 90,
+        "baseStock": 400,
+        "buys": true,
+        "sells": false
+      },
+      {
+        "resource": "titanium_ore",
+        "stock": 60,
+        "baseStock": 200,
+        "buys": true,
+        "sells": true
+      },
+      {
+        "resource": "platinum_ore",
+        "stock": 30,
+        "baseStock": 80,
+        "buys": true,
+        "sells": false
+      },
+      {
+        "resource": "salvage",
+        "stock": 60,
+        "baseStock": 100,
+        "buys": true,
+        "sells": false
+      },
+      {
+        "resource": "machine_parts",
+        "stock": 600,
+        "baseStock": 600,
+        "buys": false,
+        "sells": true
+      }
+    ],
+    "upgrades": [
+      "engine_tuning",
+      "cargo_frame"
     ]
+  },
+  {
+    "id": "pirate_den",
+    "faction": "pirate",
+    "modules": [
+      {
+        "kind": "core",
+        "x": 0,
+        "y": 0,
+        "r": 30
+      },
+      {
+        "kind": "ring",
+        "r": 80,
+        "thickness": 10
+      },
+      {
+        "kind": "truss",
+        "from": [
+          24,
+          0
+        ],
+        "to": [
+          76,
+          0
+        ],
+        "width": 7
+      },
+      {
+        "kind": "truss",
+        "from": [
+          -24,
+          0
+        ],
+        "to": [
+          -76,
+          0
+        ],
+        "width": 7
+      },
+      {
+        "kind": "tank",
+        "x": 0,
+        "y": 120,
+        "r": 18
+      },
+      {
+        "kind": "tank",
+        "x": 0,
+        "y": -120,
+        "r": 18
+      },
+      {
+        "kind": "truss",
+        "from": [
+          0,
+          30
+        ],
+        "to": [
+          0,
+          104
+        ],
+        "width": 6
+      },
+      {
+        "kind": "truss",
+        "from": [
+          0,
+          -30
+        ],
+        "to": [
+          0,
+          -104
+        ],
+        "width": 6
+      },
+      {
+        "kind": "dock",
+        "x": 122,
+        "y": 0,
+        "angle": 0,
+        "width": 40,
+        "depth": 30
+      }
+    ],
+    "docking": {
+      "maxDistance": 12,
+      "maxRelativeSpeed": 3,
+      "maxAngle": 15,
+      "hostileClearance": 0
+    },
+    "services": {
+      "repairPerHull": 3,
+      "fuelPerKg": 3
+    },
+    "market": [],
+    "upgrades": []
   }
 ]

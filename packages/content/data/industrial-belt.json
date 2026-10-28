@@ -1,0 +1,200 @@
+{
+  "id": "industrial_belt",
+  "name": "industrial_belt",
+  "seed": 4242,
+  "playerShip": "kestrel",
+  "playerStart": {
+    "x": -300,
+    "y": 0,
+    "heading": 90
+  },
+  "mapPosition": {
+    "x": -1,
+    "y": 0.6
+  },
+  "environment": {
+    "nebulaSeed": 4242,
+    "planet": {
+      "hue": 0.07,
+      "x": -9000,
+      "y": -11000,
+      "z": -6000,
+      "radius": 3000
+    }
+  },
+  "stations": [
+    {
+      "id": "ferrum_refinery",
+      "definition": "refinery",
+      "x": 0,
+      "y": 0,
+      "angle": 0
+    }
+  ],
+  "asteroidFields": [
+    {
+      "id": "belt_west",
+      "center": {
+        "x": -900,
+        "y": 900
+      },
+      "radius": 500,
+      "count": 260,
+      "minRadius": 3,
+      "maxRadius": 24,
+      "maxDrift": 1.2,
+      "types": {
+        "ferrous": 0.55,
+        "titanic": 0.3,
+        "platinum": 0.15
+      }
+    },
+    {
+      "id": "belt_mid",
+      "center": {
+        "x": 200,
+        "y": 1200
+      },
+      "radius": 550,
+      "count": 280,
+      "minRadius": 3,
+      "maxRadius": 28,
+      "maxDrift": 1.2,
+      "types": {
+        "ferrous": 0.45,
+        "titanic": 0.3,
+        "platinum": 0.15,
+        "cupric": 0.1
+      }
+    },
+    {
+      "id": "belt_east",
+      "center": {
+        "x": 1300,
+        "y": 900
+      },
+      "radius": 450,
+      "count": 200,
+      "minRadius": 3,
+      "maxRadius": 22,
+      "maxDrift": 1.2,
+      "types": {
+        "ferrous": 0.4,
+        "cupric": 0.3,
+        "titanic": 0.2,
+        "platinum": 0.1
+      }
+    },
+    {
+      "id": "belt_scatter",
+      "center": {
+        "x": 0,
+        "y": 0
+      },
+      "radius": 2400,
+      "count": 120,
+      "minRadius": 2,
+      "maxRadius": 12,
+      "maxDrift": 3,
+      "types": {
+        "ferrous": 0.7,
+        "cupric": 0.3
+      }
+    }
+  ],
+  "clearZones": [
+    {
+      "x": 0,
+      "y": 0,
+      "radius": 480
+    },
+    {
+      "x": -1600,
+      "y": 200,
+      "radius": 220
+    },
+    {
+      "x": 1500,
+      "y": -900,
+      "radius": 220
+    },
+    {
+      "x": 2100,
+      "y": 1800,
+      "radius": 120
+    }
+  ],
+  "beacons": [
+    {
+      "id": "belt_relay",
+      "x": -700,
+      "y": -700
+    }
+  ],
+  "dropPoints": [
+    {
+      "id": "belt_relay_drop",
+      "beacon": "belt_relay",
+      "risk": 1.1
+    }
+  ],
+  "encounters": [
+    {
+      "id": "belt_raiders",
+      "ship": "jackal",
+      "faction": "pirate",
+      "count": 2,
+      "spawn": {
+        "x": 1300,
+        "y": -500
+      },
+      "patrol": [
+        [
+          1300,
+          -500
+        ],
+        [
+          700,
+          -1100
+        ],
+        [
+          1700,
+          -200
+        ]
+      ],
+      "respawnDelay": 120
+    }
+  ],
+  "gates": [
+    {
+      "id": "belt_to_alpha",
+      "to": "outpost_alpha",
+      "toGate": "alpha_to_belt",
+      "x": -1600,
+      "y": 200
+    },
+    {
+      "id": "belt_to_pirate",
+      "to": "pirate_territory",
+      "toGate": "pirate_to_belt",
+      "x": 1500,
+      "y": -900
+    }
+  ],
+  "anomalies": [],
+  "pointsOfInterest": [
+    {
+      "id": "belt_hidden_deposit",
+      "kind": "deposit",
+      "x": 2100,
+      "y": 1800,
+      "reward": {
+        "credits": 300,
+        "resource": "platinum_ore",
+        "units": 20
+      }
+    }
+  ],
+  "startDocked": false,
+  "startingCredits": 0
+}

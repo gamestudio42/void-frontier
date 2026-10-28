@@ -1,0 +1,236 @@
+{
+  "id": "pirate_territory",
+  "name": "pirate_territory",
+  "seed": 6666,
+  "playerShip": "kestrel",
+  "playerStart": {
+    "x": -1300,
+    "y": 500,
+    "heading": 90
+  },
+  "mapPosition": {
+    "x": 0,
+    "y": 1.2
+  },
+  "environment": {
+    "nebulaSeed": 6666,
+    "planet": {
+      "hue": 0.98,
+      "x": 7000,
+      "y": -10000,
+      "z": 5000,
+      "radius": 2600
+    }
+  },
+  "stations": [
+    {
+      "id": "black_harbour",
+      "definition": "pirate_den",
+      "x": 400,
+      "y": 200,
+      "angle": 0
+    }
+  ],
+  "asteroidFields": [
+    {
+      "id": "wreck_field",
+      "center": {
+        "x": -200,
+        "y": -900
+      },
+      "radius": 600,
+      "count": 200,
+      "minRadius": 3,
+      "maxRadius": 20,
+      "maxDrift": 2,
+      "types": {
+        "ferrous": 0.6,
+        "titanic": 0.25,
+        "platinum": 0.15
+      }
+    },
+    {
+      "id": "pirate_scatter",
+      "center": {
+        "x": 0,
+        "y": 0
+      },
+      "radius": 2300,
+      "count": 140,
+      "minRadius": 2,
+      "maxRadius": 16,
+      "maxDrift": 3,
+      "types": {
+        "ferrous": 0.6,
+        "cupric": 0.3,
+        "titanic": 0.1
+      }
+    }
+  ],
+  "clearZones": [
+    {
+      "x": 400,
+      "y": 200,
+      "radius": 320
+    },
+    {
+      "x": -1500,
+      "y": 600,
+      "radius": 220
+    },
+    {
+      "x": 1400,
+      "y": -600,
+      "radius": 220
+    },
+    {
+      "x": -1000,
+      "y": -1500,
+      "radius": 120
+    },
+    {
+      "x": 1100,
+      "y": 1300,
+      "radius": 120
+    },
+    {
+      "x": -600,
+      "y": 1300,
+      "radius": 150
+    }
+  ],
+  "beacons": [
+    {
+      "id": "smugglers_mark",
+      "x": -600,
+      "y": 1300
+    }
+  ],
+  "dropPoints": [
+    {
+      "id": "smugglers_drop",
+      "beacon": "smugglers_mark",
+      "risk": 1.8
+    }
+  ],
+  "encounters": [
+    {
+      "id": "den_guard",
+      "ship": "marauder",
+      "faction": "pirate",
+      "count": 1,
+      "spawn": {
+        "x": 700,
+        "y": 500
+      },
+      "patrol": [
+        [
+          700,
+          500
+        ],
+        [
+          100,
+          -300
+        ],
+        [
+          900,
+          -200
+        ]
+      ],
+      "respawnDelay": 150
+    },
+    {
+      "id": "den_raiders",
+      "ship": "jackal",
+      "faction": "pirate",
+      "count": 3,
+      "spawn": {
+        "x": -200,
+        "y": -400
+      },
+      "patrol": [
+        [
+          -200,
+          -400
+        ],
+        [
+          -900,
+          200
+        ],
+        [
+          500,
+          800
+        ]
+      ],
+      "respawnDelay": 90
+    },
+    {
+      "id": "gate_watch",
+      "ship": "jackal",
+      "faction": "pirate",
+      "count": 2,
+      "spawn": {
+        "x": 1000,
+        "y": -300
+      },
+      "patrol": [
+        [
+          1000,
+          -300
+        ],
+        [
+          1300,
+          -900
+        ],
+        [
+          600,
+          -800
+        ]
+      ],
+      "respawnDelay": 100
+    }
+  ],
+  "gates": [
+    {
+      "id": "pirate_to_belt",
+      "to": "industrial_belt",
+      "toGate": "belt_to_pirate",
+      "x": -1500,
+      "y": 600
+    },
+    {
+      "id": "pirate_to_anomaly",
+      "to": "anomaly_zone",
+      "toGate": "anomaly_to_pirate",
+      "x": 1400,
+      "y": -600
+    }
+  ],
+  "anomalies": [],
+  "pointsOfInterest": [
+    {
+      "id": "smugglers_cache",
+      "kind": "cache",
+      "x": -1000,
+      "y": -1500,
+      "reward": {
+        "credits": 600,
+        "resource": "machine_parts",
+        "units": 30
+      }
+    },
+    {
+      "id": "gunship_wreck",
+      "kind": "derelict",
+      "x": 1100,
+      "y": 1300,
+      "reward": {
+        "credits": 400,
+        "resource": "salvage",
+        "units": 30
+      }
+    }
+  ],
+  "startDocked": false,
+  "startingCredits": 0
+}

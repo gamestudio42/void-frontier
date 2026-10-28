@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { ASTEROID_TYPES, OUTPOST_ALPHA, RESOURCES, SHIPS, STATIONS, getResource, getShip, getUpgrade, getWeapon, shipDefinitionSchema, validateSector } from '../src/index.ts';
+import { ASTEROID_TYPES, OUTPOST_ALPHA, RESOURCES, SECTORS, SHIPS, STATIONS, getResource, getShip, getUpgrade, getWeapon, shipDefinitionSchema, validateSector } from '../src/index.ts';
 
 describe('content', () => {
-  it('ships two player ships and one pirate for the vertical slice', () => {
-    expect(SHIPS.size).toBe(3);
+  it('ships two player ships and two pirate types', () => {
+    expect(SHIPS.size).toBe(4);
+    expect(getShip('marauder').class).toBe('frigate');
     expect(getShip('kestrel').class).toBe('scout');
     expect(getShip('mule').class).toBe('hauler');
     expect(getShip('jackal').class).toBe('interceptor');
@@ -21,8 +22,13 @@ describe('content', () => {
     expect(cannon.multipliers.hull).toBeGreaterThan(laser.multipliers.hull);
   });
 
-  it('defines three asteroid types for the three slice minerals', () => {
-    expect([...ASTEROID_TYPES.values()].map((t) => t.resource).sort()).toEqual(['copper_ore', 'iron_ore', 'titanium_ore']);
+  it('defines a rock type for each mined resource', () => {
+    expect([...ASTEROID_TYPES.values()].map((t) => t.resource).sort()).toEqual(['copper_ore', 'exotic_matter', 'iron_ore', 'platinum_ore', 'titanium_ore']);
+  });
+
+  it('links four sectors with paired gates', () => {
+    expect(SECTORS.size).toBe(4);
+    for (const sector of SECTORS.values()) expect(sector.gates.length).toBeGreaterThanOrEqual(2);
   });
 
   it('maps every rock type to a resource with mass and volume', () => {
@@ -35,15 +41,15 @@ describe('content', () => {
   });
 
   it('offers four upgrades and a market that trades every slice resource', () => {
-    const station = [...STATIONS.values()][0];
+    const station = STATIONS.get('outpost')!;
     expect(station.upgrades.map((u) => getUpgrade(u).cost).every((c) => c > 0)).toBe(true);
     expect(station.upgrades).toHaveLength(4);
     expect(station.market.map((m) => m.resource).sort()).toEqual(['copper_ore', 'iron_ore', 'machine_parts', 'salvage', 'titanium_ore']);
   });
 
-  it('has one station with a docking bay', () => {
-    expect(STATIONS.size).toBe(1);
-    expect([...STATIONS.values()][0].modules.some((m) => m.kind === 'dock')).toBe(true);
+  it('gives every station a docking bay', () => {
+    expect(STATIONS.size).toBe(3);
+    for (const station of STATIONS.values()) expect(station.modules.some((m) => m.kind === 'dock')).toBe(true);
   });
 
   it('references only existing definitions from the sector', () => {

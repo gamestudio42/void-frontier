@@ -28,9 +28,10 @@
     "seconds": 900,
     "repGain": 3,
     "resources": {
-      "iron_ore": 0.45,
-      "copper_ore": 0.35,
-      "titanium_ore": 0.2
+      "iron_ore": 0.35,
+      "copper_ore": 0.3,
+      "titanium_ore": 0.2,
+      "platinum_ore": 0.15
     }
   },
   "bounty": {

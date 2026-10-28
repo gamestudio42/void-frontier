@@ -24,6 +24,12 @@ export class World {
   spatial: SpatialIndex | null = null;
   /** Gameplay randomness (weapon spread, AI choices); seeded so runs replay exactly. */
   rng = new Rng(1);
+  /** Sector this world simulates. */
+  sectorId = '';
+  readonly gates = new Map<string, { id: string; to: string; toGate: string; position: { x: number; y: number } }>();
+  readonly anomalies: { id: string; position: { x: number; y: number }; radius: number; strength: number; coreRadius: number }[] = [];
+  /** Points of interest in this sector; `found` mirrors the global discovery log. */
+  readonly pointsOfInterest = new Map<string, { kind: 'derelict' | 'deposit' | 'cache'; position: { x: number; y: number }; reward: { credits: number; resource: string; units: number }; found: boolean }>();
   /** The player's money. */
   credits = 0;
   /** Things that happened this step; the owner drains them (sparks, sounds, HUD). */

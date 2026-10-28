@@ -4,7 +4,8 @@ import { spawnShip } from './ship.ts';
 import { aiSystem, encounterSystem, spawnEncounter } from './ai.ts';
 import { projectileSystem, weaponSystem } from './combat.ts';
 import { jettison, pickupSystem, scan, scanExpirySystem } from './mining.ts';
-import { abandonContract, acceptContract, createBoard, handInContract, missionSystem, type MissionBoard } from './missions.ts';
+import { gravitySystem, explorationSystem } from './exploration.ts';
+import { abandonContract, acceptContract, createBoard, fillOffers, handInContract, missionSystem, type MissionBoard } from './missions.ts';
 import { buyUpgrade, dockShip, marketSystem, requestDock, service, trade, undock } from './station.ts';
 import { collisionSystem } from './systems/collision.ts';
 import { flightControlSystem } from './systems/flightControl.ts';
@@ -32,10 +33,26 @@ export class Simulation {
     this.dt = dt;
   }
 
-  static fromSector(sector: SectorDefinition, dt = FIXED_DT): Simulation {
+  /**
+   * Builds a sector from its data. `board` carries the contract board across sectors;
+   * `startDocked` overrides the sector's own flag (arrivals by gate are never docked).
+   */
+  static fromSector(sector: SectorDefinition, dt = FIXED_DT, options: { board?: MissionBoard; startDocked?: boolean } = {}): Simulation {
     const sim = new Simulation(dt);
+    sim.world.sectorId = sector.id;
     const rng = new Rng(sector.seed);
     const occupied = sector.clearZones.map((zone) => ({ ...zone }));
+    for (const gate of sector.gates) {
+      sim.world.gates.set(gate.id, { id: gate.id, to: gate.to, toGate: gate.toGate, position: { x: gate.x, y: gate.y } });
+      occupied.push({ x: gate.x, y: gate.y, radius: 160 });
+    }
+    for (const well of sector.anomalies) {
+      sim.world.anomalies.push({ id: well.id, position: { x: well.x, y: well.y }, radius: well.radius, strength: well.strength, coreRadius: well.coreRadius });
+    }
+    for (const poi of sector.pointsOfInterest) {
+      sim.world.pointsOfInterest.set(poi.id, { kind: poi.kind, position: { x: poi.x, y: poi.y }, reward: { ...poi.reward }, found: false });
+      occupied.push({ x: poi.x, y: poi.y, radius: 60 });
+    }
     for (const station of sector.stations) {
       const id = spawnStation(sim.world, station.definition, station.id, { x: station.x, y: station.y }, toRadians(station.angle));
       occupied.push({ x: station.x, y: station.y, radius: sim.world.colliders.get(id)!.bound });
@@ -54,8 +71,9 @@ export class Simulation {
       sim.world.beacons.set(sim.world.createEntity(), { name: beacon.id, position: { x: beacon.x, y: beacon.y } });
     }
     sim.world.credits = sector.startingCredits;
-    sim.missions = createBoard(sector, sim.world);
-    if (sector.startDocked) {
+    sim.missions = options.board ?? createBoard();
+    fillOffers(sim.world, sim.missions);
+    if (options.startDocked ?? sector.startDocked) {
       const first = [...sim.world.stations.keys()][0];
       if (first !== undefined) dockShip(sim.world, sim.playerId, first);
       sim.drainEvents();
@@ -69,6 +87,7 @@ export class Simulation {
     aiSystem(this.world);
     flightControlSystem(this.world, this.dt);
     thrusterSystem(this.world, this.dt);
+    gravitySystem(this.world);
     integrationSystem(this.world, this.dt);
     collisionSystem(this.world, this.rules);
     weaponSystem(this.world, this.dt);
@@ -77,6 +96,7 @@ export class Simulation {
     scanExpirySystem(this.world);
     encounterSystem(this.world, this.dt);
     marketSystem(this.world, this.dt);
+    explorationSystem(this.world, this.playerId);
     if (this.missions) missionSystem(this.world, this.missions, this.playerId, this.dt);
     this.world.tick++;
   }

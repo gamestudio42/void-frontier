@@ -40,5 +40,19 @@
     "unitVolume": 0.4,
     "basePrice": 1,
     "color": "#ff9f43"
+  },
+  {
+    "id": "platinum_ore",
+    "unitMass": 110,
+    "unitVolume": 0.025,
+    "basePrice": 75,
+    "color": "#e8e3d4"
+  },
+  {
+    "id": "exotic_matter",
+    "unitMass": 20,
+    "unitVolume": 0.02,
+    "basePrice": 190,
+    "color": "#c77dff"
   }
 ]

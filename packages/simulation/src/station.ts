@@ -39,7 +39,7 @@ export function bayOf(world: World, stationId: EntityId): Bay | null {
   };
 }
 
-export type DockRefusal = 'tooFar' | 'tooFast' | 'misaligned' | 'hostiles' | 'destroyed';
+export type DockRefusal = 'tooFar' | 'tooFast' | 'misaligned' | 'hostiles' | 'destroyed' | 'hostileStation';
 
 export interface DockingStatus {
   station: EntityId;
@@ -71,6 +71,7 @@ export function dockingStatus(world: World, shipId: EntityId, range = 600): Dock
     const rules = station.definition.docking;
     const refusals: DockRefusal[] = [];
     if (ship.destroyed) refusals.push('destroyed');
+    if (station.definition.faction === 'pirate') refusals.push('hostileStation');
     if (distance > rules.maxDistance) refusals.push('tooFar');
     if (speed > rules.maxRelativeSpeed) refusals.push('tooFast');
     if (angleError > rules.maxAngle) refusals.push('misaligned');

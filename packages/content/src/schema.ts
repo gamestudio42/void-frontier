@@ -203,6 +203,8 @@ export type StationModule = z.infer<typeof stationModuleSchema>;
 
 export const stationDefinitionSchema = z.object({
   id: z.string(),
+  /** Pirate stations refuse docking. */
+  faction: z.enum(['outpost', 'pirate']),
   modules: z.array(stationModuleSchema).min(1),
   docking: z.object({
     /** metres from the bay centre */
@@ -283,8 +285,54 @@ export const asteroidFieldSchema = z.object({
 
 export type AsteroidFieldDefinition = z.infer<typeof asteroidFieldSchema>;
 
+export const gateSchema = z.object({
+  id: z.string(),
+  /** destination sector id and the gate you arrive at */
+  to: z.string(),
+  toGate: z.string(),
+  x: z.number(),
+  y: z.number(),
+});
+
+export const anomalySchema = z.object({
+  id: z.string(),
+  kind: z.literal('gravity'),
+  x: z.number(),
+  y: z.number(),
+  /** metres: no pull beyond this */
+  radius: positive,
+  /** m^3/s^2: acceleration = strength / distance^2 */
+  strength: positive,
+  /** metres: the pull stops growing inside this radius */
+  coreRadius: positive,
+});
+
+export const pointOfInterestSchema = z.object({
+  id: z.string(),
+  kind: z.enum(['derelict', 'deposit', 'cache']),
+  x: z.number(),
+  y: z.number(),
+  /** paid once, when first discovered */
+  reward: z.object({ credits: z.number().min(0), resource: z.string(), units: z.number().int().min(0) }),
+});
+
+export type GateDefinition = z.infer<typeof gateSchema>;
+export type AnomalyDefinition = z.infer<typeof anomalySchema>;
+export type PointOfInterest = z.infer<typeof pointOfInterestSchema>;
+
 export const sectorDefinitionSchema = z.object({
   id: z.string(),
+  /** i18n key suffix for the sector name */
+  name: z.string(),
+  /** position on the sector map, in map units */
+  mapPosition: z.object({ x: z.number(), y: z.number() }),
+  environment: z.object({
+    nebulaSeed: z.number().int(),
+    planet: z.object({ hue: z.number().min(0).max(1), x: z.number(), y: z.number(), z: z.number(), radius: positive }),
+  }),
+  gates: z.array(gateSchema),
+  anomalies: z.array(anomalySchema),
+  pointsOfInterest: z.array(pointOfInterestSchema),
   seed: z.number().int(),
   playerShip: z.string(),
   playerStart: z.object({ x: z.number(), y: z.number(), heading: z.number() }),

@@ -1,172 +1,100 @@
-import { CONTRACT_RULES, getShip, type SectorDefinition } from '@void-frontier/content';
-import { resizeRock, spawnPickup } from './mining.ts';
-import type { MissionBoard } from './missions.ts';
+import { getSector } from '@void-frontier/content';
+import { createBoard, type MissionBoard } from './missions.ts';
+import { applyPlayer, applySectorSnapshot, captureSector, capturePlayer, markDiscovered, type PlayerState, type SectorSnapshot } from './sector.ts';
 import { Simulation } from './simulation.ts';
-import { dockShip, installUpgrades, undock } from './station.ts';
-import type { FlightMode } from './types.ts';
 
 /** Bump when the save shape changes, and add a migration below. */
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
-type Vec = [number, number];
+/** The parts of the contract board that change; drops and stations come from content. */
+export type SavedBoard = Pick<MissionBoard, 'offers' | 'active' | 'history' | 'reputation' | 'nextId' | 'refreshTick'>;
 
 export interface SaveData {
   version: number;
+  /** Sector the player is in. */
   sector: string;
-  seed: number;
+  /** Simulation clock; it runs on across jumps, so contract deadlines stay valid. */
   tick: number;
   credits: number;
-  rng: [number, number, number, number];
-  player: {
-    ship: string;
-    upgrades: string[];
-    hull: number;
-    shield: number;
-    energy: number;
-    fuel: number;
-    cargo: [string, number][];
-    kills: number;
-    mode: FlightMode;
-    /** Index of the station in the sector, or null in flight. */
-    dockedAt: number | null;
-    position: Vec;
-    velocity: Vec;
-    angle: number;
-    angularVelocity: number;
-    scanReadyTick: number;
-  };
-  /** Every surviving rock by entity id: [id, x, y, vx, vy, angle, spin, ore, pendingOre]. Missing ids were mined out. */
-  asteroids: number[][];
-  /** Market stock per station, in sector order. */
-  markets: number[][];
-  pickups: { resource: string; units: number; position: Vec; velocity: Vec; life: number }[];
-  missions: Omit<MissionBoard, 'rules'> | null;
+  player: PlayerState;
+  /** What every visited sector remembers, including the current one. */
+  sectors: Record<string, SectorSnapshot>;
+  missions: SavedBoard | null;
+  /** Points of interest already found, in any sector. */
+  discovered: string[];
+}
+
+export interface GameState {
+  sim: Simulation;
+  memory: Record<string, SectorSnapshot>;
+  discovered: Set<string>;
 }
 
 /** A consistent snapshot of everything a player would miss. Pirates and rounds in flight are not kept. */
-export function serialize(sim: Simulation, sector: SectorDefinition): SaveData {
-  const world = sim.world;
-  const ship = world.ships.get(sim.playerId)!;
-  const body = world.bodies.get(sim.playerId)!;
-  const stationIds = [...world.stations.keys()];
-  const missions = sim.missions ? (({ rules: _rules, ...rest }) => structuredClone(rest))(sim.missions) : null;
+export function serialize(state: GameState): SaveData {
+  const { sim } = state;
+  const board = sim.missions;
   return {
     version: SAVE_VERSION,
-    sector: sector.id,
-    seed: sector.seed,
-    tick: world.tick,
-    credits: world.credits,
-    rng: world.rng.getState(),
-    player: {
-      ship: ship.baseDefinition.id,
-      upgrades: [...ship.upgrades],
-      hull: ship.hull,
-      shield: ship.shield,
-      energy: ship.energy,
-      fuel: ship.fuel,
-      cargo: [...ship.cargo.entries()],
-      kills: ship.kills,
-      mode: ship.mode,
-      dockedAt: ship.docked === null ? null : stationIds.indexOf(ship.docked),
-      position: [body.position.x, body.position.y],
-      velocity: [body.velocity.x, body.velocity.y],
-      angle: body.angle,
-      angularVelocity: body.angularVelocity,
-      scanReadyTick: ship.scanReadyTick,
-    },
-    asteroids: [...world.asteroids.entries()].map(([id, rock]) => {
-      const b = world.bodies.get(id)!;
-      return [id, b.position.x, b.position.y, b.velocity.x, b.velocity.y, b.angle, b.angularVelocity, rock.ore, rock.pendingOre];
-    }),
-    markets: stationIds.map((id) => world.stations.get(id)!.market.map((item) => item.stock)),
-    pickups: [...world.pickups.values()].map((p) => ({
-      resource: p.resource,
-      units: p.units,
-      position: [p.position.x, p.position.y],
-      velocity: [p.velocity.x, p.velocity.y],
-      life: p.life,
-    })),
-    missions,
+    sector: sim.world.sectorId,
+    tick: sim.world.tick,
+    credits: sim.world.credits,
+    player: capturePlayer(sim),
+    sectors: { ...structuredClone(state.memory), [sim.world.sectorId]: captureSector(sim) },
+    missions: board
+      ? structuredClone({ offers: board.offers, active: board.active, history: board.history, reputation: board.reputation, nextId: board.nextId, refreshTick: board.refreshTick })
+      : null,
+    discovered: [...state.discovered].sort(),
   };
 }
 
-/** Rebuilds the sector from its seed, then applies the saved state on top. */
-export function restore(sector: SectorDefinition, data: SaveData): Simulation {
-  if (data.sector !== sector.id || data.seed !== sector.seed) throw new Error('Save belongs to another sector');
-  const sim = Simulation.fromSector(sector);
-  const world = sim.world;
-  world.tick = data.tick;
-  world.credits = data.credits;
-  world.rng.setState(data.rng);
-
-  const id = sim.playerId;
-  const ship = world.ships.get(id)!;
-  if (ship.baseDefinition.id !== data.player.ship) throw new Error(`Unknown player ship in save: ${data.player.ship}`);
-  getShip(data.player.ship);
-  installUpgrades(world, id, data.player.upgrades);
-  Object.assign(ship, {
-    hull: data.player.hull,
-    shield: data.player.shield,
-    energy: data.player.energy,
-    fuel: data.player.fuel,
-    cargo: new Map(data.player.cargo),
-    kills: data.player.kills,
-    mode: data.player.mode,
-    scanReadyTick: data.player.scanReadyTick,
-  });
-  const stationIds = [...world.stations.keys()];
-  if (data.player.dockedAt === null) {
-    if (ship.docked !== null) undock(world, id);
-    const body = world.bodies.get(id)!;
-    body.position = { x: data.player.position[0], y: data.player.position[1] };
-    body.previousPosition = { ...body.position };
-    body.velocity = { x: data.player.velocity[0], y: data.player.velocity[1] };
-    body.angle = data.player.angle;
-    body.previousAngle = body.angle;
-    body.angularVelocity = data.player.angularVelocity;
-  } else if (ship.docked !== stationIds[data.player.dockedAt]) {
-    if (ship.docked !== null) undock(world, id);
-    dockShip(world, id, stationIds[data.player.dockedAt]);
+/** Rebuilds the current sector from its seed, then applies the saved state on top. */
+export function restore(data: SaveData): GameState {
+  const sector = getSector(data.sector);
+  const board = createBoard();
+  if (data.missions) {
+    const m = structuredClone(data.missions);
+    Object.assign(board, { offers: m.offers, active: m.active, history: m.history, reputation: m.reputation, nextId: m.nextId, refreshTick: m.refreshTick });
   }
-
-  const saved = new Map(data.asteroids.map((row) => [row[0], row]));
-  for (const rockId of [...world.asteroids.keys()]) {
-    const row = saved.get(rockId);
-    if (!row) {
-      world.destroyEntity(rockId);
-      continue;
-    }
-    const [, x, y, vx, vy, angle, spin, ore, pending] = row;
-    const body = world.bodies.get(rockId)!;
-    body.position = { x, y };
-    body.previousPosition = { x, y };
-    body.velocity = { x: vx, y: vy };
-    body.angle = angle;
-    body.previousAngle = angle;
-    body.angularVelocity = spin;
-    const rock = world.asteroids.get(rockId)!;
-    rock.ore = ore;
-    rock.pendingOre = pending;
-    resizeRock(world, rockId);
-  }
-
-  data.markets.forEach((stocks, index) => {
-    const station = world.stations.get(stationIds[index]);
-    station?.market.forEach((item, i) => {
-      if (stocks[i] !== undefined) item.stock = stocks[i];
-    });
-  });
-  for (const p of data.pickups) {
-    const pickupId = spawnPickup(world, p.resource, p.units, { x: p.position[0], y: p.position[1] }, { x: p.velocity[0], y: p.velocity[1] });
-    world.pickups.get(pickupId)!.life = p.life;
-  }
-  if (data.missions) sim.missions = { ...structuredClone(data.missions), rules: CONTRACT_RULES };
-  world.events.length = 0;
-  return sim;
+  const sim = Simulation.fromSector(sector, undefined, { board, startDocked: false });
+  sim.world.tick = data.tick;
+  sim.world.credits = data.credits;
+  const memory = structuredClone(data.sectors);
+  const current = memory[data.sector];
+  if (current) applySectorSnapshot(sim, current);
+  delete memory[data.sector];
+  const discovered = new Set(data.discovered);
+  markDiscovered(sim, discovered);
+  applyPlayer(sim, data.player);
+  sim.world.events.length = 0;
+  return { sim, memory, discovered };
 }
 
 /** Upgrades older saves step by step. Each entry turns version n into n + 1. */
-const MIGRATIONS: Record<number, (data: Record<string, unknown>) => Record<string, unknown>> = {};
+const MIGRATIONS: Record<number, (data: Record<string, unknown>) => Record<string, unknown>> = {
+  // 1 → 2: one sector became many. The single sector's state moves under `sectors`,
+  // contracts learn which station issued them and which sector they deliver to.
+  1: (v1) => {
+    const sector = v1.sector as string;
+    const tag = (contract: Record<string, unknown>) => ({
+      ...contract,
+      issuer: 'outpost_alpha_station',
+      ...(contract.delivery ? { delivery: { ...(contract.delivery as object), sector } } : {}),
+    });
+    const missions = v1.missions as { offers: Record<string, unknown>[]; active: Record<string, unknown>[] } | null;
+    return {
+      sector,
+      tick: v1.tick,
+      credits: v1.credits,
+      player: v1.player,
+      sectors: { [sector]: { rng: v1.rng, asteroids: v1.asteroids, markets: v1.markets, pickups: v1.pickups } },
+      missions: missions
+        ? { ...missions, offers: { outpost_alpha_station: missions.offers.map(tag) }, active: missions.active.map(tag) }
+        : null,
+      discovered: [],
+    };
+  },
+};
 
 export function migrate(raw: unknown): SaveData {
   if (!raw || typeof raw !== 'object' || typeof (raw as { version?: unknown }).version !== 'number') throw new Error('Not a Void Frontier save');

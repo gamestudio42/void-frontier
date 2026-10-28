@@ -34,5 +34,29 @@
       "roughness": 0.6
     },
     "oreUnitsPerSquareMetre": 0.35
+  },
+  {
+    "id": "platinum",
+    "resource": "platinum_ore",
+    "density": 5200,
+    "oreUnitsPerSquareMetre": 0.18,
+    "look": {
+      "base": "#5e5c58",
+      "vein": "#f2ead2",
+      "metalness": 0.6,
+      "roughness": 0.45
+    }
+  },
+  {
+    "id": "exotic",
+    "resource": "exotic_matter",
+    "density": 2200,
+    "oreUnitsPerSquareMetre": 0.08,
+    "look": {
+      "base": "#2a2433",
+      "vein": "#c77dff",
+      "metalness": 0.3,
+      "roughness": 0.35
+    }
   }
 ]

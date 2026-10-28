@@ -89,6 +89,21 @@
       "x": 1900,
       "y": 300,
       "radius": 120
+    },
+    {
+      "x": -1700,
+      "y": -400,
+      "radius": 220
+    },
+    {
+      "x": 1800,
+      "y": -1500,
+      "radius": 220
+    },
+    {
+      "x": -1250,
+      "y": -1150,
+      "radius": 120
     }
   ],
   "beacons": [
@@ -177,6 +192,51 @@
       "id": "gate_relay",
       "beacon": "gate",
       "risk": 1.45
+    }
+  ],
+  "name": "outpost_alpha",
+  "mapPosition": {
+    "x": 0,
+    "y": 0
+  },
+  "environment": {
+    "nebulaSeed": 1337,
+    "planet": {
+      "hue": 0.58,
+      "x": 9000,
+      "y": -12000,
+      "z": -9500,
+      "radius": 2300
+    }
+  },
+  "gates": [
+    {
+      "id": "alpha_to_belt",
+      "to": "industrial_belt",
+      "toGate": "belt_to_alpha",
+      "x": -1700,
+      "y": -400
+    },
+    {
+      "id": "alpha_to_anomaly",
+      "to": "anomaly_zone",
+      "toGate": "anomaly_to_alpha",
+      "x": 1800,
+      "y": -1500
+    }
+  ],
+  "anomalies": [],
+  "pointsOfInterest": [
+    {
+      "id": "alpha_wreck",
+      "kind": "derelict",
+      "x": -1250,
+      "y": -1150,
+      "reward": {
+        "credits": 250,
+        "resource": "salvage",
+        "units": 16
+      }
     }
   ]
 }
