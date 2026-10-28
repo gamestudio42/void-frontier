@@ -88,7 +88,6 @@ interface Slot {
   mesh: InstancedMesh;
   index: number;
   tilt: Quaternion;
-  scale: number;
   lift: number;
 }
 
@@ -133,7 +132,7 @@ export class AsteroidRenderer {
         const tilt = new Quaternion().setFromEuler(new Euler(rand() * Math.PI * 2, rand() * Math.PI * 2, rand() * Math.PI * 2));
         const shade = 0.85 + rand() * 0.3;
         mesh.setColorAt(index, new Color(shade, shade, shade));
-        this.slots.set(id, { mesh, index, tilt, scale: rock.radius, lift: (rand() - 0.5) * Math.min(14, rock.radius) });
+        this.slots.set(id, { mesh, index, tilt, lift: (rand() - 0.5) * Math.min(14, rock.radius) });
       });
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
       scene.add(mesh);
@@ -144,7 +143,14 @@ export class AsteroidRenderer {
   update(world: World, alpha: number): void {
     for (const [id, slot] of this.slots) {
       const body = world.bodies.get(id);
-      if (!body) continue;
+      const rock = world.asteroids.get(id);
+      if (!body || !rock) {
+        // Mined out: collapse the instance and forget it.
+        this.matrix.makeScale(0, 0, 0);
+        slot.mesh.setMatrixAt(slot.index, this.matrix);
+        this.slots.delete(id);
+        continue;
+      }
       const x = body.previousPosition.x + (body.position.x - body.previousPosition.x) * alpha;
       const y = body.previousPosition.y + (body.position.y - body.previousPosition.y) * alpha;
       // The sim spins rocks in the plane; around a tilted axis it reads as a tumble.
@@ -154,7 +160,7 @@ export class AsteroidRenderer {
       this.spin.setFromAxisAngle(this.up, body.previousAngle + delta * alpha);
       this.rotation.copy(this.spin).multiply(slot.tilt);
       this.position.set(x, slot.lift, -y);
-      this.scaleVector.setScalar(slot.scale);
+      this.scaleVector.setScalar(rock.radius);
       this.matrix.compose(this.position, this.rotation, this.scaleVector);
       slot.mesh.setMatrixAt(slot.index, this.matrix);
     }

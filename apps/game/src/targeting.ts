@@ -1,3 +1,4 @@
+import { getResource } from '@void-frontier/content';
 import { hostilesNear, readTarget, type Simulation } from '@void-frontier/simulation';
 import type { SpaceRenderer } from '@void-frontier/view3d';
 
@@ -27,6 +28,34 @@ export function drawTargeting(
   ctx.clearRect(0, 0, width, height);
   const me = sim.world.ships.get(sim.playerId);
   if (!me || me.destroyed) return;
+
+  // Scanner readings: composition tags on revealed rocks that are on screen.
+  ctx.font = '600 10.5px ui-monospace, Menlo, Consolas, monospace';
+  ctx.textAlign = 'left';
+  const myBody = sim.world.bodies.get(sim.playerId)!;
+  for (const id of sim.world.scanned.keys()) {
+    const rock = sim.world.asteroids.get(id);
+    const body = sim.world.bodies.get(id);
+    if (!rock || !body) continue;
+    // Label only rocks worth flying to: close ones, or big ones further out.
+    const d = Math.hypot(body.position.x - myBody.position.x, body.position.y - myBody.position.y);
+    if (d > 350 && rock.ore < 150) continue;
+    const s = renderer.worldToScreen(body.position, width, height);
+    if (!s.onScreen) continue;
+    const color = getResource(rock.type.resource).color;
+    ctx.strokeStyle = color;
+    ctx.globalAlpha = 0.75;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, 3, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(s.x + 3, s.y - 3);
+    ctx.lineTo(s.x + 12, s.y - 12);
+    ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.fillText(`${RESOURCE_TAGS[rock.type.resource] ?? '?'} ${Math.ceil(rock.ore)}`, s.x + 14, s.y - 13);
+    ctx.globalAlpha = 1;
+  }
 
   for (const id of hostilesNear(sim.world, sim.playerId, me.definition.sensors.range)) {
     const body = sim.world.bodies.get(id)!;
@@ -115,6 +144,9 @@ export function drawTargeting(
     }
   }
 }
+
+/** Chemical-symbol style tags keep scan labels short and language-neutral. */
+const RESOURCE_TAGS: Record<string, string> = { iron_ore: 'Fe', copper_ore: 'Cu', titanium_ore: 'Ti', salvage: 'Sv' };
 
 function brackets(ctx: CanvasRenderingContext2D, x: number, y: number, size: number): void {
   const k = size * 0.4;

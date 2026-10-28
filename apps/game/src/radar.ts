@@ -1,3 +1,4 @@
+import { getResource } from '@void-frontier/content';
 import { readTelemetry, type Simulation } from '@void-frontier/simulation';
 
 const RANGE = 1400;
@@ -62,9 +63,17 @@ export function drawRadar(canvas: HTMLCanvasElement, sim: Simulation, time: numb
     const p = sim.world.bodies.get(id)!.position;
     const [sx, sy] = toScreen(p.x, p.y);
     if (sx < -10 || sy < -10 || sx > size + 10 || sy > size + 10) continue;
+    ctx.fillStyle = sim.world.scanned.has(id) ? getResource(rock.type.resource).color : 'rgba(170, 176, 184, 0.75)';
     ctx.beginPath();
     ctx.arc(sx, sy, Math.max(1, rock.radius * scale), 0, Math.PI * 2);
     ctx.fill();
+  }
+
+  for (const pickup of sim.world.pickups.values()) {
+    const [sx, sy] = toScreen(pickup.position.x, pickup.position.y);
+    if (sx < 0 || sy < 0 || sx > size || sy > size) continue;
+    ctx.fillStyle = getResource(pickup.resource).color;
+    ctx.fillRect(sx - 1, sy - 1, 2, 2);
   }
 
   for (const [id] of sim.world.stations) {

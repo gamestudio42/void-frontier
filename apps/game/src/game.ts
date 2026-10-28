@@ -8,7 +8,6 @@ import { drawTargeting } from './targeting.ts';
 import type { HudStore } from './store.ts';
 
 const HUD_INTERVAL = 0.1;
-const TEST_CARGO_KG = 5000;
 const QUALITIES: Quality[] = ['high', 'medium', 'low'];
 
 /** Owns the frame loop: input → fixed simulation steps → effects → interpolated render → HUD. */
@@ -22,6 +21,8 @@ export class Game {
   private overlay: HTMLCanvasElement | null = null;
   private target: number | null = null;
   private hitFlash = 0;
+  private jettisonArmedAt = -10;
+  private gains = new Map<string, { units: number; at: number }>();
   private frameHandle = 0;
   private lastTime = 0;
   private clock = 0;
@@ -55,9 +56,13 @@ export class Game {
       toggleHelp: () => this.store.update({ help: !this.store.getSnapshot().help }),
       toggleDebug: () => this.store.update({ debug: !this.store.getSnapshot().debug }),
       togglePause: () => this.store.update({ paused: !this.store.getSnapshot().paused }),
-      toggleCargo: () => {
-        const ship = this.sim.world.ships.get(this.sim.playerId);
-        if (ship) this.sim.setCargoMass(this.sim.playerId, ship.cargoMass > 0 ? 0 : TEST_CARGO_KG);
+      jettison: () => {
+        // Two presses within a second, so a stray key does not dump a full hold.
+        const now = this.clock;
+        if (now - this.jettisonArmedAt < 1) {
+          this.sim.jettison(this.sim.playerId);
+          this.jettisonArmedAt = -10;
+        } else this.jettisonArmedAt = now;
         this.publish();
       },
       cycleQuality: () => {
@@ -74,8 +79,9 @@ export class Game {
         else this.target = hostiles[(hostiles.indexOf(this.target ?? -1) + 1) % hostiles.length];
         this.publish();
       },
-      relaunch: () => {
+      scanOrRelaunch: () => {
         if (this.sim.world.ships.get(this.sim.playerId)?.destroyed) this.restart();
+        else this.sim.scan(this.sim.playerId);
       },
       zoom: (factor) => this.renderer.rig.zoomBy(factor),
     });
@@ -112,6 +118,7 @@ export class Game {
     this.renderer.setQuality(quality);
     this.stepper.reset();
     this.target = null;
+    this.gains.clear();
     this.resize();
     this.publish();
   }
@@ -157,6 +164,11 @@ export class Game {
           if (mine && event.type === 'collision' && event.damage > 0) this.hits++;
           if (event.type === 'shipDestroyed' && event.id === this.sim.playerId) this.hits++;
           if (event.type === 'hit' && event.attacker === this.sim.playerId && this.sim.world.ships.has(event.target)) this.hitFlash = 1;
+          if (event.type === 'collected' && event.ship === this.sim.playerId) {
+            const gain = this.gains.get(event.resource);
+            // Merge pickups into one line while they keep coming.
+            this.gains.set(event.resource, { units: (gain && this.clock - gain.at < 2.5 ? gain.units : 0) + event.units, at: this.clock });
+          }
         }
       }
     }
@@ -165,7 +177,7 @@ export class Game {
     // Keep a nearby target in frame so dogfights stay on screen.
     const targetBody = this.target !== null ? this.sim.world.bodies.get(this.target) : undefined;
     const me = this.sim.world.bodies.get(this.sim.playerId);
-    const frameTarget = targetBody && me && Math.hypot(targetBody.position.x - me.position.x, targetBody.position.y - me.position.y) < 900 ? targetBody.position : null;
+    const frameTarget = targetBody && me && Math.hypot(targetBody.position.x - me.position.x, targetBody.position.y - me.position.y) < 650 ? targetBody.position : null;
     const stats = this.renderer.render(this.sim, alpha, frameDt, { aim: this.input.steering ? this.aim : null, frame: frameTarget });
     if (this.radar) drawRadar(this.radar, this.sim, this.clock, this.target);
     this.hitFlash = Math.max(0, this.hitFlash - elapsed * 6);
@@ -230,6 +242,12 @@ export class Game {
       station,
       proximity: nearestObstacle(this.sim.world, this.sim.playerId),
       target: readTarget(this.sim.world, this.sim.playerId, this.target),
+      gains: [...this.gains.entries()].filter(([, g]) => this.clock - g.at < 2.5).map(([resource, g]) => ({ resource, units: g.units })),
+      jettisonArmed: this.clock - this.jettisonArmedAt < 1,
+      holdFull: (() => {
+        const t = readTelemetry(this.sim.world, this.sim.playerId);
+        return !!t && t.holdMass >= t.holdMaxMass - 60;
+      })(),
       hits: this.hits,
       steering: this.input.steering,
       braking: this.input.isHeld('Space'),

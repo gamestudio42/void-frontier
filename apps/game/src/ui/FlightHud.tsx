@@ -1,3 +1,4 @@
+import { RESOURCES } from '@void-frontier/content';
 import type { FlightTelemetry } from '@void-frontier/simulation';
 import type { MessageKey, Translate } from '../i18n.ts';
 import type { HudState } from '../store.ts';
@@ -33,6 +34,8 @@ function Thruster({ label, value, signed }: { label: string; value: number; sign
     </div>
   );
 }
+
+const RESOURCE_COLORS: Record<string, string> = Object.fromEntries([...RESOURCES.values()].map((r) => [r.id, r.color]));
 
 /** Paired guns show as one line: the hotter of the pair drives the heat bar. */
 function groupWeapons(weapons: FlightTelemetry['weapons']) {
@@ -100,6 +103,8 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
           {tel.output.boosting && <span className="flag boost">{t('hud.boost')}</span>}
           {hud.braking && <span className="flag brake">{t('hud.brake')}</span>}
           {tel.fuel <= 0 && <span className="flag empty">{t('hud.noFuel')}</span>}
+          {hud.holdFull && <span className="flag full">{t('hud.holdFull')}</span>}
+          {hud.jettisonArmed && <span className="flag brake">{t('hud.jettisonArmed')}</span>}
         </div>
       </header>
 
@@ -162,12 +167,23 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
             {formatNumber(locale, tel.mass / 1000, 2)} {t('unit.mass')}
           </strong>
         </div>
-        {tel.cargoMass > 0 && (
-          <div className="row dim">
-            <span className="label">{t('hud.cargo')}</span>
-            <strong>{formatNumber(locale, tel.cargoMass / 1000, 1)} {t('unit.mass')}</strong>
+        <div className="row">
+          <span className="label">{t('hud.hold')}</span>
+          <strong data-testid="hold" data-value={tel.holdMass.toFixed(1)}>
+            {formatNumber(locale, tel.holdMass / 1000, 2)} / {formatNumber(locale, tel.holdMaxMass / 1000, 1)} {t('unit.mass')}
+          </strong>
+        </div>
+        <Bar value={tel.holdMass} max={tel.holdMaxMass} className="hold" />
+        {tel.hold.map((item) => (
+          <div key={item.resource} className="row dim hold-item">
+            <span>
+              <i className="swatch" style={{ background: RESOURCE_COLORS[item.resource] }} /> {t(`resource.${item.resource}` as MessageKey)}
+            </span>
+            <strong>
+              {item.units} {t('unit.units')}
+            </strong>
           </div>
-        )}
+        ))}
         <div className="row">
           <span className="label">{t('hud.accel')}</span>
           <strong>{formatNumber(locale, tel.mainAcceleration, 1)} {t('unit.accel')}</strong>
@@ -182,7 +198,7 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
           {groupWeapons(tel.weapons).map((w) => (
             <div key={w.id} className={`weapon ${w.overheated ? 'hot' : ''}`}>
               <span>
-                <kbd>{w.group === 'primary' ? 'LMB' : 'RMB'}</kbd> {t(`hud.weapon.${w.id}` as MessageKey)}
+                <kbd>{w.group === 'primary' ? 'LMB' : w.group === 'secondary' ? 'RMB' : 'MMB'}</kbd> {t(`hud.weapon.${w.id}` as MessageKey)}
                 {w.count > 1 ? ` ×${w.count}` : ''}
               </span>
               <div className="heat">
@@ -203,18 +219,28 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
 
       <TargetPanel hud={hud} t={t} locale={locale} />
 
+      <section className="mining-status">
+        <span>
+          <kbd>R</kbd> {t('hud.scanner')}: <strong>{tel.scanCooldown > 0 ? `${formatNumber(locale, tel.scanCooldown, 1)} s` : t('hud.scanReady')}</strong>
+        </span>
+        {tel.miningTarget && (
+          <span className="mining-target" data-testid="mining-target">
+            {t('hud.mining')}: <strong>{t(`rock.${tel.miningTarget.asteroidType}` as MessageKey)}</strong> · {Math.ceil(tel.miningTarget.ore)} / {tel.miningTarget.oreMax}{' '}
+            {t('unit.units')} {t('hud.oreLeft')}
+          </span>
+        )}
+      </section>
+
+      <ul className="gains" aria-live="polite">
+        {hud.gains.map((gain) => (
+          <li key={gain.resource}>
+            <i className="swatch" style={{ background: RESOURCE_COLORS[gain.resource] }} /> +{gain.units} {t(`resource.${gain.resource}` as MessageKey)}
+          </li>
+        ))}
+      </ul>
+
       <footer className="hud-bottom">
         <span>{hud.steering ? t('hud.steering.on') : t('hud.steering.off')} <kbd>V</kbd></span>
-        {hud.station && (
-          <span>
-            {t('hud.station')}: <strong>{t(`station.${hud.station.name}` as MessageKey)}</strong> {formatDistance(locale, hud.station.distance)}
-          </span>
-        )}
-        {hud.proximity && (
-          <span>
-            {t('hud.nearest')}: {t(`hud.kind.${hud.proximity.kind}` as MessageKey)} {formatDistance(locale, hud.proximity.distance)}
-          </span>
-        )}
         <span>{t('hud.helpHint')}</span>
       </footer>
     </div>

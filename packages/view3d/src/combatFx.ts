@@ -88,8 +88,8 @@ export class BeamRenderer {
     this.geometry.translate(0.5, 0, 0);
   }
 
-  update(world: World, time: number): { x: number; y: number }[] {
-    const impacts: { x: number; y: number }[] = [];
+  update(world: World, time: number): { x: number; y: number; mining: boolean }[] {
+    const impacts: { x: number; y: number; mining: boolean }[] = [];
     const active = new Set<string>();
     for (const [id, ship] of world.ships) {
       ship.weapons.forEach((mount, index) => {
@@ -99,7 +99,8 @@ export class BeamRenderer {
         let beam = this.beams.get(key);
         if (!beam) {
           const group = new Group();
-          const color = ship.faction === 'pirate' ? new Color(2.4, 0.4, 0.3) : new Color(0.5, 1.6, 2.6);
+          const color =
+            mount.definition.kind === 'mining' ? new Color(2.6, 1.5, 0.35) : ship.faction === 'pirate' ? new Color(2.4, 0.4, 0.3) : new Color(0.5, 1.6, 2.6);
           const core = new Mesh(this.geometry, new MeshBasicMaterial({ color: new Color(2.5, 2.5, 2.5), transparent: true, blending: AdditiveBlending, depthWrite: false }));
           const glow = new Mesh(this.geometry, new MeshBasicMaterial({ color, transparent: true, opacity: 0.5, blending: AdditiveBlending, depthWrite: false }));
           core.position.y = 1.2;
@@ -120,7 +121,7 @@ export class BeamRenderer {
         const flicker = 0.85 + Math.sin(time * 90 + index) * 0.15;
         beam.core.scale.set(length, 1, 0.3 * flicker);
         beam.glow.scale.set(length, 1, 1.5 * flicker);
-        if (mount.beam.hit !== null) impacts.push({ ...to });
+        if (mount.beam.hit !== null) impacts.push({ ...to, mining: mount.definition.kind === 'mining' });
       });
     }
     for (const [key, beam] of this.beams) if (!active.has(key)) beam.group.visible = false;

@@ -24,6 +24,10 @@ export interface HudState {
   station: { name: string; distance: number } | null;
   proximity: Proximity | null;
   target: TargetInfo | null;
+  /** Recent pickups, merged per resource, for the HUD feed. */
+  gains: { resource: string; units: number }[];
+  jettisonArmed: boolean;
+  holdFull: boolean;
   /** Increments on every damaging hit, so the HUD can flash. */
   hits: number;
   stats: DebugStats;
@@ -61,6 +65,9 @@ export const initialHudState = (): HudState => ({
   station: null,
   proximity: null,
   target: null,
+  gains: [],
+  jettisonArmed: false,
+  holdFull: false,
   hits: 0,
   stats: { fps: 0, frameMs: 0, tick: 0, stepsPerFrame: 0, droppedSeconds: 0, entities: 0, drawCalls: 0, triangles: 0, zoom: 1, quality: 'high', autoQuality: true },
 });

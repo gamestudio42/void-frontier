@@ -7,8 +7,8 @@ export interface InputActions {
   toggleHelp(): void;
   toggleDebug(): void;
   togglePause(): void;
-  toggleCargo(): void;
-  relaunch(): void;
+  scanOrRelaunch(): void;
+  jettison(): void;
   cycleQuality(): void;
   cycleTarget(): void;
   zoom(factor: number): void;
@@ -41,8 +41,8 @@ export class InputController {
       case 'Backquote': this.actions.toggleDebug(); break;
       case 'Escape':
       case 'KeyP': this.actions.togglePause(); break;
-      case 'KeyL': this.actions.toggleCargo(); break;
-      case 'KeyR': this.actions.relaunch(); break;
+      case 'KeyR': this.actions.scanOrRelaunch(); break;
+      case 'KeyK': this.actions.jettison(); break;
       case 'KeyG': this.actions.cycleQuality(); break;
       case 'Tab': this.actions.cycleTarget(); break;
       case 'Equal':
@@ -119,6 +119,8 @@ export class InputController {
       firePrimary: this.buttons.has(0) || this.held.has('ControlLeft'),
       fireSecondary: this.buttons.has(2) || this.held.has('AltLeft'),
       target: null,
+      // Middle mouse or X: mining laser.
+      fireMining: this.buttons.has(1) || this.held.has('KeyX'),
       brake: this.held.has('Space'),
       boost: this.held.has('ShiftLeft') || this.held.has('ShiftRight'),
     };

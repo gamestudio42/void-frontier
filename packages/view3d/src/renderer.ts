@@ -25,6 +25,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { AsteroidRenderer } from './asteroids.ts';
 import { BeamRenderer, ShieldBubble, TracerRenderer } from './combatFx.ts';
+import { PickupRenderer } from './mining.ts';
 import { CameraRig } from './camera.ts';
 import { fromScene, toScene } from './coords.ts';
 import { DustField, PlaneGrid, createBeacon, createPlanet, createStarfield } from './environment.ts';
@@ -51,8 +52,12 @@ export interface RenderStats {
 
 interface Blast {
   ring: Mesh;
-  light: PointLight;
+  light: PointLight | null;
   age: number;
+  /** seconds the ring takes to expand */
+  duration: number;
+  /** final ring radius in metres */
+  reach: number;
 }
 
 const SUN_DIRECTION = new Vector3(-0.55, 0.75, 0.38).normalize();
@@ -88,6 +93,7 @@ export class SpaceRenderer {
   private readonly particles = new ParticleSystem();
   private readonly blasts: Blast[] = [];
   private readonly tracers: TracerRenderer;
+  private readonly pickups: PickupRenderer;
   private readonly beams: BeamRenderer;
   private readonly shields = new Map<EntityId, ShieldBubble>();
   private readonly projected = new Vector3();
@@ -153,6 +159,7 @@ export class SpaceRenderer {
     }
     this.asteroids = new AsteroidRenderer(this.scene, sim.world);
     this.tracers = new TracerRenderer(this.scene);
+    this.pickups = new PickupRenderer(this.scene);
     this.beams = new BeamRenderer(this.scene);
 
     this.composer = new EffectComposer(this.renderer);
@@ -209,6 +216,20 @@ export class SpaceRenderer {
         const involvesPlayer = event.a === sim.playerId || event.b === sim.playerId;
         this.sparks(event.point, event.normal, event.speed);
         if (involvesPlayer) this.rig.shake(Math.min(0.9, 0.12 + event.speed / 40 + event.damage / 400));
+      } else if (event.type === 'scan') {
+        this.ring(toScene(event.position, 0.6), event.range, 1.3, 0x6fd3ff, null);
+      } else if (event.type === 'asteroidDepleted') {
+        const p = toScene(event.position, 0);
+        for (let i = 0; i < 80 + event.radius * 10; i++) {
+          const a = Math.random() * Math.PI * 2;
+          const s = 2 + Math.random() * 14;
+          this.particles.emit(p.x, (Math.random() - 0.5) * event.radius, p.z, Math.cos(a) * s, (Math.random() - 0.5) * 4, Math.sin(a) * s, DUST, DUST_END, 2 + Math.random() * event.radius, 1.5 + Math.random() * 2, 0.4);
+        }
+        for (let i = 0; i < 30; i++) {
+          const a = Math.random() * Math.PI * 2;
+          const s = 6 + Math.random() * 20;
+          this.particles.emit(p.x, 0, p.z, Math.cos(a) * s, Math.random() * 4, Math.sin(a) * s, SPARK, SPARK_END, 0.8, 0.4 + Math.random() * 0.5, 1);
+        }
       } else if (event.type === 'shot') {
         const p = toScene(event.position, 1);
         for (let i = 0; i < 6; i++) {
@@ -273,9 +294,16 @@ export class SpaceRenderer {
     }
 
     this.tracers.update(sim.world, sim.playerId, alpha, sim.dt);
+    this.pickups.update(sim.world, sim.playerId, this.time);
     for (const impact of this.beams.update(sim.world, this.time)) {
       const p = toScene(impact, 1);
-      for (let i = 0; i < 2; i++) this.particles.emit(p.x, p.y, p.z, (Math.random() - 0.5) * 30, Math.random() * 6, (Math.random() - 0.5) * 30, BEAM_GLOW, BEAM_GLOW_END, 2 + Math.random() * 2, 0.15 + Math.random() * 0.2, 3);
+      if (impact.mining) {
+        // Cutting rock: hot sparks and a haze of dust.
+        this.particles.emit(p.x, p.y, p.z, (Math.random() - 0.5) * 24, Math.random() * 8, (Math.random() - 0.5) * 24, SPARK, SPARK_END, 0.7, 0.3 + Math.random() * 0.3, 1.5);
+        if (Math.random() < 0.5) this.particles.emit(p.x, p.y, p.z, (Math.random() - 0.5) * 6, Math.random() * 2, (Math.random() - 0.5) * 6, DUST, DUST_END, 3 + Math.random() * 3, 0.8 + Math.random(), 0.6);
+      } else {
+        for (let i = 0; i < 2; i++) this.particles.emit(p.x, p.y, p.z, (Math.random() - 0.5) * 30, Math.random() * 6, (Math.random() - 0.5) * 30, BEAM_GLOW, BEAM_GLOW_END, 2 + Math.random() * 2, 0.15 + Math.random() * 0.2, 3);
+      }
     }
     this.updateBlasts(frameDt);
     this.particles.update(frameDt);
@@ -304,6 +332,7 @@ export class SpaceRenderer {
     for (const model of this.ships.values()) model.dispose();
     for (const bubble of this.shields.values()) bubble.dispose();
     this.tracers.dispose();
+    this.pickups.dispose();
     this.beams.dispose();
     for (const station of this.stations) station.dispose();
     this.asteroids.dispose();
@@ -430,31 +459,41 @@ export class SpaceRenderer {
         0.6 + Math.random() * 1.6, fire ? 1.4 : 0.5,
       );
     }
-    const ring = new Mesh(
-      new RingGeometry(0.8, 1, 64),
-      new MeshBasicMaterial({ color: 0xffc27a, transparent: true, blending: AdditiveBlending, depthWrite: false }),
-    );
-    ring.rotation.x = -Math.PI / 2;
-    ring.position.copy(p);
     const light = new PointLight(0xffa860, 40000, 600, 2);
     light.position.copy(p).setY(30);
-    this.scene.add(ring, light);
-    this.blasts.push({ ring, light, age: 0 });
+    this.scene.add(light);
+    this.ring(p, 165, 1.4, 0xffc27a, light);
+  }
+
+  /** Expanding flat ring: explosion shockwave or scanner pulse. */
+  private ring(position: Vector3, reach: number, duration: number, color: number, light: PointLight | null): void {
+    const ring = new Mesh(
+      new RingGeometry(0.97, 1, 96),
+      new MeshBasicMaterial({ color, transparent: true, blending: AdditiveBlending, depthWrite: false }),
+    );
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.copy(position);
+    this.scene.add(ring);
+    this.blasts.push({ ring, light, age: 0, duration, reach });
   }
 
   private updateBlasts(dt: number): void {
     for (let i = this.blasts.length - 1; i >= 0; i--) {
       const blast = this.blasts[i];
       blast.age += dt;
-      const t = blast.age / 1.4;
-      blast.ring.scale.setScalar(4 + t * 160);
+      const t = blast.age / blast.duration;
+      // Ease out: fast at first, slowing as it spreads.
+      blast.ring.scale.setScalar(4 + (1 - (1 - Math.min(1, t)) ** 2) * blast.reach);
       (blast.ring.material as MeshBasicMaterial).opacity = Math.max(0, 1 - t);
-      blast.light.intensity = 40000 * Math.max(0, 1 - blast.age / 0.8) ** 2;
+      if (blast.light) blast.light.intensity = 40000 * Math.max(0, 1 - blast.age / 0.8) ** 2;
       if (t >= 1) {
-        this.scene.remove(blast.ring, blast.light);
+        this.scene.remove(blast.ring);
         blast.ring.geometry.dispose();
         (blast.ring.material as MeshBasicMaterial).dispose();
-        blast.light.dispose();
+        if (blast.light) {
+          this.scene.remove(blast.light);
+          blast.light.dispose();
+        }
         this.blasts.splice(i, 1);
       }
     }

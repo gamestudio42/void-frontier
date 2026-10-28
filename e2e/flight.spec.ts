@@ -49,12 +49,6 @@ test('flight assist and the brake bring the ship to a stop', async ({ page }) =>
   await page.keyboard.up('Space');
 });
 
-test('test cargo adds mass', async ({ page }) => {
-  const empty = await value(page, 'mass');
-  await page.keyboard.press('l');
-  await expect.poll(() => value(page, 'mass')).toBeGreaterThan(empty + 4000);
-});
-
 test('pause freezes the simulation', async ({ page }) => {
   await hold(page, 'w', 600);
   await page.keyboard.press('Escape');
