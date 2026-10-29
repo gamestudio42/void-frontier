@@ -79,7 +79,8 @@
       "engine": 1,
       "utility": 2,
       "defense": 2
-    }
+    },
+    "price": 6000
   },
   {
     "id": "mule",
@@ -147,7 +148,8 @@
       "engine": 1,
       "utility": 3,
       "defense": 1
-    }
+    },
+    "price": 9500
   },
   {
     "id": "jackal",
@@ -208,7 +210,8 @@
       "engine": 1,
       "utility": 1,
       "defense": 1
-    }
+    },
+    "price": 0
   },
   {
     "id": "marauder",
@@ -276,6 +279,159 @@
       "engine": 1,
       "utility": 1,
       "defense": 2
-    }
+    },
+    "price": 0
+  },
+  {
+    "id": "prospector",
+    "class": "miner",
+    "price": 11000,
+    "hull": {
+      "integrity": 1400,
+      "dryMass": 13000,
+      "length": 20,
+      "collisionRadius": 9,
+      "armor": 0.2
+    },
+    "movement": {
+      "mainThrust": 200000,
+      "reverseThrust": 110000,
+      "lateralThrust": 75000,
+      "rotationalTorque": 620000,
+      "gyrationRadius": 5,
+      "maxAngularVelocity": 1.4,
+      "boostMultiplier": 1.4,
+      "boostFuelMultiplier": 2.5
+    },
+    "fuel": {
+      "capacity": 800,
+      "consumptionPerMegaNewtonSecond": 13
+    },
+    "cargo": {
+      "maxMass": 12000,
+      "maxVolume": 45
+    },
+    "shield": {
+      "capacity": 300,
+      "rechargeRate": 25,
+      "rechargeDelay": 4
+    },
+    "reactor": {
+      "capacity": 140,
+      "rechargeRate": 16
+    },
+    "sensors": {
+      "range": 1200,
+      "scanRange": 1300,
+      "scanCooldown": 5
+    },
+    "tractor": {
+      "range": 110,
+      "collectRadius": 14
+    },
+    "slots": {
+      "engine": 1,
+      "utility": 3,
+      "defense": 1
+    },
+    "hardpoints": [
+      {
+        "id": "gun",
+        "x": 9,
+        "y": 0,
+        "weapon": "autocannon_mk1",
+        "group": "primary"
+      },
+      {
+        "id": "mining_laser",
+        "x": 10,
+        "y": 0,
+        "weapon": "mining_laser_mk2",
+        "group": "mining"
+      }
+    ]
+  },
+  {
+    "id": "lancer",
+    "class": "fighter",
+    "price": 14500,
+    "hull": {
+      "integrity": 900,
+      "dryMass": 7000,
+      "length": 15,
+      "collisionRadius": 6.5,
+      "armor": 0.2
+    },
+    "movement": {
+      "mainThrust": 185000,
+      "reverseThrust": 110000,
+      "lateralThrust": 90000,
+      "rotationalTorque": 520000,
+      "gyrationRadius": 3.6,
+      "maxAngularVelocity": 2.6,
+      "boostMultiplier": 1.7,
+      "boostFuelMultiplier": 2.5
+    },
+    "fuel": {
+      "capacity": 450,
+      "consumptionPerMegaNewtonSecond": 14
+    },
+    "cargo": {
+      "maxMass": 1500,
+      "maxVolume": 6
+    },
+    "shield": {
+      "capacity": 450,
+      "rechargeRate": 38,
+      "rechargeDelay": 3
+    },
+    "reactor": {
+      "capacity": 140,
+      "rechargeRate": 18
+    },
+    "sensors": {
+      "range": 1600,
+      "scanRange": 700,
+      "scanCooldown": 7
+    },
+    "tractor": {
+      "range": 40,
+      "collectRadius": 10
+    },
+    "slots": {
+      "engine": 1,
+      "utility": 2,
+      "defense": 2
+    },
+    "hardpoints": [
+      {
+        "id": "gun_left",
+        "x": 5,
+        "y": -3,
+        "weapon": "autocannon_mk1",
+        "group": "primary"
+      },
+      {
+        "id": "gun_right",
+        "x": 5,
+        "y": 3,
+        "weapon": "autocannon_mk1",
+        "group": "primary"
+      },
+      {
+        "id": "gun_centre",
+        "x": 7,
+        "y": 0,
+        "weapon": "autocannon_mk1",
+        "group": "primary"
+      },
+      {
+        "id": "laser",
+        "x": 7.5,
+        "y": 0,
+        "weapon": "laser_mk1",
+        "group": "secondary"
+      }
+    ]
   }
 ]

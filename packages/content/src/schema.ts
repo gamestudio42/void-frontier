@@ -4,6 +4,8 @@ const positive = z.number().positive();
 
 export const shipDefinitionSchema = z.object({
   id: z.string().regex(/^[a-z][a-z0-9_]*$/),
+  /** Credits at a shipyard; 0 for ships that are never sold. */
+  price: z.number().min(0),
   class: z.enum(['scout', 'interceptor', 'fighter', 'miner', 'hauler', 'frigate', 'salvager']),
   hull: z.object({
     integrity: positive,
@@ -237,6 +239,8 @@ export const stationDefinitionSchema = z.object({
     }),
   ),
   upgrades: z.array(z.string()),
+  /** Hulls this station sells, some only to pilots in good standing. */
+  shipyard: z.array(z.object({ ship: z.string(), requires: z.object({ faction: z.string(), reputation: z.number() }).optional() })),
   /** Units per minute the station makes and uses, whether or not the player is there. */
   economy: z.object({ produces: z.record(z.string(), z.number().min(0)), consumes: z.record(z.string(), z.number().min(0)) }),
 });

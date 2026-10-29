@@ -39,6 +39,8 @@ export interface FlightTelemetry {
   /** The rock under the mining laser, if any. */
   miningTarget: { asteroidType: string; resource: string; ore: number; oreMax: number } | null;
   destroyed: boolean;
+  /** Hull type being flown. */
+  shipId: string;
   docked: boolean;
   credits: number;
   upgrades: string[];
@@ -119,6 +121,7 @@ export function readTelemetry(world: World, id: EntityId): FlightTelemetry | nul
       return rock ? { asteroidType: rock.type.id, resource: rock.type.resource, ore: rock.ore, oreMax: rock.oreMax } : null;
     })(),
     destroyed: ship.destroyed,
+    shipId: ship.baseDefinition.id,
     docked: ship.docked !== null,
     credits: world.credits,
     upgrades: [...ship.upgrades],

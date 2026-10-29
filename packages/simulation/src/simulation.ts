@@ -5,6 +5,7 @@ import { aiSystem, encounterSystem, spawnEncounter } from './ai.ts';
 import { projectileSystem, weaponSystem } from './combat.ts';
 import { jettison, pickupSystem, scan, scanExpirySystem } from './mining.ts';
 import { createEconomy, detachTraders, economySystem, type Economy } from './economy.ts';
+import { boardShip, buyShip, createFleet, sellShip, type Fleet } from './fleet.ts';
 import { gravitySystem, explorationSystem } from './exploration.ts';
 import { abandonContract, acceptContract, createBoard, dockedStationKey, fillOffers, handInContract, missionSystem, type MissionBoard } from './missions.ts';
 import { buyUpgrade, sellUpgrade, dockShip, marketSystem, requestDock, service, trade, undock } from './station.ts';
@@ -32,6 +33,8 @@ export class Simulation {
   missions: MissionBoard | null = null;
   /** Markets, haulers and events of every sector; null in bare test worlds. */
   economy: Economy | null = null;
+  /** Ships the player owns besides the one being flown. */
+  fleet: Fleet = createFleet();
 
   constructor(dt = FIXED_DT) {
     this.dt = dt;
@@ -41,7 +44,11 @@ export class Simulation {
    * Builds a sector from its data. `board` carries the contract board across sectors;
    * `startDocked` overrides the sector's own flag (arrivals by gate are never docked).
    */
-  static fromSector(sector: SectorDefinition, dt = FIXED_DT, options: { board?: MissionBoard; economy?: Economy; startDocked?: boolean } = {}): Simulation {
+  static fromSector(
+    sector: SectorDefinition,
+    dt = FIXED_DT,
+    options: { board?: MissionBoard; economy?: Economy; fleet?: Fleet; playerShip?: string; startDocked?: boolean } = {},
+  ): Simulation {
     const sim = new Simulation(dt);
     sim.world.sectorId = sector.id;
     const rng = new Rng(sector.seed);
@@ -67,7 +74,7 @@ export class Simulation {
       sim.world.encounters.push({ definition: encounter, members: spawnEncounter(sim.world, encounter), respawnAt: null });
     }
     // The sector heading is a compass bearing; the sim angle is counter-clockwise from +X.
-    sim.playerId = spawnShip(sim.world, getShip(sector.playerShip), {
+    sim.playerId = spawnShip(sim.world, getShip(options.playerShip ?? sector.playerShip), {
       position: { x: sector.playerStart.x, y: sector.playerStart.y },
       angle: toRadians(90 - sector.playerStart.heading),
     });
@@ -75,6 +82,7 @@ export class Simulation {
       sim.world.beacons.set(sim.world.createEntity(), { name: beacon.id, position: { x: beacon.x, y: beacon.y } });
     }
     sim.world.credits = sector.startingCredits;
+    sim.fleet = options.fleet ?? createFleet();
     sim.economy = options.economy ?? createEconomy();
     detachTraders(sim.economy);
     // Stations trade from the shared economy, so stock moves with the player between sectors.
@@ -179,6 +187,18 @@ export class Simulation {
 
   abandonContract(contractId: number): boolean {
     return this.missions ? abandonContract(this.world, this.missions, contractId) : false;
+  }
+
+  buyShip(shipId: string) {
+    return buyShip(this, shipId);
+  }
+
+  sellShip(ownedId: number) {
+    return sellShip(this, ownedId);
+  }
+
+  boardShip(ownedId: number) {
+    return boardShip(this, ownedId);
   }
 
   /** Scanner pulse for a ship; false while it recharges. */

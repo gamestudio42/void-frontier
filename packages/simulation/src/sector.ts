@@ -176,7 +176,13 @@ export function jump(
   const left = captureSector(sim);
   const player = capturePlayer(sim);
   const destination = getSector(gate.to);
-  const next = Simulation.fromSector(destination, sim.dt, { board: sim.missions ?? undefined, economy: sim.economy ?? undefined, startDocked: false });
+  const next = Simulation.fromSector(destination, sim.dt, {
+    board: sim.missions ?? undefined,
+    economy: sim.economy ?? undefined,
+    fleet: sim.fleet,
+    playerShip: player.ship,
+    startDocked: false,
+  });
   next.world.tick = sim.world.tick;
   next.world.credits = sim.world.credits;
   const snapshot = memory[destination.id];

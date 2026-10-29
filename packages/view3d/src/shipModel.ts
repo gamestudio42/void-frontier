@@ -117,8 +117,21 @@ export function buildShipModel(definition: ShipDefinition, faction: 'player' | '
     }
   }
 
-  // Interceptors carry forward-swept blades and twin fins: a hunter's silhouette.
-  if (definition.class === 'interceptor') {
+  // Miners: a drill boom at the nose and ore hoppers slung under each side.
+  if (definition.class === 'miner') {
+    root.add(box(L * 0.32, L * 0.05, W * 0.12, dark, L * 0.52, -L * 0.02, 0));
+    const head = new Mesh(new CylinderGeometry(L * 0.04, L * 0.06, L * 0.08, 10), accent);
+    head.rotation.z = Math.PI / 2;
+    head.position.set(L * 0.7, -L * 0.02, 0);
+    root.add(head);
+    for (const side of [-1, 1]) {
+      root.add(box(L * 0.42, L * 0.12, W * 0.32, accent, -L * 0.05, -L * 0.02, side * W * 0.62));
+      root.add(box(L * 0.44, L * 0.02, W * 0.34, dark, -L * 0.05, L * 0.05, side * W * 0.62));
+    }
+  }
+
+  // Interceptors and fighters carry forward-swept blades and twin fins: a hunter's silhouette.
+  if (definition.class === 'interceptor' || definition.class === 'fighter') {
     for (const side of [-1, 1]) {
       const blade = box(L * 0.42, L * 0.025, W * 0.9, accent, -L * 0.02, 0, side * W * 0.85);
       blade.rotation.y = side * 0.45;

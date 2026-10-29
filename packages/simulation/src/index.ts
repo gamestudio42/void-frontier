@@ -22,3 +22,4 @@ export * from './exploration.ts';
 export * from './sector.ts';
 export * from './subsystems.ts';
 export * from './economy.ts';
+export * from './fleet.ts';

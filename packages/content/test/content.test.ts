@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { ASTEROID_TYPES, FACTIONS, OUTPOST_ALPHA, RESOURCES, SECTORS, SHIPS, STATIONS, UPGRADES, getResource, getShip, getUpgrade, getWeapon, shipDefinitionSchema, validateSector } from '../src/index.ts';
 
 describe('content', () => {
-  it('ships two player ships and two pirate types', () => {
-    expect(SHIPS.size).toBe(4);
+  it('ships four player hulls and two pirate types', () => {
+    expect(SHIPS.size).toBe(6);
+    expect(getShip('prospector').class).toBe('miner');
+    expect(getShip('lancer').class).toBe('fighter');
     expect(getShip('marauder').class).toBe('frigate');
     expect(getShip('kestrel').class).toBe('scout');
     expect(getShip('mule').class).toBe('hauler');
@@ -56,6 +58,7 @@ describe('content', () => {
   it('puts every module in a slot the starter ship has', () => {
     const slots = getShip('kestrel').slots;
     for (const upgrade of UPGRADES.values()) expect(slots[upgrade.slot]).toBeGreaterThan(0);
+    for (const ship of SHIPS.values()) for (const h of ship.hardpoints) expect(getWeapon(h.weapon)).toBeDefined();
     expect(UPGRADES.size).toBe(10);
   });
 

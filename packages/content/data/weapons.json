@@ -68,5 +68,22 @@
       "shield": 0.5,
       "hull": 0.5
     }
+  },
+  {
+    "id": "mining_laser_mk2",
+    "kind": "mining",
+    "extractionRate": 14,
+    "range": 200,
+    "optimalRange": 100,
+    "damagePerSecond": 18,
+    "gimbal": 14,
+    "heatPerSecond": 8,
+    "maxHeat": 100,
+    "coolingRate": 14,
+    "energyPerSecond": 10,
+    "multipliers": {
+      "shield": 0.5,
+      "hull": 0.5
+    }
   }
 ]

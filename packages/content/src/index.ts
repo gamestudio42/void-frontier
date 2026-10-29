@@ -85,6 +85,10 @@ for (const type of ASTEROID_TYPES.values()) getResource(type.resource);
 for (const upgrade of UPGRADES.values()) if (upgrade.requires) getFaction(upgrade.requires.faction);
 for (const station of STATIONS.values()) {
   getFaction(station.faction);
+  for (const offer of station.shipyard) {
+    if (getShip(offer.ship).price <= 0) throw new Error(`Station ${station.id} sells ${offer.ship}, which has no price`);
+    if (offer.requires) getFaction(offer.requires.faction);
+  }
   for (const item of station.market) getResource(item.resource);
   for (const upgrade of station.upgrades) getUpgrade(upgrade);
   if (!station.modules.some((m) => m.kind === 'dock')) throw new Error(`Station ${station.id} has no docking bay`);

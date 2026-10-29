@@ -224,7 +224,18 @@
         "machine_parts": 6,
         "titanium_ore": 1
       }
-    }
+    },
+    "shipyard": [
+      {
+        "ship": "kestrel"
+      },
+      {
+        "ship": "mule"
+      },
+      {
+        "ship": "prospector"
+      }
+    ]
   },
   {
     "id": "refinery",
@@ -414,7 +425,22 @@
         "titanium_ore": 2,
         "platinum_ore": 1
       }
-    }
+    },
+    "shipyard": [
+      {
+        "ship": "mule"
+      },
+      {
+        "ship": "prospector"
+      },
+      {
+        "ship": "lancer",
+        "requires": {
+          "faction": "ferrum_combine",
+          "reputation": 15
+        }
+      }
+    ]
   },
   {
     "id": "pirate_den",
@@ -515,6 +541,7 @@
     "economy": {
       "produces": {},
       "consumes": {}
-    }
+    },
+    "shipyard": []
   }
 ]

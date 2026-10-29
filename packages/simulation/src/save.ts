@@ -1,11 +1,12 @@
 import { getSector } from '@void-frontier/content';
 import { createEconomy, detachTraders, type Economy } from './economy.ts';
+import { createFleet, type Fleet } from './fleet.ts';
 import { createBoard, type MissionBoard } from './missions.ts';
 import { applyPlayer, applySectorSnapshot, captureSector, capturePlayer, markDiscovered, type PlayerState, type SectorSnapshot } from './sector.ts';
 import { Simulation } from './simulation.ts';
 
 /** Bump when the save shape changes, and add a migration below. */
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 /** The parts of the contract board that change; drops and stations come from content. */
 export type SavedBoard = Pick<MissionBoard, 'offers' | 'active' | 'history' | 'reputation' | 'nextId' | 'refreshTick'>;
@@ -25,6 +26,8 @@ export interface SaveData {
   discovered: string[];
   /** Markets, haulers, events and news of every sector; null in saves made before 0.4. */
   economy: Economy | null;
+  /** Ships parked in hangars; null in saves made before 0.5. */
+  fleet: Fleet | null;
 }
 
 export interface GameState {
@@ -53,6 +56,7 @@ export function serialize(state: GameState): SaveData {
       detachTraders(copy);
       return copy;
     })() : null,
+    fleet: structuredClone(sim.fleet),
   };
 }
 
@@ -77,7 +81,13 @@ export function restore(data: SaveData): GameState {
       });
     }
   }
-  const sim = Simulation.fromSector(sector, undefined, { board, economy, startDocked: false });
+  const sim = Simulation.fromSector(sector, undefined, {
+    board,
+    economy,
+    fleet: data.fleet ? structuredClone(data.fleet) : createFleet(),
+    playerShip: data.player.ship,
+    startDocked: false,
+  });
   sim.world.tick = data.tick;
   sim.world.credits = data.credits;
   const memory = structuredClone(data.sectors);
@@ -96,6 +106,8 @@ const MIGRATIONS: Record<number, (data: Record<string, unknown>) => Record<strin
   // 3 → 4: markets moved into the shared economy; `restore` rebuilds it from the old
   // per-sector stock when `economy` is null.
   3: (v3) => ({ ...v3, economy: null }),
+  // 4 → 5: hangars. Older games own only the ship being flown.
+  4: (v4) => ({ ...v4, fleet: null }),
   // 2 → 3: reputation splits by faction (the old single score was the outpost's), ships
   // gain subsystems and weapon-mount health, contracts learn their issuer's faction.
   2: (v2) => {
