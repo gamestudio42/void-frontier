@@ -147,7 +147,7 @@ export function drawRadar(canvas: HTMLCanvasElement, sim: Simulation, time: numb
       ctx.stroke();
     }
     ctx.rotate(-body.angle);
-    ctx.fillStyle = ship.faction === 'pirate' ? '#ff5a4a' : '#7dffb2';
+    ctx.fillStyle = ship.faction === 'pirate' ? '#ff5a4a' : sim.world.pilots.get(id)?.fleet !== undefined ? '#ffd166' : '#7dffb2';
     ctx.beginPath();
     ctx.moveTo(5, 0);
     ctx.lineTo(-4, 3.5);

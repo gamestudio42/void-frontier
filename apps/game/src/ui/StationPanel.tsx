@@ -1,12 +1,13 @@
 import { getUpgrade } from '@void-frontier/content';
 import { useState } from 'react';
 import type { MessageKey, Translate } from '../i18n.ts';
-import type { ContractsView, StationView } from '../store.ts';
+import type { ContractsView, FleetView, StationView } from '../store.ts';
 import { ContractsTab, NewsFeed, type ContractActions } from './contracts.tsx';
+import { CrewTab, type FleetActions } from './Fleet.tsx';
 import { ShipyardTab, type ShipyardActions } from './Shipyard.tsx';
 import { formatNumber } from './format.ts';
 
-export interface StationActions extends ContractActions, ShipyardActions {
+export interface StationActions extends ContractActions, ShipyardActions, FleetActions {
   sellUpgrade(id: string): void;
   undock(): void;
   trade(resource: string, units: number, side: 'buy' | 'sell'): void;
@@ -17,6 +18,7 @@ export interface StationActions extends ContractActions, ShipyardActions {
 interface StationPanelProps {
   view: StationView;
   contracts: ContractsView | null;
+  fleet: FleetView | null;
   news: { tick: number; kind: string; subject: string }[];
   events: { id: string; secondsLeft: number }[];
   hull: { value: number; max: number };
@@ -27,7 +29,7 @@ interface StationPanelProps {
   locale: string;
 }
 
-type Tab = 'contracts' | 'market' | 'services' | 'upgrades' | 'shipyard';
+type Tab = 'contracts' | 'market' | 'services' | 'upgrades' | 'shipyard' | 'crew';
 
 /** Upgrade effects as short, translated lines. */
 function effectLines(id: string, t: Translate, locale: string): string[] {
@@ -49,7 +51,7 @@ function effectLines(id: string, t: Translate, locale: string): string[] {
   return lines;
 }
 
-export function StationPanel({ view, contracts, news, events, hull, fuel, hold, actions, t, locale }: StationPanelProps) {
+export function StationPanel({ view, contracts, fleet, news, events, hull, fuel, hold, actions, t, locale }: StationPanelProps) {
   const [tab, setTab] = useState<Tab>('contracts');
   const cr = (n: number) => `${formatNumber(locale, n)} cr`;
   return (
@@ -68,7 +70,7 @@ export function StationPanel({ view, contracts, news, events, hull, fuel, hold, 
           </div>
         </header>
         <nav className="tabs" role="tablist">
-          {(['contracts', 'market', 'services', 'upgrades', 'shipyard'] as Tab[]).map((id) => (
+          {(['contracts', 'market', 'services', 'upgrades', 'shipyard', 'crew'] as Tab[]).map((id) => (
             <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? 'active' : ''} onClick={() => setTab(id)} data-testid={`tab-${id}`}>
               {t(`station.tab.${id}` as MessageKey)}
             </button>
@@ -194,7 +196,8 @@ export function StationPanel({ view, contracts, news, events, hull, fuel, hold, 
           </div>
         )}
 
-        {tab === 'shipyard' && <ShipyardTab view={view} actions={actions} t={t} locale={locale} />}
+        {tab === 'shipyard' && <ShipyardTab view={view} fleet={fleet} actions={actions} t={t} locale={locale} />}
+        {tab === 'crew' && fleet && <CrewTab fleet={fleet} actions={actions} t={t} locale={locale} />}
 
         <footer>
           <button className="primary" onClick={() => actions.undock()} data-testid="undock">

@@ -7,6 +7,7 @@ import { HudStore, initialHudState } from './store.ts';
 import { ControlsPanel } from './ui/ControlsPanel.tsx';
 import { MainMenu, PauseMenu, TutorialCard } from './ui/menus.tsx';
 import { SectorMap } from './ui/SectorMap.tsx';
+import { FleetPanel } from './ui/Fleet.tsx';
 import { loadSettings, saveSettings, type Settings } from './settings.ts';
 import { DebugOverlay } from './ui/DebugOverlay.tsx';
 import { FlightHud } from './ui/FlightHud.tsx';
@@ -75,7 +76,10 @@ export function App() {
       <Notices notices={hud.notices} t={t} locale={locale} />
       <div key={`jump-${hud.jumpedAt}`} className={hud.jumpedAt > 0 ? 'jump-flash' : ''} aria-hidden="true" />
       {hud.mapOpen && hud.menu === null && (
-        <SectorMap events={hud.events} current={hud.sectorId} visited={hud.visited} discovered={hud.discovered} contracts={hud.contracts} t={t} onClose={() => store.update({ mapOpen: false })} />
+        <SectorMap events={hud.events} fleet={hud.fleet} current={hud.sectorId} visited={hud.visited} discovered={hud.discovered} contracts={hud.contracts} t={t} onClose={() => store.update({ mapOpen: false })} />
+      )}
+      {hud.fleetOpen && hud.fleet && hud.menu === null && game && (
+        <FleetPanel fleet={hud.fleet} actions={game} t={t} locale={locale} onClose={() => store.update({ fleetOpen: false })} />
       )}
       <figure className="radar" aria-label={t('hud.radar')} hidden={hud.menu === 'main'}>
         <canvas ref={radarRef} data-testid="radar" />
@@ -84,6 +88,7 @@ export function App() {
         <StationPanel
           view={hud.station}
           contracts={hud.contracts}
+          fleet={hud.fleet}
           news={hud.news}
           events={hud.events}
           hull={{ value: hud.telemetry.hull, max: hud.telemetry.hullMax }}

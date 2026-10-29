@@ -1,6 +1,7 @@
 import type { MessageKey, Translate } from '../i18n.ts';
 import type { ActiveContractView, ContractView, ContractsView } from '../store.ts';
 import { formatNumber } from './format.ts';
+import { fleetNotice } from './Fleet.tsx';
 
 export interface ContractActions {
   acceptContract(id: number): void;
@@ -139,6 +140,8 @@ export function Notices({ notices, t, locale }: { notices: { id: number; kind: s
         <div key={`${n.id}-${n.outcome}`} className={`notice ${n.outcome}`} data-testid="notice">
           {n.kind === 'tutorial' ? (
             <strong>{t('tutorial.done')}</strong>
+          ) : n.kind.startsWith('fleet:') ? (
+            <strong>{fleetNotice(n.kind.split(':')[1], n.kind.split(':')[2], n.kind.split(':')[3], t)}</strong>
           ) : n.kind.startsWith('news:') ? (
             <strong>{newsLine(n.kind.split(':')[1], n.kind.split(':')[2], t)}</strong>
           ) : n.kind.startsWith('system:') ? (

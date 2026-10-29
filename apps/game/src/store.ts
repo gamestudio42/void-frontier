@@ -1,4 +1,4 @@
-import type { DockRefusal, FlightTelemetry, Proximity, TargetInfo } from '@void-frontier/simulation';
+import type { DockRefusal, FleetNote, FleetOrder, FlightTelemetry, Pilot, Proximity, TargetInfo } from '@void-frontier/simulation';
 
 export interface DebugStats {
   fps: number;
@@ -39,6 +39,38 @@ export interface StationView {
   hangar: { id: number; ship: string; station: string; here: boolean; value: number; upgrades: number; cargo: number }[];
   /** Hull being flown. */
   flying: string;
+}
+
+export interface FleetShipView {
+  id: number;
+  ship: string;
+  pilot: Pilot | null;
+  order: FleetOrder | null;
+  /** parked: in a hangar with nothing to do; docked: loading or unloading on its routine. */
+  status: 'parked' | 'docked' | 'travel' | 'work' | 'escort';
+  /** Station it is parked at, last left, or heading to. */
+  station: string;
+  heading: string | null;
+  sector: string;
+  /** Parked in the hangar of the station the player is docked at. */
+  here: boolean;
+  cargo: number;
+  earned: number;
+  fit: { trade: boolean; mine: boolean; wingman: boolean };
+}
+
+export interface FleetView {
+  ships: FleetShipView[];
+  /** Hired pilots waiting at a station without a ship. */
+  crew: { pilot: Pilot; station: string; here: boolean }[];
+  /** Pilots for hire at the station the player is docked at. */
+  offers: (Pilot & { fee: number })[];
+  pilots: number;
+  maxPilots: number;
+  /** Credits per pay cycle for everyone on the payroll. */
+  payroll: number;
+  payIn: number;
+  log: FleetNote[];
 }
 
 export interface ContractView {
@@ -104,6 +136,8 @@ export interface HudState {
   discovered: string[];
   visited: string[];
   mapOpen: boolean;
+  fleetOpen: boolean;
+  fleet: FleetView | null;
   /** Latest economy news, newest first. */
   news: { tick: number; kind: string; subject: string; station?: string; sector?: string; resource?: string }[];
   /** Active economy events. */
@@ -161,6 +195,8 @@ export const initialHudState = (): HudState => ({
   discovered: [],
   visited: ['outpost_alpha'],
   mapOpen: false,
+  fleetOpen: false,
+  fleet: null,
   news: [],
   events: [],
   hits: 0,

@@ -1,6 +1,6 @@
 import { EVENT_RULES, FACTIONS, SECTORS, STATIONS } from '@void-frontier/content';
 import type { MessageKey, Translate } from '../i18n.ts';
-import type { ContractsView } from '../store.ts';
+import type { ContractsView, FleetView } from '../store.ts';
 
 interface SectorMapProps {
   events: { id: string; secondsLeft: number }[];
@@ -8,6 +8,7 @@ interface SectorMapProps {
   visited: string[];
   discovered: string[];
   contracts: ContractsView | null;
+  fleet: FleetView | null;
   t: Translate;
   onClose(): void;
 }
@@ -20,7 +21,7 @@ function danger(sectorId: string): 'low' | 'medium' | 'high' {
 }
 
 /** The gate network: sectors as nodes on their map positions, gates as links. */
-export function SectorMap({ events, current, visited, discovered, contracts, t, onClose }: SectorMapProps) {
+export function SectorMap({ events, fleet, current, visited, discovered, contracts, t, onClose }: SectorMapProps) {
   const sectors = [...SECTORS.values()];
   const scale = 230;
   const cx = 360;
@@ -66,6 +67,14 @@ export function SectorMap({ events, current, visited, discovered, contracts, t, 
                 {stations.map((st, i) => (
                   <rect key={i} x={-26 + i * 14} y={-6} width={10} height={10} className={FACTIONS.get(st.faction)!.hostile ? 'map-station pirate' : 'map-station'} />
                 ))}
+                {(() => {
+                  const mine = (fleet?.ships ?? []).filter((f) => f.sector === s.id).length;
+                  return mine > 0 ? (
+                    <text x={30} y={-26} className="map-fleet" data-testid={`map-fleet-${s.id}`}>
+                      ▲{mine}
+                    </text>
+                  ) : null;
+                })()}
                 <text y={52} className="map-name">
                   {t(`sector.${s.id}` as MessageKey)}
                 </text>

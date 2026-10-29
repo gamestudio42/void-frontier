@@ -1,6 +1,7 @@
 import { getShip, getWeapon } from '@void-frontier/content';
 import type { MessageKey, Translate } from '../i18n.ts';
-import type { StationView } from '../store.ts';
+import type { FleetView, StationView } from '../store.ts';
+import { OrderPicker, Skills, orderLine, type FleetActions } from './Fleet.tsx';
 import { formatNumber } from './format.ts';
 
 export interface ShipyardActions {
@@ -24,10 +25,11 @@ function stats(shipId: string, t: Translate, locale: string): [string, string][]
   ];
 }
 
-export function ShipyardTab({ view, actions, t, locale }: { view: StationView; actions: ShipyardActions; t: Translate; locale: string }) {
+export function ShipyardTab({ view, fleet, actions, t, locale }: { view: StationView; fleet: FleetView | null; actions: ShipyardActions & FleetActions; t: Translate; locale: string }) {
   const cr = (n: number) => `${formatNumber(locale, n)} cr`;
-  const here = view.hangar.filter((h) => h.here);
-  const elsewhere = view.hangar.filter((h) => !h.here);
+  const here = view.hangar.filter((h) => h.here && fleet?.ships.find((s) => s.id === h.id)?.here !== false);
+  const elsewhere = view.hangar.filter((h) => !here.includes(h));
+  const crewOf = (id: number) => fleet?.ships.find((s) => s.id === id);
   return (
     <div className="shipyard">
       <h3>{t('shipyard.hangar')}</h3>
@@ -58,6 +60,23 @@ export function ShipyardTab({ view, actions, t, locale }: { view: StationView; a
                 </div>
               ))}
             </dl>
+            {(() => {
+              const crewed = crewOf(h.id);
+              if (!crewed) return null;
+              return (
+                <div className="hull-crew">
+                  {crewed.pilot ? (
+                    <p className="meta">
+                      {t('fleet.pilot')}: <b>{crewed.pilot.name}</b> <Skills pilot={crewed.pilot} t={t} />
+                    </p>
+                  ) : (
+                    <p className="meta">{t('fleet.noPilot')}</p>
+                  )}
+                  <p className="meta">{orderLine(crewed.order, t)}</p>
+                  <OrderPicker ship={crewed} actions={actions} t={t} />
+                </div>
+              );
+            })()}
             <button onClick={() => actions.boardShip(h.id)} data-testid={`board-${h.ship}`}>
               {t('shipyard.board')}
             </button>

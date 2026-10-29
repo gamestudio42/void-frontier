@@ -1,7 +1,7 @@
-import { OUTPOST_ALPHA, STATION_PLACEMENTS, getFaction, getSector } from '@void-frontier/content';
+import { CREW_RULES, OUTPOST_ALPHA, STATION_PLACEMENTS, getFaction, getSector } from '@void-frontier/content';
 import { FIXED_DT, FixedStepper, type Vec2 } from '@void-frontier/kernel';
 import { getUpgrade } from '@void-frontier/content';
-import { Simulation, shipValue, shipyardOffers, slotUsage, applySectorSnapshot, captureSector, gateStatus, gravityAt, jump, markDiscovered, nextGate, dockedStationKey, type SectorSnapshot, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, installUpgrades, hostilesNear, nearestObstacle, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
+import { Simulation, fleetEntities, hireFee, isParkedAt, orderProblem, payroll, shipValue, shipyardOffers, type FleetOrder, slotUsage, applySectorSnapshot, captureSector, gateStatus, gravityAt, jump, markDiscovered, nextGate, dockedStationKey, type SectorSnapshot, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, installUpgrades, hostilesNear, nearestObstacle, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
 import { SpaceRenderer, type Quality } from '@void-frontier/view3d';
 import { AudioEngine } from './audio.ts';
 import { InputController } from './input.ts';
@@ -105,7 +105,11 @@ export class Game {
         else this.target = hostiles[(hostiles.indexOf(this.target ?? -1) + 1) % hostiles.length];
         this.publish();
       },
-      toggleMap: () => this.store.update({ mapOpen: !this.store.getSnapshot().mapOpen }),
+      toggleMap: () => this.store.update({ mapOpen: !this.store.getSnapshot().mapOpen, fleetOpen: false }),
+      toggleFleet: () => {
+        this.store.update({ fleetOpen: !this.store.getSnapshot().fleetOpen, mapOpen: false });
+        this.publish();
+      },
       dockOrUndock: () => {
         const ship = this.sim.world.ships.get(this.sim.playerId);
         if (!ship || ship.destroyed) return;
@@ -177,6 +181,26 @@ export class Game {
 
   boardShip(id: number): void {
     if (this.sim.boardShip(id).ok) this.target = null;
+    this.publish();
+  }
+
+  hirePilot(id: number): void {
+    this.sim.hirePilot(id);
+    this.publish();
+  }
+
+  assignPilot(pilotId: number, shipId: number): void {
+    this.sim.assignPilot(pilotId, shipId);
+    this.publish();
+  }
+
+  dismissPilot(id: number): void {
+    this.sim.dismissPilot(id);
+    this.publish();
+  }
+
+  setOrder(shipId: number, order: FleetOrder | null): void {
+    this.sim.setOrder(shipId, order);
     this.publish();
   }
 
@@ -346,7 +370,7 @@ export class Game {
     this.clock += elapsed;
     const snapshot = this.store.getSnapshot();
     const help = snapshot.help;
-    const paused = snapshot.paused || snapshot.menu !== null || snapshot.mapOpen;
+    const paused = snapshot.paused || snapshot.menu !== null || snapshot.mapOpen || snapshot.fleetOpen;
 
     // The camera from the last frame is close enough to turn the cursor into a world point.
     this.aim = this.input.pointer ? this.renderer.screenToWorld(this.input.pointer.x, this.input.pointer.y) : null;
@@ -383,6 +407,11 @@ export class Game {
           }
           if (event.type === 'news' && (event.item.kind === 'eventStarted' || event.item.kind === 'traderLost')) {
             this.notices.push({ text: `news:${event.item.kind}:${event.item.subject}`, kind: event.item.kind === 'traderLost' ? 'failed' : 'abandoned', reward: 0, at: this.clock, id: -5000 - event.item.tick });
+          }
+          if (event.type === 'fleet' && ['lost', 'quit', 'unpaid', 'attacked', 'skill'].includes(event.note.kind)) {
+            const n = event.note;
+            const bad = n.kind === 'lost' || n.kind === 'quit' || n.kind === 'unpaid';
+            this.notices.push({ text: `fleet:${n.kind}:${n.ship ?? ''}:${n.pilot ?? ''}`, kind: bad ? 'failed' : 'abandoned', reward: 0, at: this.clock, id: -9000 - n.tick });
           }
           if (event.type === 'contract') {
             this.notices.push({ text: event.kind, kind: event.outcome, reward: event.reward, at: this.clock, id: event.id });
@@ -516,6 +545,10 @@ export class Game {
       const b = t.shipId !== null ? this.sim.world.bodies.get(t.shipId) : undefined;
       if (b) list.push({ label: this.labels.route(t.route), position: b.position, colour: '#7dffb2' });
     }
+    for (const [id, owned] of fleetEntities(this.sim)) {
+      const b = this.sim.world.bodies.get(id);
+      if (b) list.push({ label: owned.pilot?.name ?? '', position: b.position, colour: '#ffd166' });
+    }
     for (const poi of this.sim.world.pointsOfInterest.values()) {
       if (poi.kind === 'deposit' && !poi.found) continue;
       list.push({ label: poi.found ? '✓' : '?', position: poi.position, colour: '#c77dff' });
@@ -563,6 +596,46 @@ export class Game {
         };
       }),
       history: board.history.slice(0, 6),
+    };
+  }
+
+  private fleetView() {
+    const sim = this.sim;
+    const fleet = sim.fleet;
+    const here = dockedStationKey(sim.world, sim.playerId);
+    const sectorOf = (key: string) => STATION_PLACEMENTS.get(key)?.sector ?? sim.world.sectorId;
+    return {
+      ships: fleet.ships.map((owned) => {
+        const run = owned.run;
+        const status = run === null ? ('parked' as const) : run.phase;
+        const leg = run && run.legs.length > 0 ? run.legs[Math.min(run.leg, run.legs.length - 1)] : null;
+        const sector = status === 'escort' ? sim.world.sectorId : leg && status !== 'docked' ? leg.sector : sectorOf(owned.station);
+        return {
+          id: owned.id,
+          ship: owned.state.ship,
+          pilot: owned.pilot,
+          order: owned.order,
+          status,
+          station: owned.station,
+          heading: run?.phase === 'travel' ? run.target : null,
+          sector,
+          here: here !== null && isParkedAt(owned, here),
+          cargo: owned.state.cargo.reduce((sum, [, units]) => sum + units, 0),
+          earned: owned.earned,
+          fit: {
+            trade: orderProblem(owned, { kind: 'trade', from: 'ferrum_refinery', to: 'outpost_alpha_station', resource: 'machine_parts' }) === null,
+            mine: orderProblem(owned, { kind: 'mine', site: CREW_RULES.sites[0].id }) === null,
+            wingman: orderProblem(owned, { kind: 'wingman' }) === null,
+          },
+        };
+      }),
+      crew: fleet.crew.map((c) => ({ pilot: c.pilot, station: c.station, here: c.station === here })),
+      offers: here ? (fleet.offers[here] ?? []).map((p) => ({ ...p, fee: hireFee(p) })) : [],
+      pilots: payroll(fleet).length,
+      maxPilots: CREW_RULES.maxPilots,
+      payroll: payroll(fleet).reduce((sum, p) => sum + p.wage, 0),
+      payIn: Math.max(0, (fleet.payTick - sim.world.tick) / 60),
+      log: fleet.log.slice(0, 10),
     };
   }
 
@@ -638,6 +711,7 @@ export class Game {
       discovered: [...this.discovered],
       news: (this.sim.economy?.news ?? []).slice(0, 8),
       events: (this.sim.economy?.events ?? []).map((e) => ({ id: e.id, secondsLeft: Math.max(0, (e.endsTick - this.sim.world.tick) / 60) })),
+      fleet: this.fleetView(),
       visited: [...new Set([...Object.keys(this.memory), this.sim.world.sectorId])],
       dockRefused: this.dockRefused && this.clock - this.dockRefused.at < 3 ? this.dockRefused.refusals : null,
       station: this.stationView(),
