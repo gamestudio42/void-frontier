@@ -237,7 +237,52 @@ export const stationDefinitionSchema = z.object({
     }),
   ),
   upgrades: z.array(z.string()),
+  /** Units per minute the station makes and uses, whether or not the player is there. */
+  economy: z.object({ produces: z.record(z.string(), z.number().min(0)), consumes: z.record(z.string(), z.number().min(0)) }),
 });
+
+export const traderRouteSchema = z.object({
+  id: z.string(),
+  /** Lawful faction the hauler flies for. */
+  allegiance: z.string(),
+  ship: z.string(),
+  /** Station keys (sector station ids). */
+  from: z.string(),
+  to: z.string(),
+  cargo: z.string(),
+  units: z.number().int().positive(),
+  /** Seconds docked between runs. */
+  interval: positive,
+  /** m/s cruising speed (used off-screen and as the AI's target speed). */
+  speed: positive,
+});
+
+export type TraderRoute = z.infer<typeof traderRouteSchema>;
+
+export const economyEventSchema = z.object({
+  id: z.string(),
+  kind: z.enum(['shortage', 'surplus', 'raid', 'boom']),
+  station: z.string().optional(),
+  sector: z.string().optional(),
+  resource: z.string().optional(),
+  /** consumption (shortage), production (surplus), price (boom) or raid-risk multiplier */
+  factor: positive,
+  /** seconds */
+  duration: positive,
+});
+
+export type EconomyEventDefinition = z.infer<typeof economyEventSchema>;
+
+export const eventRulesSchema = z.object({
+  minInterval: positive,
+  maxInterval: positive,
+  maxActive: z.number().int().min(1),
+  /** Chance per sector crossed that an unescorted hauler off-screen is lost to pirates. */
+  sectorRisk: z.record(z.string(), z.number().min(0).max(1)),
+  events: z.array(economyEventSchema),
+});
+
+export type EventRules = z.infer<typeof eventRulesSchema>;
 
 export const upgradeSchema = z.object({
   id: z.string().regex(/^[a-z][a-z0-9_]*$/),
@@ -426,6 +471,13 @@ export const contractRulesSchema = z.object({
   }),
   elite: z.object({ unitsMultiplier: z.number().min(1), rewardMultiplier: z.number().min(1) }),
   penalty: z.object({ failed: z.number().min(0), abandoned: z.number().min(0) }),
+  escort: z.object({
+    baseReward: positive,
+    rewardPerHop: positive,
+    repGain: positive,
+    /** metres: stay this close to the hauler when it arrives */
+    range: positive,
+  }),
 });
 
 export type ContractRules = z.infer<typeof contractRulesSchema>;

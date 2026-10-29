@@ -12,6 +12,7 @@ export interface SpawnShipOptions {
   fuel?: number;
   cargoMass?: number;
   faction?: Faction;
+  allegiance?: string | null;
 }
 
 /** kg of resources in the hold. */
@@ -53,6 +54,7 @@ export function spawnShip(world: World, definition: ShipDefinition, options: Spa
     upgrades: [],
     docked: null,
     faction: options.faction ?? 'player',
+    allegiance: options.allegiance ?? null,
     subsystems: { engines: 1, reactor: 1, sensors: 1, shieldGenerator: 1, cargoHold: 1 },
     mode: options.mode ?? 'newtonian',
     shield: definition.shield.capacity,

@@ -1,7 +1,9 @@
 import { z } from 'zod';
 import asteroidData from '../data/asteroids.json';
 import contractData from '../data/contracts.json';
+import eventData from '../data/events.json';
 import factionData from '../data/factions.json';
+import traderData from '../data/traders.json';
 import anomalyZoneData from '../data/anomaly-zone.json';
 import industrialBeltData from '../data/industrial-belt.json';
 import outpostAlphaData from '../data/outpost-alpha.json';
@@ -16,7 +18,9 @@ import {
   asteroidTypeSchema,
   collisionRulesSchema,
   contractRulesSchema,
+  eventRulesSchema,
   factionSchema,
+  traderRouteSchema,
   resourceSchema,
   sectorDefinitionSchema,
   shipDefinitionSchema,
@@ -26,7 +30,9 @@ import {
   type AsteroidType,
   type CollisionRules,
   type ContractRules,
+  type EventRules,
   type FactionDefinition,
+  type TraderRoute,
   type ResourceDefinition,
   type SectorDefinition,
   type ShipDefinition,
@@ -47,6 +53,8 @@ export const RESOURCES: ReadonlyMap<string, ResourceDefinition> = byId(z.array(r
 export const UPGRADES: ReadonlyMap<string, UpgradeDefinition> = byId(z.array(upgradeSchema).parse(upgradeData));
 export const WEAPONS: ReadonlyMap<string, WeaponDefinition> = byId(z.array(weaponDefinitionSchema).parse(weaponData));
 export const FACTIONS: ReadonlyMap<string, FactionDefinition> = byId(z.array(factionSchema).parse(factionData));
+export const TRADER_ROUTES: readonly TraderRoute[] = z.array(traderRouteSchema).parse(traderData);
+export const EVENT_RULES: EventRules = eventRulesSchema.parse(eventData);
 export const CONTRACT_RULES: ContractRules = contractRulesSchema.parse(contractData);
 export const COLLISION_RULES: CollisionRules = collisionRulesSchema.parse(physicsData);
 export const OUTPOST_ALPHA: SectorDefinition = sectorDefinitionSchema.parse(outpostAlphaData);
@@ -108,3 +116,21 @@ for (const sector of SECTORS.values()) {
 }
 getResource(CONTRACT_RULES.delivery.cargo);
 for (const resource of Object.keys(CONTRACT_RULES.mining.resources)) getResource(resource);
+
+/** Every station placement in every sector, by its key (the sector's station id). */
+export const STATION_PLACEMENTS: ReadonlyMap<string, { sector: string; definition: string; x: number; y: number; angle: number }> = new Map(
+  [...SECTORS.values()].flatMap((sector) => sector.stations.map((s) => [s.id, { sector: sector.id, definition: s.definition, x: s.x, y: s.y, angle: s.angle }] as const)),
+);
+
+for (const route of TRADER_ROUTES) {
+  getShip(route.ship);
+  getFaction(route.allegiance);
+  getResource(route.cargo);
+  for (const key of [route.from, route.to]) if (!STATION_PLACEMENTS.has(key)) throw new Error(`Trader route ${route.id} names unknown station ${key}`);
+}
+for (const event of EVENT_RULES.events) {
+  if (event.station && !STATION_PLACEMENTS.has(event.station)) throw new Error(`Event ${event.id} names unknown station ${event.station}`);
+  if (event.sector) getSector(event.sector);
+  if (event.resource) getResource(event.resource);
+}
+for (const station of STATIONS.values()) for (const r of [...Object.keys(station.economy.produces), ...Object.keys(station.economy.consumes)]) getResource(r);

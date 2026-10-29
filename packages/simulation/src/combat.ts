@@ -4,7 +4,7 @@ import { moduleModifiers } from './station.ts';
 import { sensorRange, shieldCapacity } from './ship.ts';
 import { extractOre } from './mining.ts';
 import { raycast } from './spatial.ts';
-import type { Body, EntityId, Ship, WeaponMount } from './types.ts';
+import { isHostile, type Body, type EntityId, type Ship, type WeaponMount } from './types.ts';
 import type { World } from './world.ts';
 
 /** World position of a hardpoint (ship-local x forward, y right). */
@@ -194,7 +194,7 @@ export function hostilesNear(world: World, id: EntityId, range: number): EntityI
   if (!self || !body) return [];
   const found: { id: EntityId; d: number }[] = [];
   for (const [other, ship] of world.ships) {
-    if (other === id || ship.destroyed || ship.docked !== null || ship.faction === self.faction) continue;
+    if (other === id || ship.destroyed || ship.docked !== null || !isHostile(self.faction, ship.faction)) continue;
     const p = world.bodies.get(other)!.position;
     const dx = p.x - body.position.x;
     const dy = p.y - body.position.y;

@@ -1,0 +1,35 @@
+[
+  {
+    "id": "ferrum_parts_run",
+    "allegiance": "ferrum_combine",
+    "ship": "mule",
+    "from": "ferrum_refinery",
+    "to": "outpost_alpha_station",
+    "cargo": "machine_parts",
+    "units": 60,
+    "interval": 200,
+    "speed": 55
+  },
+  {
+    "id": "outpost_ore_run",
+    "allegiance": "outpost_authority",
+    "ship": "mule",
+    "from": "outpost_alpha_station",
+    "to": "ferrum_refinery",
+    "cargo": "iron_ore",
+    "units": 45,
+    "interval": 260,
+    "speed": 55
+  },
+  {
+    "id": "ferrum_copper_run",
+    "allegiance": "ferrum_combine",
+    "ship": "mule",
+    "from": "outpost_alpha_station",
+    "to": "ferrum_refinery",
+    "cargo": "copper_ore",
+    "units": 35,
+    "interval": 320,
+    "speed": 55
+  }
+]

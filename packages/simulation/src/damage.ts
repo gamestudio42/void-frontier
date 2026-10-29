@@ -20,12 +20,24 @@ export function destroyShip(world: World, id: EntityId, by: EntityId | null): vo
   if (by !== null) {
     const killer = world.ships.get(by);
     if (killer) killer.kills++;
-    // Lawful factions thank whoever thins out the pirates.
+    // Lawful factions thank whoever thins out the pirates, and more when it saves one of their haulers.
     if (killer?.faction === 'player' && ship.faction === 'pirate') {
       for (const faction of FACTIONS.values()) {
         if (faction.hostile || faction.killReward <= 0) continue;
         world.standing[faction.id] = Math.min(100, (world.standing[faction.id] ?? 0) + faction.killReward);
       }
+      for (const [otherId, other] of world.ships) {
+        if (other.faction !== 'trader' || other.destroyed || !other.allegiance || (world.tick - other.lastDamageTick) / 60 > 15) continue;
+        const p = world.bodies.get(otherId)!.position;
+        const dx = p.x - body.position.x;
+        const dy = p.y - body.position.y;
+        if (dx * dx + dy * dy > 1200 * 1200) continue;
+        world.standing[other.allegiance] = Math.min(100, (world.standing[other.allegiance] ?? 0) + 3);
+      }
+    }
+    // Shooting down a hauler is remembered.
+    if (killer?.faction === 'player' && ship.faction === 'trader' && ship.allegiance) {
+      world.standing[ship.allegiance] = Math.max(-100, (world.standing[ship.allegiance] ?? 0) - 15);
     }
   }
 }
@@ -61,6 +73,9 @@ export function applyWeaponDamage(
     }
   }
   const hullDamage = raw * multipliers.hull * (1 - ship.definition.hull.armor);
+  if (ship.faction === 'trader' && ship.allegiance && world.ships.get(attackerId)?.faction === 'player') {
+    world.standing[ship.allegiance] = Math.max(-100, (world.standing[ship.allegiance] ?? 0) - (shieldDamage + hullDamage) * 0.02);
+  }
   ship.hull = Math.max(0, ship.hull - hullDamage);
   damageSubsystems(world, targetId, point, hullDamage);
   world.events.push({ type: 'hit', target: targetId, attacker: attackerId, point: { ...point }, shieldDamage, hullDamage, beam });

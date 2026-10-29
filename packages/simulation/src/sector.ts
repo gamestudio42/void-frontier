@@ -83,12 +83,6 @@ export function applySectorSnapshot(sim: Simulation, snapshot: SectorSnapshot): 
     rock.pendingOre = pending;
     resizeRock(world, rockId);
   }
-  const stations = [...world.stations.values()];
-  snapshot.markets.forEach((stocks, index) => {
-    stations[index]?.market.forEach((item, i) => {
-      if (stocks[i] !== undefined) item.stock = stocks[i];
-    });
-  });
   for (const p of snapshot.pickups) {
     const id = spawnPickup(world, p.resource, p.units, { x: p.position[0], y: p.position[1] }, { x: p.velocity[0], y: p.velocity[1] });
     world.pickups.get(id)!.life = p.life;
@@ -182,7 +176,7 @@ export function jump(
   const left = captureSector(sim);
   const player = capturePlayer(sim);
   const destination = getSector(gate.to);
-  const next = Simulation.fromSector(destination, sim.dt, { board: sim.missions ?? undefined, startDocked: false });
+  const next = Simulation.fromSector(destination, sim.dt, { board: sim.missions ?? undefined, economy: sim.economy ?? undefined, startDocked: false });
   next.world.tick = sim.world.tick;
   next.world.credits = sim.world.credits;
   const snapshot = memory[destination.id];

@@ -75,7 +75,7 @@ function place(parent: Object3D, p: Plume, x: number, y: number, z: number): Plu
 }
 
 /** `faction` changes the livery: pirates fly dark hulls with blood-red trim. */
-export function buildShipModel(definition: ShipDefinition, faction: 'player' | 'pirate' = 'player'): ShipModel {
+export function buildShipModel(definition: ShipDefinition, faction: 'player' | 'pirate' | 'trader' = 'player'): ShipModel {
   const L = definition.hull.length;
   const hauler = definition.class === 'hauler';
   const W = hauler ? L * 0.42 : L * 0.34;
@@ -83,6 +83,11 @@ export function buildShipModel(definition: ShipDefinition, faction: 'player' | '
   const hull = hullMaterial();
   const dark = darkMaterial();
   const accent = accentMaterial();
+  if (faction === 'trader') {
+    // Civilian haulers: pale hulls with green trim, readable as friendly at a glance.
+    hull.color.setHex(0xb8bcb4);
+    accent.color.setHex(0x3fa86a);
+  }
   if (faction === 'pirate') {
     hull.color.setHex(0x4a4d52);
     dark.color.setHex(0x1f2125);

@@ -43,7 +43,29 @@ export function aiSystem(world: World): void {
   }
 }
 
+/** Haulers: fly the route, slow down on arrival, burn hard when shot at, steer around rocks. */
+function travel(world: World, id: EntityId, ship: Ship, body: Body, goal: { to: { x: number; y: number }; speed: number }): void {
+  const command = idleCommand();
+  const dx = goal.to.x - body.position.x;
+  const dy = goal.to.y - body.position.y;
+  const d = Math.sqrt(dx * dx + dy * dy) || 1;
+  const underFire = (world.tick - ship.lastDamageTick) / 60 < 4;
+  const speed = Math.min(goal.speed * (underFire ? 1.6 : 1), d * 0.35);
+  let desired = { x: (dx / d) * speed, y: (dy / d) * speed };
+  desired = avoid(world, id, body, desired);
+  const error = worldToLocal(forwardOf(body.angle), { x: desired.x - body.velocity.x, y: desired.y - body.velocity.y });
+  command.thrust = clamp(error.x * AI.steeringGain, -1, 1);
+  command.strafe = clamp(error.y * AI.steeringGain, -1, 1);
+  command.boost = underFire && error.x > 20;
+  command.aim = { x: body.position.x + desired.x * 10, y: body.position.y + desired.y * 10 };
+  ship.command = command;
+}
+
 function think(world: World, id: EntityId, ship: Ship, body: Body, pilot: AiPilot): void {
+  if (pilot.travel) {
+    travel(world, id, ship, body, pilot.travel);
+    return;
+  }
   const range = sensorRange(ship);
 
   // Keep a target while it stays inside the leash; otherwise take the nearest hostile in sensor range.

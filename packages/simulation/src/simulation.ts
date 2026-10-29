@@ -4,8 +4,9 @@ import { spawnShip } from './ship.ts';
 import { aiSystem, encounterSystem, spawnEncounter } from './ai.ts';
 import { projectileSystem, weaponSystem } from './combat.ts';
 import { jettison, pickupSystem, scan, scanExpirySystem } from './mining.ts';
+import { createEconomy, detachTraders, economySystem, type Economy } from './economy.ts';
 import { gravitySystem, explorationSystem } from './exploration.ts';
-import { abandonContract, acceptContract, createBoard, fillOffers, handInContract, missionSystem, type MissionBoard } from './missions.ts';
+import { abandonContract, acceptContract, createBoard, dockedStationKey, fillOffers, handInContract, missionSystem, type MissionBoard } from './missions.ts';
 import { buyUpgrade, sellUpgrade, dockShip, marketSystem, requestDock, service, trade, undock } from './station.ts';
 import { collisionSystem } from './systems/collision.ts';
 import { subsystemSystem } from './subsystems.ts';
@@ -29,6 +30,8 @@ export class Simulation {
   rules: CollisionRules = COLLISION_RULES;
   /** Contract board for the player; null in bare test worlds. */
   missions: MissionBoard | null = null;
+  /** Markets, haulers and events of every sector; null in bare test worlds. */
+  economy: Economy | null = null;
 
   constructor(dt = FIXED_DT) {
     this.dt = dt;
@@ -38,7 +41,7 @@ export class Simulation {
    * Builds a sector from its data. `board` carries the contract board across sectors;
    * `startDocked` overrides the sector's own flag (arrivals by gate are never docked).
    */
-  static fromSector(sector: SectorDefinition, dt = FIXED_DT, options: { board?: MissionBoard; startDocked?: boolean } = {}): Simulation {
+  static fromSector(sector: SectorDefinition, dt = FIXED_DT, options: { board?: MissionBoard; economy?: Economy; startDocked?: boolean } = {}): Simulation {
     const sim = new Simulation(dt);
     sim.world.sectorId = sector.id;
     const rng = new Rng(sector.seed);
@@ -72,6 +75,13 @@ export class Simulation {
       sim.world.beacons.set(sim.world.createEntity(), { name: beacon.id, position: { x: beacon.x, y: beacon.y } });
     }
     sim.world.credits = sector.startingCredits;
+    sim.economy = options.economy ?? createEconomy();
+    detachTraders(sim.economy);
+    // Stations trade from the shared economy, so stock moves with the player between sectors.
+    for (const station of sim.world.stations.values()) {
+      const shared = sim.economy.markets[station.name];
+      if (shared) station.market = shared;
+    }
     sim.missions = options.board ?? createBoard();
     // Standing lives on the board (it survives jumps); the world reads the same object.
     sim.world.standing = sim.missions.reputation;
@@ -101,6 +111,7 @@ export class Simulation {
     encounterSystem(this.world, this.dt);
     marketSystem(this.world, this.dt);
     explorationSystem(this.world, this.playerId);
+    if (this.economy) economySystem(this.world, this.economy, this.missions, this.playerId, this.dt);
     if (this.missions) missionSystem(this.world, this.missions, this.playerId, this.dt);
     this.world.tick++;
   }
@@ -150,7 +161,16 @@ export class Simulation {
   }
 
   acceptContract(offerId: number) {
-    return this.missions ? acceptContract(this.world, this.missions, this.playerId, offerId) : ({ ok: false, reason: 'unknown' } as const);
+    if (!this.missions) return { ok: false, reason: 'unknown' } as const;
+    const key = dockedStationKey(this.world, this.playerId);
+    const offer = key ? this.missions.offers[key]?.find((o) => o.id === offerId) : undefined;
+    const result = acceptContract(this.world, this.missions, this.playerId, offerId);
+    // An escort rides with its hauler, which settles the contract on arrival.
+    if (result.ok && offer?.escort && this.economy) {
+      const trader = this.economy.traders.find((t) => t.route === offer.escort!.route);
+      if (trader) trader.escort = offer.id;
+    }
+    return result;
   }
 
   handInContract(contractId: number) {

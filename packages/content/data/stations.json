@@ -214,7 +214,17 @@
       "shield_capacitor",
       "deep_scanner"
     ],
-    "faction": "outpost_authority"
+    "faction": "outpost_authority",
+    "economy": {
+      "produces": {
+        "iron_ore": 3,
+        "copper_ore": 3
+      },
+      "consumes": {
+        "machine_parts": 6,
+        "titanium_ore": 1
+      }
+    }
   },
   {
     "id": "refinery",
@@ -393,7 +403,18 @@
       "repair_drones",
       "afterburner",
       "combat_computer"
-    ]
+    ],
+    "economy": {
+      "produces": {
+        "machine_parts": 10
+      },
+      "consumes": {
+        "iron_ore": 6,
+        "copper_ore": 4,
+        "titanium_ore": 2,
+        "platinum_ore": 1
+      }
+    }
   },
   {
     "id": "pirate_den",
@@ -490,6 +511,10 @@
       "fuelPerKg": 3
     },
     "market": [],
-    "upgrades": []
+    "upgrades": [],
+    "economy": {
+      "produces": {},
+      "consumes": {}
+    }
   }
 ]

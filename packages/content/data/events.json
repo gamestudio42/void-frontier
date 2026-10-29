@@ -1,0 +1,67 @@
+{
+  "minInterval": 240,
+  "maxInterval": 420,
+  "maxActive": 2,
+  "sectorRisk": {
+    "outpost_alpha": 0.04,
+    "industrial_belt": 0.03,
+    "pirate_territory": 0.4,
+    "anomaly_zone": 0.1
+  },
+  "events": [
+    {
+      "id": "parts_shortage",
+      "kind": "shortage",
+      "station": "outpost_alpha_station",
+      "resource": "machine_parts",
+      "factor": 3,
+      "duration": 360
+    },
+    {
+      "id": "ore_shortage",
+      "kind": "shortage",
+      "station": "ferrum_refinery",
+      "resource": "iron_ore",
+      "factor": 3,
+      "duration": 360
+    },
+    {
+      "id": "parts_glut",
+      "kind": "surplus",
+      "station": "ferrum_refinery",
+      "resource": "machine_parts",
+      "factor": 3,
+      "duration": 300
+    },
+    {
+      "id": "belt_raids",
+      "kind": "raid",
+      "sector": "industrial_belt",
+      "factor": 4,
+      "duration": 300
+    },
+    {
+      "id": "alpha_raids",
+      "kind": "raid",
+      "sector": "outpost_alpha",
+      "factor": 4,
+      "duration": 300
+    },
+    {
+      "id": "platinum_rush",
+      "kind": "boom",
+      "station": "ferrum_refinery",
+      "resource": "platinum_ore",
+      "factor": 1.8,
+      "duration": 420
+    },
+    {
+      "id": "titanium_rush",
+      "kind": "boom",
+      "station": "outpost_alpha_station",
+      "resource": "titanium_ore",
+      "factor": 1.6,
+      "duration": 420
+    }
+  ]
+}

@@ -1,10 +1,11 @@
 import { getSector } from '@void-frontier/content';
+import { createEconomy, detachTraders, type Economy } from './economy.ts';
 import { createBoard, type MissionBoard } from './missions.ts';
 import { applyPlayer, applySectorSnapshot, captureSector, capturePlayer, markDiscovered, type PlayerState, type SectorSnapshot } from './sector.ts';
 import { Simulation } from './simulation.ts';
 
 /** Bump when the save shape changes, and add a migration below. */
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 /** The parts of the contract board that change; drops and stations come from content. */
 export type SavedBoard = Pick<MissionBoard, 'offers' | 'active' | 'history' | 'reputation' | 'nextId' | 'refreshTick'>;
@@ -22,6 +23,8 @@ export interface SaveData {
   missions: SavedBoard | null;
   /** Points of interest already found, in any sector. */
   discovered: string[];
+  /** Markets, haulers, events and news of every sector; null in saves made before 0.4. */
+  economy: Economy | null;
 }
 
 export interface GameState {
@@ -45,6 +48,11 @@ export function serialize(state: GameState): SaveData {
       ? structuredClone({ offers: board.offers, active: board.active, history: board.history, reputation: board.reputation, nextId: board.nextId, refreshTick: board.refreshTick })
       : null,
     discovered: [...state.discovered].sort(),
+    economy: sim.economy ? (() => {
+      const copy = structuredClone(sim.economy);
+      detachTraders(copy);
+      return copy;
+    })() : null,
   };
 }
 
@@ -56,7 +64,20 @@ export function restore(data: SaveData): GameState {
     const m = structuredClone(data.missions);
     Object.assign(board, { offers: m.offers, active: m.active, history: m.history, reputation: m.reputation, nextId: m.nextId, refreshTick: m.refreshTick });
   }
-  const sim = Simulation.fromSector(sector, undefined, { board, startDocked: false });
+  let economy = data.economy ? structuredClone(data.economy) : null;
+  if (!economy) {
+    // Saves from before the shared economy kept stock per sector: carry it over.
+    economy = createEconomy();
+    for (const [sectorId, snapshot] of Object.entries(data.sectors)) {
+      getSector(sectorId).stations.forEach((station, index) => {
+        const items = economy!.markets[station.id];
+        snapshot.markets?.[index]?.forEach((stock, i) => {
+          if (items?.[i]) items[i].stock = stock;
+        });
+      });
+    }
+  }
+  const sim = Simulation.fromSector(sector, undefined, { board, economy, startDocked: false });
   sim.world.tick = data.tick;
   sim.world.credits = data.credits;
   const memory = structuredClone(data.sectors);
@@ -72,6 +93,9 @@ export function restore(data: SaveData): GameState {
 
 /** Upgrades older saves step by step. Each entry turns version n into n + 1. */
 const MIGRATIONS: Record<number, (data: Record<string, unknown>) => Record<string, unknown>> = {
+  // 3 → 4: markets moved into the shared economy; `restore` rebuilds it from the old
+  // per-sector stock when `economy` is null.
+  3: (v3) => ({ ...v3, economy: null }),
   // 2 → 3: reputation splits by faction (the old single score was the outpost's), ships
   // gain subsystems and weapon-mount health, contracts learn their issuer's faction.
   2: (v2) => {

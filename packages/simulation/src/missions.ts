@@ -1,9 +1,10 @@
 import { CONTRACT_RULES, FACTIONS, SECTORS, getFaction, getResource, getStation, type ContractRules } from '@void-frontier/content';
+import { setContractCloser } from './economy.ts';
 import { holdSpaceFor } from './ship.ts';
 import type { EntityId } from './types.ts';
 import type { World } from './world.ts';
 
-export type ContractKind = 'delivery' | 'mining' | 'bounty';
+export type ContractKind = 'delivery' | 'mining' | 'bounty' | 'escort';
 
 export interface DropPoint {
   id: string;
@@ -38,6 +39,8 @@ export interface Contract {
   delivery?: { units: number; sector: string; drop?: string; station?: string };
   mining?: { resource: string; units: number };
   bounty?: { count: number; killsAtStart: number };
+  /** Fly alongside a hauler on route `route` until it docks at `to`. */
+  escort?: { route: string; to: string };
 }
 
 export type ContractOutcome = 'completed' | 'failed' | 'abandoned';
@@ -200,6 +203,12 @@ function close(world: World, board: MissionBoard, contract: Contract, outcome: C
   world.events.push({ type: 'contract', id: contract.id, kind: contract.kind, outcome, reward });
 }
 
+// Escorts are settled by the economy when the hauler arrives or is lost.
+setContractCloser((world, board, id, outcome) => {
+  const contract = board.active.find((c) => c.id === id);
+  if (contract) close(world, board, contract, outcome);
+});
+
 /** Key of the station a ship is docked at, or null. */
 export function dockedStationKey(world: World, shipId: EntityId): string | null {
   const ship = world.ships.get(shipId);
@@ -236,6 +245,7 @@ export function contractProgress(world: World, board: MissionBoard, shipId: Enti
   const ship = world.ships.get(shipId);
   if (contract.mining) return { current: Math.min(contract.mining.units, ship?.cargo.get(contract.mining.resource) ?? 0), target: contract.mining.units };
   if (contract.bounty) return { current: Math.min(contract.bounty.count, (ship?.kills ?? 0) - contract.bounty.killsAtStart), target: contract.bounty.count };
+  if (contract.escort) return { current: 0, target: 1 };
   const cargo = board.rules.delivery.cargo;
   return { current: Math.min(contract.delivery!.units, ship?.cargo.get(cargo) ?? 0), target: contract.delivery!.units };
 }
@@ -248,7 +258,7 @@ export function handInContract(world: World, board: MissionBoard, shipId: Entity
   if (!ship || dockedStationKey(world, shipId) === null) return { ok: false, reason: 'notDocked' };
   const contract = board.active.find((c) => c.id === contractId);
   if (!contract) return { ok: false, reason: 'unknown' };
-  if (contract.delivery) return { ok: false, reason: 'deliverInPerson' };
+  if (contract.delivery || contract.escort) return { ok: false, reason: 'deliverInPerson' };
   const progress = contractProgress(world, board, shipId, contract);
   if (progress.current < progress.target) return { ok: false, reason: 'incomplete' };
   if (contract.mining) {

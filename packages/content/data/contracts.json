@@ -48,5 +48,11 @@
   "penalty": {
     "failed": 6,
     "abandoned": 4
+  },
+  "escort": {
+    "baseReward": 500,
+    "rewardPerHop": 250,
+    "repGain": 6,
+    "range": 2000
   }
 }

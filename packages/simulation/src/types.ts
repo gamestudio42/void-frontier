@@ -5,7 +5,10 @@ export type EntityId = number;
 
 export type FlightMode = 'newtonian' | 'assisted';
 
-export type Faction = 'player' | 'pirate';
+export type Faction = 'player' | 'pirate' | 'trader';
+
+/** Pirates fight everyone else; players and traders are on the same side. */
+export const isHostile = (a: Faction, b: Faction): boolean => (a === 'pirate') !== (b === 'pirate');
 
 /** Rigid body on the movement plane. Angle is counter-clockwise from +X, in radians. */
 export interface Body {
@@ -87,6 +90,8 @@ export interface Ship {
   /** Station the ship is docked at, or null in flight. */
   docked: EntityId | null;
   faction: Faction;
+  /** Lawful faction a trader flies for (reputation reacts to who protects it). */
+  allegiance: string | null;
   mode: FlightMode;
   shield: number;
   energy: number;
@@ -149,6 +154,8 @@ export interface Asteroid {
 
 export interface MarketItem {
   resource: string;
+  /** Price multiplier from economy events (a mining boom), 1 when nothing is happening. */
+  priceFactor?: number;
   /** Units in stock; fractional while it drifts back toward the base stock. */
   stock: number;
   baseStock: number;
@@ -175,7 +182,8 @@ export type SimEvent =
       damage: number;
     }
   | { type: 'shipDestroyed'; id: EntityId; position: { x: number; y: number }; by: EntityId | null }
-  | { type: 'contract'; id: number; kind: 'delivery' | 'mining' | 'bounty'; outcome: 'completed' | 'failed' | 'abandoned'; reward: number }
+  | { type: 'contract'; id: number; kind: 'delivery' | 'mining' | 'bounty' | 'escort'; outcome: 'completed' | 'failed' | 'abandoned'; reward: number }
+  | { type: 'news'; item: NewsItem }
   | { type: 'subsystemDamaged'; ship: EntityId; system: SubsystemId | 'weapon'; health: number }
   | { type: 'discovered'; id: string; kind: 'derelict' | 'deposit' | 'cache'; credits: number }
   | { type: 'docked'; ship: EntityId; station: EntityId }
@@ -210,6 +218,8 @@ export type AiMode = 'patrol' | 'engage' | 'retreat';
 
 export interface AiPilot {
   mode: AiMode;
+  /** Haulers fly to a point instead of hunting; they never pick fights. */
+  travel?: { to: { x: number; y: number }; speed: number };
   patrol: { x: number; y: number }[];
   waypoint: number;
   target: EntityId | null;
@@ -236,4 +246,14 @@ export interface Pickup {
   life: number;
   /** Tick before which tractors ignore it (just jettisoned). */
   freeAfterTick: number;
+}
+
+export interface NewsItem {
+  tick: number;
+  kind: 'eventStarted' | 'eventEnded' | 'traderDeparted' | 'traderArrived' | 'traderLost' | 'traderDefended';
+  /** Event id, or trader route id. */
+  subject: string;
+  station?: string;
+  sector?: string;
+  resource?: string;
 }

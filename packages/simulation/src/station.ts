@@ -153,7 +153,7 @@ const BID_DISCOUNT = 0.9;
 export function unitPrice(item: MarketItem, side: 'buy' | 'sell', stock = item.stock): number {
   const base = getResource(item.resource).basePrice;
   const factor = Math.min(2.5, Math.max(0.5, Math.sqrt(item.baseStock / Math.max(stock, 1))));
-  return Math.max(1, Math.round(base * factor * (side === 'buy' ? ASK_MARKUP : BID_DISCOUNT)));
+  return Math.max(1, Math.round(base * factor * (item.priceFactor ?? 1) * (side === 'buy' ? ASK_MARKUP : BID_DISCOUNT)));
 }
 
 /** Total for `units`, priced one unit at a time so a big sale moves the price as it goes. */
