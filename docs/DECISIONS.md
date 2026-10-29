@@ -173,3 +173,15 @@ A hauler is a route state. In the simulated sector it is a ship flying its leg w
 ## 043. Events change rates and prices, not the rules
 
 Shortages multiply consumption (and cut stock at once), gluts multiply production, rushes multiply the price a station pays, and raids multiply off-screen risk and spawn real raiders on the busiest lane. They are data in `events.json`, so new ones need no code.
+
+## 044. Owned ships are parked player states
+
+A ship in the hangar is the same `PlayerState` the save uses for the flying ship, plus the station key where it is parked. Boarding parks the current ship, removes its entity and spawns the chosen one docked at the same station, so no new ship representation is needed and saves only gain a `fleet` field.
+
+## 045. Ships are boarded where they are parked
+
+There is no remote transfer: a parked ship can be boarded or sold only while docked at its station. Location matters, and moving a cargo ship to a market is a reason to fly it there.
+
+## 046. Shipyards are station data
+
+Each station lists the hulls it sells, with optional faction standing requirements, in `stations.json`; hull prices live in `ships.json`. Resale pays 60% of the hull and half of each module, matching module resale.

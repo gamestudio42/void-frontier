@@ -141,6 +141,11 @@ Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kes
 - **Events.** Every four to seven minutes something happens: a shortage, a glut, pirate raids in a sector, a platinum or titanium rush. The station news shows what is running and for how long.
 - **Escorts.** Before a hauler leaves, its station posts an escort contract. Fly with it and be within 2 km when it docks. Save a hauler from pirates and its faction remembers; shoot one and it remembers that too.
 
+## Advanced sandbox (0.5)
+
+- **Fleet.** Buy hulls at a station shipyard. Every ship you own stays where you left it, with its cargo, modules and damage. Dock where it is parked to fly it or sell it.
+- **Hulls.** Kestrel scout (6,000 cr, all-rounder), Mule hauler (9,500 cr, 20 t hold), Prospector miner (11,000 cr, mining laser Mk II, long tractor), Lancer fighter (14,500 cr at Ferrum Refinery, needs Ferrum standing +15, three autocannons).
+
 ## Not yet
 
- docking, economy, missions, saves, audio and the second ship in play (it is defined in content). See `docs/ROADMAP.md`.
+Crew, a procedural universe and larger story contracts. See `docs/ROADMAP.md`.

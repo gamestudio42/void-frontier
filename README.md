@@ -55,6 +55,14 @@
 </p>
 
 <p align="center">
+  <img src="docs/screenshots/prospector.jpg" alt="A Prospector miner cuts a copper rock with its heavy mining laser, the hold filling on the HUD" width="920">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/shipyard.jpg" alt="The shipyard tab at Outpost Alpha: the hangar with the flying Kestrel and a parked Mule, and hulls for sale" width="920">
+</p>
+
+<p align="center">
   <img src="docs/screenshots/convoy.jpg" alt="The scout flies beside an Outpost ore hauler while a pirate raider closes in" width="920">
 </p>
 
@@ -94,7 +102,7 @@ New players get a guided first flight that teaches each of these by doing it. Pr
 
 ## Status
 
-**0.4: a living frontier.** Stations produce and consume on the clock, NPC haulers carry goods between them through pirate-patrolled lanes, events shake up supply and prices, and you can escort convoys for pay and standing. This builds on 0.3 (subsystems, factions, outfitting), 0.2 (four sectors and jump gates) and the 0.1 vertical slice. Next is 0.5: owning several ships; see the [roadmap](docs/ROADMAP.md).
+**0.5: a fleet of your own.** Buy a Mule hauler, a Prospector miner or a Lancer fighter at the station shipyards, park them where you like and switch hulls when docked; each keeps its cargo, modules and damage. This builds on 0.4 (living economy, haulers, events), 0.3 (subsystems, factions, outfitting), 0.2 (four sectors and gates) and the 0.1 vertical slice. See the [roadmap](docs/ROADMAP.md).
 
 ## Develop
 

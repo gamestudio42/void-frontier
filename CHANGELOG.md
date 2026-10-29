@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.0: advanced sandbox
+
+- Fleet and hangar: own several ships, each parked with its cargo, modules and damage.
+- Shipyards at Outpost Alpha and Ferrum Refinery; buy, board and sell hulls.
+- New hulls: Prospector miner (mining laser Mk II) and Lancer fighter (Ferrum standing).
+- Save format 5 with migration.
+
 ## 0.4.0: dynamic universe
 
 - Shared economy with production and consumption at every station.

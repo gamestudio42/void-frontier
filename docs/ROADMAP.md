@@ -164,6 +164,15 @@ Known limits: one hand-built set of sectors (no procedural universe yet); NPC tr
 - [x] Frontier news at stations, notices in flight, hauler labels on screen, raid alerts on the map
 - [x] Save format 4 with a migration from version 3
 
-## 0.5: advanced sandbox (next)
+## 0.5: advanced sandbox (done)
 
-Several owned ships and a hangar, buying the Mule hauler, and switching between specialisations.
+- [x] A fleet: every ship you own is parked at a station with its own cargo, modules and damage
+- [x] Shipyards at Outpost Alpha and Ferrum Refinery; hulls cost credits and some need standing
+- [x] Five player hulls: Kestrel scout, Mule hauler, Prospector miner, Lancer fighter (Ferrum standing)
+- [x] Board any ship parked where you are docked; sell parked ships for 60% of the hull plus half their modules
+- [x] Miner hull and mining laser Mk II; ship-specific models for miner and fighter
+- [x] Save format 5 with a migration from version 4
+
+## 0.6: next
+
+To be planned from the spec: crew, larger contracts or a procedural universe.
