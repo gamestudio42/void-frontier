@@ -38,7 +38,7 @@ export interface StationView {
 
 export interface ContractView {
   id: number;
-  kind: 'delivery' | 'mining' | 'bounty';
+  kind: 'delivery' | 'mining' | 'bounty' | 'escort';
   elite: boolean;
   reward: number;
   seconds: number;
@@ -47,6 +47,8 @@ export interface ContractView {
   drop: string | null;
   station: string | null;
   sector: string | null;
+  /** Escorts: the hauler's route id. */
+  route: string | null;
 }
 
 export interface ActiveContractView extends ContractView {
@@ -97,6 +99,10 @@ export interface HudState {
   discovered: string[];
   visited: string[];
   mapOpen: boolean;
+  /** Latest economy news, newest first. */
+  news: { tick: number; kind: string; subject: string; station?: string; sector?: string; resource?: string }[];
+  /** Active economy events. */
+  events: { id: string; secondsLeft: number }[];
   /** Increments on every damaging hit, so the HUD can flash. */
   hits: number;
   stats: DebugStats;
@@ -150,6 +156,8 @@ export const initialHudState = (): HudState => ({
   discovered: [],
   visited: ['outpost_alpha'],
   mapOpen: false,
+  news: [],
+  events: [],
   hits: 0,
   stats: { fps: 0, frameMs: 0, tick: 0, stepsPerFrame: 0, droppedSeconds: 0, entities: 0, drawCalls: 0, triangles: 0, zoom: 1, quality: 'high', autoQuality: true },
 });

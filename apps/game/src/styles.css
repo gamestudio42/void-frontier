@@ -1736,3 +1736,55 @@ button {
 .rep-fill.negative {
   background: var(--red);
 }
+
+.news {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--panel-edge);
+  border-left: 3px solid var(--amber);
+  border-radius: 6px;
+}
+
+.news h3 {
+  margin: 0 0 6px !important;
+}
+
+.news-event {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #ffd27a;
+}
+
+.news-event span {
+  font-family: var(--mono);
+  color: var(--muted);
+}
+
+.news ul {
+  margin: 6px 0 0;
+  padding-left: 16px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.news li.traderLost {
+  color: var(--red);
+}
+
+.news li.traderArrived {
+  color: var(--green);
+}
+
+.map-alert {
+  fill: var(--red);
+  font-size: 18px;
+  text-anchor: middle;
+}
+
+.map-events {
+  margin: 0;
+  padding-left: 18px;
+  color: #ffd27a;
+  font-size: 13px;
+}

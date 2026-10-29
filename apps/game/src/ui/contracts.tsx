@@ -12,6 +12,10 @@ const clock = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.fl
 
 /** One sentence that says what to do, in the player's language. */
 export function objective(c: ContractView, t: Translate): string {
+  if (c.kind === 'escort')
+    return t('contract.escort.objective')
+      .replace('{route}', t(`route.${c.route}` as MessageKey))
+      .replace('{station}', t(`station.${c.station}` as MessageKey));
   if (c.kind === 'delivery' && c.station)
     return t('contract.station.objective')
       .replace('{units}', String(c.units))
@@ -135,6 +139,8 @@ export function Notices({ notices, t, locale }: { notices: { id: number; kind: s
         <div key={`${n.id}-${n.outcome}`} className={`notice ${n.outcome}`} data-testid="notice">
           {n.kind === 'tutorial' ? (
             <strong>{t('tutorial.done')}</strong>
+          ) : n.kind.startsWith('news:') ? (
+            <strong>{newsLine(n.kind.split(':')[1], n.kind.split(':')[2], t)}</strong>
           ) : n.kind.startsWith('system:') ? (
             <strong>
               {t(`system.${n.kind.slice(7)}` as MessageKey)} {n.outcome === 'failed' ? t('system.offline') : t('system.damaged')}
@@ -152,6 +158,40 @@ export function Notices({ notices, t, locale }: { notices: { id: number; kind: s
           )}
         </div>
       ))}
+    </div>
+  );
+}
+
+/** One line of station news. Event and route names come from the string tables. */
+export function newsLine(kind: string, subject: string, t: Translate): string {
+  if (kind === 'eventStarted') return t(`event.${subject}` as MessageKey);
+  if (kind === 'eventEnded') return `${t('news.ended')}: ${t(`event.${subject}` as MessageKey)}`;
+  return `${t(`route.${subject}` as MessageKey)} ${t(`news.${kind}` as MessageKey)}`;
+}
+
+export function NewsFeed({ news, events, t }: { news: { tick: number; kind: string; subject: string }[]; events: { id: string; secondsLeft: number }[]; t: Translate }) {
+  if (news.length === 0 && events.length === 0) return null;
+  return (
+    <div className="news" data-testid="news">
+      <h3>{t('news.title')}</h3>
+      {events.map((e) => (
+        <div key={e.id} className="news-event">
+          <strong>{t(`event.${e.id}` as MessageKey)}</strong>
+          <span>
+            {Math.floor(e.secondsLeft / 60)}:{String(Math.floor(e.secondsLeft % 60)).padStart(2, '0')}
+          </span>
+        </div>
+      ))}
+      <ul>
+        {news
+          .filter((n) => n.kind !== 'eventStarted')
+          .slice(0, 5)
+          .map((n) => (
+            <li key={`${n.tick}-${n.kind}-${n.subject}`} className={n.kind}>
+              {newsLine(n.kind, n.subject, t)}
+            </li>
+          ))}
+      </ul>
     </div>
   );
 }

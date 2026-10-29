@@ -1,4 +1,4 @@
-import { OUTPOST_ALPHA, getFaction, getSector } from '@void-frontier/content';
+import { OUTPOST_ALPHA, STATION_PLACEMENTS, getFaction, getSector } from '@void-frontier/content';
 import { FIXED_DT, FixedStepper, type Vec2 } from '@void-frontier/kernel';
 import { getUpgrade } from '@void-frontier/content';
 import { Simulation, slotUsage, applySectorSnapshot, captureSector, gateStatus, gravityAt, jump, markDiscovered, nextGate, dockedStationKey, type SectorSnapshot, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, installUpgrades, hostilesNear, nearestObstacle, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
@@ -360,6 +360,9 @@ export class Game {
           if (event.type === 'subsystemDamaged' && event.ship === this.sim.playerId) {
             this.notices.push({ text: `system:${event.system}`, kind: event.health === 0 ? 'failed' : 'abandoned', reward: 0, at: this.clock, id: -1000 - Math.round(this.clock * 10) });
           }
+          if (event.type === 'news' && (event.item.kind === 'eventStarted' || event.item.kind === 'traderLost')) {
+            this.notices.push({ text: `news:${event.item.kind}:${event.item.subject}`, kind: event.item.kind === 'traderLost' ? 'failed' : 'abandoned', reward: 0, at: this.clock, id: -5000 - event.item.tick });
+          }
           if (event.type === 'contract') {
             this.notices.push({ text: event.kind, kind: event.outcome, reward: event.reward, at: this.clock, id: event.id });
           }
@@ -463,6 +466,12 @@ export class Game {
     const here = this.sim.world.sectorId;
     const points: { label: string; position: { x: number; y: number } }[] = [];
     for (const c of board.active) {
+      if (c.escort) {
+        const t = this.sim.economy?.traders.find((tr) => tr.route === c.escort!.route);
+        const b = t?.shipId != null ? this.sim.world.bodies.get(t.shipId) : undefined;
+        if (b) points.push({ label: this.labels.route(c.escort.route), position: b.position });
+        continue;
+      }
       const d = c.delivery;
       if (!d) continue;
       const label = d.drop ? this.labels.drop(d.drop) : this.labels.station(d.station!);
@@ -482,6 +491,10 @@ export class Game {
   private markers(): { label: string; position: { x: number; y: number }; colour: string }[] {
     const list: { label: string; position: { x: number; y: number }; colour: string }[] = [];
     for (const gate of this.sim.world.gates.values()) list.push({ label: `⟶ ${this.labels.sector(gate.to)}`, position: gate.position, colour: '#6fd3ff' });
+    for (const t of this.sim.economy?.traders ?? []) {
+      const b = t.shipId !== null ? this.sim.world.bodies.get(t.shipId) : undefined;
+      if (b) list.push({ label: this.labels.route(t.route), position: b.position, colour: '#7dffb2' });
+    }
     for (const poi of this.sim.world.pointsOfInterest.values()) {
       if (poi.kind === 'deposit' && !poi.found) continue;
       list.push({ label: poi.found ? '✓' : '?', position: poi.position, colour: '#c77dff' });
@@ -490,7 +503,7 @@ export class Game {
   }
 
   /** Set by the UI so canvas labels follow the chosen language. */
-  labels = { drop: (id: string) => id, station: (id: string) => id, sector: (id: string) => id };
+  labels = { drop: (id: string) => id, station: (id: string) => id, sector: (id: string) => id, route: (id: string) => id };
 
   private contractsView() {
     const board = this.sim.missions;
@@ -509,7 +522,9 @@ export class Game {
       resource: c.mining?.resource ?? null,
       drop: c.delivery?.drop ?? null,
       station: c.delivery?.station ?? null,
-      sector: c.delivery?.sector ?? null,
+      sector: c.delivery?.sector ?? (c.escort ? STATION_PLACEMENTS.get(c.escort.to)!.sector : null),
+      route: c.escort?.route ?? null,
+      ...(c.escort ? { station: c.escort.to } : {}),
     });
     return {
       reputation: Object.fromEntries(Object.entries(board.reputation).filter(([id]) => !getFaction(id).hostile)),
@@ -589,6 +604,8 @@ export class Game {
       })(),
       jumpedAt: this.jumpedAt,
       discovered: [...this.discovered],
+      news: (this.sim.economy?.news ?? []).slice(0, 8),
+      events: (this.sim.economy?.events ?? []).map((e) => ({ id: e.id, secondsLeft: Math.max(0, (e.endsTick - this.sim.world.tick) / 60) })),
       visited: [...new Set([...Object.keys(this.memory), this.sim.world.sectorId])],
       dockRefused: this.dockRefused && this.clock - this.dockRefused.at < 3 ? this.dockRefused.refusals : null,
       station: this.stationView(),

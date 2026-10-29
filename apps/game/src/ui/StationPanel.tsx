@@ -2,7 +2,7 @@ import { getUpgrade } from '@void-frontier/content';
 import { useState } from 'react';
 import type { MessageKey, Translate } from '../i18n.ts';
 import type { ContractsView, StationView } from '../store.ts';
-import { ContractsTab, type ContractActions } from './contracts.tsx';
+import { ContractsTab, NewsFeed, type ContractActions } from './contracts.tsx';
 import { formatNumber } from './format.ts';
 
 export interface StationActions extends ContractActions {
@@ -16,6 +16,8 @@ export interface StationActions extends ContractActions {
 interface StationPanelProps {
   view: StationView;
   contracts: ContractsView | null;
+  news: { tick: number; kind: string; subject: string }[];
+  events: { id: string; secondsLeft: number }[];
   hull: { value: number; max: number };
   fuel: { value: number; max: number };
   hold: { mass: number; max: number };
@@ -46,7 +48,7 @@ function effectLines(id: string, t: Translate, locale: string): string[] {
   return lines;
 }
 
-export function StationPanel({ view, contracts, hull, fuel, hold, actions, t, locale }: StationPanelProps) {
+export function StationPanel({ view, contracts, news, events, hull, fuel, hold, actions, t, locale }: StationPanelProps) {
   const [tab, setTab] = useState<Tab>('contracts');
   const cr = (n: number) => `${formatNumber(locale, n)} cr`;
   return (
@@ -72,6 +74,7 @@ export function StationPanel({ view, contracts, hull, fuel, hold, actions, t, lo
           ))}
         </nav>
 
+        {tab === 'contracts' && <NewsFeed news={news} events={events} t={t} />}
         {tab === 'contracts' && contracts && <ContractsTab view={contracts} actions={actions} t={t} locale={locale} />}
 
         {tab === 'market' && (

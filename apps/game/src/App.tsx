@@ -56,6 +56,7 @@ export function App() {
         drop: (id) => t(`drop.${id}` as MessageKey),
         station: (id) => t(`station.${id}` as MessageKey),
         sector: (id) => t(`sector.${id}` as MessageKey),
+        route: (id) => t(`route.${id}` as MessageKey),
       };
   }, [game, t]);
 
@@ -74,7 +75,7 @@ export function App() {
       <Notices notices={hud.notices} t={t} locale={locale} />
       <div key={`jump-${hud.jumpedAt}`} className={hud.jumpedAt > 0 ? 'jump-flash' : ''} aria-hidden="true" />
       {hud.mapOpen && hud.menu === null && (
-        <SectorMap current={hud.sectorId} visited={hud.visited} discovered={hud.discovered} contracts={hud.contracts} t={t} onClose={() => store.update({ mapOpen: false })} />
+        <SectorMap events={hud.events} current={hud.sectorId} visited={hud.visited} discovered={hud.discovered} contracts={hud.contracts} t={t} onClose={() => store.update({ mapOpen: false })} />
       )}
       <figure className="radar" aria-label={t('hud.radar')} hidden={hud.menu === 'main'}>
         <canvas ref={radarRef} data-testid="radar" />
@@ -83,6 +84,8 @@ export function App() {
         <StationPanel
           view={hud.station}
           contracts={hud.contracts}
+          news={hud.news}
+          events={hud.events}
           hull={{ value: hud.telemetry.hull, max: hud.telemetry.hullMax }}
           fuel={{ value: hud.telemetry.fuel, max: hud.telemetry.fuelCapacity }}
           hold={{ mass: hud.telemetry.holdMass, max: hud.telemetry.holdMaxMass }}

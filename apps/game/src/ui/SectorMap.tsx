@@ -1,8 +1,9 @@
-import { FACTIONS, SECTORS, STATIONS } from '@void-frontier/content';
+import { EVENT_RULES, FACTIONS, SECTORS, STATIONS } from '@void-frontier/content';
 import type { MessageKey, Translate } from '../i18n.ts';
 import type { ContractsView } from '../store.ts';
 
 interface SectorMapProps {
+  events: { id: string; secondsLeft: number }[];
   current: string;
   visited: string[];
   discovered: string[];
@@ -19,7 +20,7 @@ function danger(sectorId: string): 'low' | 'medium' | 'high' {
 }
 
 /** The gate network: sectors as nodes on their map positions, gates as links. */
-export function SectorMap({ current, visited, discovered, contracts, t, onClose }: SectorMapProps) {
+export function SectorMap({ events, current, visited, discovered, contracts, t, onClose }: SectorMapProps) {
   const sectors = [...SECTORS.values()];
   const scale = 230;
   const cx = 360;
@@ -57,6 +58,11 @@ export function SectorMap({ current, visited, discovered, contracts, t, onClose 
               <g key={s.id} transform={`translate(${p.x} ${p.y})`} className={`map-node ${here ? 'here' : ''} ${seen ? '' : 'unseen'} danger-${level}`}>
                 <circle r={here ? 34 : 28} style={s.controllingFaction ? { stroke: FACTIONS.get(s.controllingFaction)!.color } : undefined} />
                 {targets.has(s.id) && <circle r={42} className="map-target" />}
+                {events.some((e) => EVENT_RULES.events.find((d) => d.id === e.id)?.sector === s.id) && (
+                  <text y={-38} className="map-alert">
+                    ⚠
+                  </text>
+                )}
                 {stations.map((st, i) => (
                   <rect key={i} x={-26 + i * 14} y={-6} width={10} height={10} className={FACTIONS.get(st.faction)!.hostile ? 'map-station pirate' : 'map-station'} />
                 ))}
@@ -76,6 +82,13 @@ export function SectorMap({ current, visited, discovered, contracts, t, onClose 
             );
           })}
         </svg>
+        {events.length > 0 && (
+          <ul className="map-events">
+            {events.map((e) => (
+              <li key={e.id}>{t(`event.${e.id}` as MessageKey)}</li>
+            ))}
+          </ul>
+        )}
       </section>
     </div>
   );
