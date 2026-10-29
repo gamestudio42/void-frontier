@@ -34,6 +34,11 @@ export interface StationView {
   /** Modules on offer here plus any already installed, with whether they can be fitted. */
   upgrades: { id: string; slot: 'engine' | 'utility' | 'defense'; cost: number; installed: boolean; offered: boolean; locked: { faction: string; reputation: number } | null }[];
   slots: Record<'engine' | 'utility' | 'defense', { used: number; total: number }>;
+  shipyard: { ship: string; price: number; locked: { faction: string; reputation: number } | null }[];
+  /** Every parked ship, here or elsewhere. */
+  hangar: { id: number; ship: string; station: string; here: boolean; value: number; upgrades: number; cargo: number }[];
+  /** Hull being flown. */
+  flying: string;
 }
 
 export interface ContractView {

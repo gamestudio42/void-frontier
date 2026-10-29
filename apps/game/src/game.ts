@@ -1,7 +1,7 @@
 import { OUTPOST_ALPHA, STATION_PLACEMENTS, getFaction, getSector } from '@void-frontier/content';
 import { FIXED_DT, FixedStepper, type Vec2 } from '@void-frontier/kernel';
 import { getUpgrade } from '@void-frontier/content';
-import { Simulation, slotUsage, applySectorSnapshot, captureSector, gateStatus, gravityAt, jump, markDiscovered, nextGate, dockedStationKey, type SectorSnapshot, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, installUpgrades, hostilesNear, nearestObstacle, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
+import { Simulation, shipValue, shipyardOffers, slotUsage, applySectorSnapshot, captureSector, gateStatus, gravityAt, jump, markDiscovered, nextGate, dockedStationKey, type SectorSnapshot, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, installUpgrades, hostilesNear, nearestObstacle, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
 import { SpaceRenderer, type Quality } from '@void-frontier/view3d';
 import { AudioEngine } from './audio.ts';
 import { InputController } from './input.ts';
@@ -165,6 +165,21 @@ export class Game {
     this.publish();
   }
 
+  buyShip(id: string): void {
+    this.sim.buyShip(id);
+    this.publish();
+  }
+
+  sellShip(id: number): void {
+    this.sim.sellShip(id);
+    this.publish();
+  }
+
+  boardShip(id: number): void {
+    if (this.sim.boardShip(id).ok) this.target = null;
+    this.publish();
+  }
+
   sellUpgrade(id: string): void {
     this.sim.sellUpgrade(this.sim.playerId, id);
     this.publish();
@@ -204,7 +219,13 @@ export class Game {
     // The insurer always relaunches you at Outpost Alpha; the clock and every sector's memory carry on.
     this.memory[this.sim.world.sectorId] = captureSector(this.sim);
     const tick = this.sim.world.tick;
-    const sim = Simulation.fromSector(OUTPOST_ALPHA, undefined, { board, startDocked: true });
+    const sim = Simulation.fromSector(OUTPOST_ALPHA, undefined, {
+      board,
+      economy: this.sim.economy ?? undefined,
+      fleet: this.sim.fleet,
+      playerShip: oldShip?.baseDefinition.id,
+      startDocked: true,
+    });
     sim.world.tick = tick;
     const home = this.memory[OUTPOST_ALPHA.id];
     if (home) applySectorSnapshot(sim, home);
@@ -570,6 +591,17 @@ export class Game {
         return { id, slot: u.slot, cost: u.cost, installed: ship.upgrades.includes(id), offered: station.definition.upgrades.includes(id), locked };
       }),
       slots: slotUsage(ship),
+      shipyard: shipyardOffers(world, this.sim.playerId),
+      hangar: this.sim.fleet.ships.map((owned) => ({
+        id: owned.id,
+        ship: owned.state.ship,
+        station: owned.station,
+        here: owned.station === station.name,
+        value: shipValue(owned.state),
+        upgrades: owned.state.upgrades.length,
+        cargo: owned.state.cargo.reduce((sum, [, units]) => sum + units, 0),
+      })),
+      flying: ship.baseDefinition.id,
     };
   }
 

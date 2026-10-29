@@ -77,7 +77,7 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
         <div className="brand">
           <strong>{t('app.title')}</strong>
           <span data-testid="sector" data-value={hud.sectorId}>
-            {t(`sector.${hud.sectorId}` as MessageKey)}
+            {t(`sector.${hud.sectorId}` as MessageKey)} · {t(`ship.${tel.shipId}` as MessageKey)}
           </span>
         </div>
         <div className={`mode mode-${tel.mode}`} data-testid="flight-mode" data-mode={tel.mode}>
