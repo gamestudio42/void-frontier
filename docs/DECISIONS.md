@@ -185,3 +185,23 @@ There is no remote transfer: a parked ship can be boarded or sold only while doc
 ## 046. Shipyards are station data
 
 Each station lists the hulls it sells, with optional faction standing requirements, in `stations.json`; hull prices live in `ships.json`. Resale pays 60% of the hull and half of each module, matching module resale.
+
+## 047. One route runner for haulers and the fleet
+
+Leg planning, cruising on the clock and spawning a ship partway along a leg moved from `economy.ts` to `routes.ts`. NPC haulers and fleet ships use the same code, so a fleet ship behaves like a hauler where the player is not: real in the simulated sector, clock-driven elsewhere. The move changed no hauler behaviour (the 0.4 tests pass unchanged).
+
+## 048. Fleet orders are deterministic routines, not planners
+
+A crewed ship follows one of three routines (mine, trade, wingman) as a small state machine: docked, travel, work, escort. There is no AI planning and no language model: the spec asks for deterministic systems first. A trader loads unit by unit only while the next unit still sells at the destination, after commission, for 8% more than it costs, so it waits instead of trading at a loss.
+
+## 049. Pirate risk once per sector, at a quarter of a hauler's
+
+Fleet ships roll for pirates once per sector crossed (on the way out), scaled by `fleetRisk` (0.25) and reduced by piloting skill, plus combat skill if armed. Rolling per route segment, as haulers do, lost most fleet ships within an hour of play.
+
+## 050. Passive income stays below active play
+
+Fleet miners work at a small share of their laser's rate, pilots keep a 25% commission and draw a wage every 5 minutes. With an average pilot a Prospector nets about 3,000 cr an hour near Outpost Alpha and 10,000 to 12,000 in the belt fields; a test keeps the belt figure under 14,500. The fleet is worth building, but flying still pays better.
+
+## 051. A lost ship's pilot survives
+
+When a fleet ship is destroyed, half its hold spills (in the simulated sector), the ship is gone and the pilot ejects and waits at the nearest station on the payroll. Losing a ship costs the hull and cargo, not the crew's experience.

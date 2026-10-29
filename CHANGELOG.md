@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.0: autonomous fleet
+
+- Hire pilots at station crew boards; wages every 5 minutes and a commission on sales.
+- Orders for crewed ships: mine, trade or fly as a wingman; real in your sector, simulated elsewhere.
+- Fleet panel (O), crew tab, fleet markers on radar, screen and map, fleet notices.
+- Save format 6 with migration.
+
 ## 0.5.0: advanced sandbox
 
 - Fleet and hangar: own several ships, each parked with its cargo, modules and damage.

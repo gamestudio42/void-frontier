@@ -146,6 +146,13 @@ Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kes
 - **Fleet.** Buy hulls at a station shipyard. Every ship you own stays where you left it, with its cargo, modules and damage. Dock where it is parked to fly it or sell it.
 - **Hulls.** Kestrel scout (6,000 cr, all-rounder), Mule hauler (9,500 cr, 20 t hold), Prospector miner (11,000 cr, mining laser Mk II, long tractor), Lancer fighter (14,500 cr at Ferrum Refinery, needs Ferrum standing +15, three autocannons).
 
+## Autonomous fleet (0.6)
+
+- **Crew.** Outpost Alpha and Ferrum Refinery each list three pilots for hire, refreshed every 15 minutes. A pilot has piloting, mining and combat from 1 to 5, a hiring fee of two wages, and a wage every 5 minutes. Up to six pilots. Every few trips a pilot improves.
+- **Orders.** Put a pilot aboard a parked ship and give it an order: *mine* one of six fields and sell the ore at that field's station; *trade* one good between two stations; or *wingman*, flying beside you. Recall sends a ship to the next station.
+- **Where they are.** In your sector fleet ships fly for real (gold on the radar, pilot name on screen); elsewhere they run on the clock and may meet pirates once per sector they cross.
+- **Money.** Sales go straight to your account, less the pilot's 25% commission. The fleet panel (O) shows each ship's net earnings and a log.
+
 ## Not yet
 
 Crew, a procedural universe and larger story contracts. See `docs/ROADMAP.md`.

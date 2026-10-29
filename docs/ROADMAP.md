@@ -173,6 +173,17 @@ Known limits: one hand-built set of sectors (no procedural universe yet); NPC tr
 - [x] Miner hull and mining laser Mk II; ship-specific models for miner and fighter
 - [x] Save format 5 with a migration from version 4
 
-## 0.6: next
+## 0.6: autonomous fleet (done)
 
-To be planned from the spec: crew, larger contracts or a procedural universe.
+- [x] Hauler route code shared by NPC haulers and the player's fleet (`routes.ts`), with no change to haulers
+- [x] Crew boards at lawful stations: pilots with piloting, mining and combat skills, a hiring fee and a wage per 5-minute cycle; unpaid pilots quit
+- [x] Orders for crewed ships: mine a field and sell at its station, trade between two stations (buying only while the margin holds after the pilot's commission), or fly as a wingman
+- [x] Real ships in the player's sector (fleet miners cut rocks, wingmen hold formation and fight threats near the player), clock-driven elsewhere with one pirate roll per sector crossed
+- [x] Ship losses: half the hold spills, the pilot ejects and waits at the nearest station
+- [x] Wingmen launch with the player, jump through gates with them and park where they dock
+- [x] Crew tab, orders on hangar cards, fleet panel (O) with net earnings and a log, gold fleet markers on radar and screen, fleet counts on the map, notices
+- [x] Save format 6 with a migration from version 5
+
+## 1.0: complete game (next)
+
+Content, balance, narrative and polish, per the spec. To be planned.
