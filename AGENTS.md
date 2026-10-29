@@ -46,6 +46,7 @@ Instructions for AI coding agents working on Void Frontier. Read `docs/GDD.md`, 
 - Every gate has a matching gate on the far side (checked at load).
 - Subsystem damage comes only from hull damage at a position; health stays within 0..1 and engines never give less than 35% thrust.
 - A ship never holds more modules of a kind than it has slots.
+- Station markets are the economy's objects: never copy them into a sector; a hauler's cargo leaves one market and reaches the other, or is lost.
 
 ## Commands
 

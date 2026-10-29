@@ -1,6 +1,6 @@
 # Void Frontier: game design
 
-Status: 0.3 depth (subsystems, factions, outfitting). The full vision and the original Portuguese specification are in `docs/reference/void-frontier-spec-v0.1-pt.md`.
+Status: 0.4 dynamic universe (economy, haulers, events, escorts). The full vision and the original Portuguese specification are in `docs/reference/void-frontier-spec-v0.1-pt.md`.
 
 ## Fantasy
 
@@ -133,6 +133,13 @@ Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kes
 - **Repairs.** Station repairs fix hull, systems and mounts together. Repair drones patch the worst system in flight after five quiet seconds, using reactor energy.
 - **Factions.** Outpost Authority (Outpost Alpha), Ferrum Combine (Industrial Belt) and the hostile Free Pirates. Each lawful faction tracks your reputation: contracts move the issuer's, every pirate destroyed raises both. At -25 or below their stations refuse docking. The Ferrum combat computer needs +20 with them.
 - **Outfitting.** The Kestrel has 1 engine, 2 utility and 2 defence slots. Modules: engine tuning or afterburner (engine); cargo frame, deep scanner, tractor Mk II, repair drones, combat computer (utility); reinforced hull, shield capacitor, armour plating (defence). Removing a module refunds half.
+
+## Dynamic universe (0.4)
+
+- **Living markets.** Outpost Alpha mines iron and copper and burns machine parts; Ferrum Refinery turns ore into machine parts. Stock moves every second whether you are there or not.
+- **Haulers.** Three hauler routes keep the two stations supplied. You meet them on the lanes; pirates hunt them. A lost hauler spills part of its cargo and its goods never arrive.
+- **Events.** Every four to seven minutes something happens: a shortage, a glut, pirate raids in a sector, a platinum or titanium rush. The station news shows what is running and for how long.
+- **Escorts.** Before a hauler leaves, its station posts an escort contract. Fly with it and be within 2 km when it docks. Save a hauler from pirates and its faction remembers; shoot one and it remembers that too.
 
 ## Not yet
 

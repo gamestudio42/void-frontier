@@ -49,6 +49,7 @@ Dependencies point down only: `game → view3d → simulation → content, kerne
 | 11 | `encounterSystem` | encounters | respawned pirate groups |
 | 12 | `marketSystem` | market stock (1 Hz) | stock drifting toward base |
 | 12b | `explorationSystem` | points of interest, player, scan events | discoveries, rewards |
+| 12c | `economySystem` | economy, haulers, events | markets, hauler ships and routes, raids, escort results; news events |
 | 13 | `missionSystem` | contract board, player position and hold | deliveries completed, deadlines failed, board refreshed; contract events |
 
 Later systems (mining, inventory, missions, economy) slot in following the order in the specification, section 14.4.
@@ -82,6 +83,7 @@ The collision system also publishes its grid as `world.spatial`; weapons, projec
 - `mining.ts`: ore extraction, rock resizing and break-up, pickups, tractor, scanner, jettison and pirate salvage. Ship mass includes the hold, so mining feeds straight into flight.
 - `station.ts`: bay geometry, docking checks and lock, market pricing and trades, services, upgrades (rebuilding the effective ship definition) and market drift. Trades move goods and credits together or not at all.
 - `subsystems.ts`: zone-based subsystem damage (`damageSubsystems`, called for weapon and collision hull damage) and ongoing effects. Thrust, energy, shields, sensors and guns read subsystem health where they are computed.
+- `economy.ts`: the shared economy (markets by station key, haulers, events, news), route planning through gates and around stations, and the switch between real and abstract haulers. `Simulation.economy` is passed across jumps and saved.
 - `missions.ts`: the contract board (offers, active, history, reputation), offer generation from `contracts.json`, accept, hand-in, abandon and `carryBoard` for a lost ship. It lives on `Simulation.missions` and reads the world; it never moves bodies.
 - Gameplay randomness (spread, spawn headings, chunk scatter, contract offers) comes from `world.rng`, seeded from the sector, so fights replay exactly.
 

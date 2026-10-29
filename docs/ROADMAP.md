@@ -151,6 +151,19 @@ Known limits: one hand-built set of sectors (no procedural universe yet); NPC tr
 - [x] Damage diagram for your ship and your target, smoke and sparks from damaged sections, alarms
 - [x] Save format 3 with a migration from version 2
 
-## 0.4: dynamic universe (next)
+## 0.4: dynamic universe (done)
 
-NPC traders moving goods between stations, events that change supply and prices, trade routes pirates can raid, and reputation that reacts to who you protect.
+- [x] A shared economy: every station produces and consumes on the clock, in every sector, and its market is the same object wherever you trade
+- [x] Three NPC hauler routes between Outpost Alpha and Ferrum Refinery, loading real stock and delivering it
+- [x] Haulers fly as real ships in the sector you are in (routed out of the bay and around station hulls) and run on the clock elsewhere
+- [x] Pirates hunt haulers; a lost hauler drops part of its cargo and its goods never arrive, so stations run short and prices climb
+- [x] Off-screen haulers face a per-sector pirate risk unless escorted
+- [x] Seven economy events (shortages, a glut, pirate raids that spawn real raiders, two mineral rushes) with timers and news
+- [x] Escort contracts posted before a hauler leaves; paid when it docks with you nearby, failed if it is lost
+- [x] Reputation reacts: firing on a hauler costs its faction's trust, killing pirates that are attacking one earns it
+- [x] Frontier news at stations, notices in flight, hauler labels on screen, raid alerts on the map
+- [x] Save format 4 with a migration from version 3
+
+## 0.5: advanced sandbox (next)
+
+Several owned ships and a hangar, buying the Mule hauler, and switching between specialisations.

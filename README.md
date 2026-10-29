@@ -43,7 +43,8 @@
 8. **Trade and upgrade.** Fly back into the station's bay slowly and lined up, press `F` to dock, sell your ore and salvage, repair, refuel and buy upgrades. Prices follow the station's stock.
 9. **Go further.** Four sectors are linked by jump gates: the Industrial Belt's refinery pays best for ore, Pirate Territory hides wrecks and caches behind gunships, and the Anomaly Zone's gravity well guards the rarest crystals. `M` opens the sector map.
 10. **Build your ship.** Shots break what they hit: engines at the tail, sensors and guns at the nose, reactor and hold amidships. Fit modules into engine, utility and defence slots, earn standing with the Outpost Authority and the Ferrum Combine, and unlock their best equipment.
-11. **Mind the rocks.** Asteroids and the station are solid. Bump them gently and you bounce; hit them fast and the hull gives way. The radar, the nearest-object readout and the collision warning help you thread the field. `R` relaunches a lost ship.
+11. **Watch the lanes.** Haulers carry ore and parts between stations while pirates hunt them; shortages, raids and mineral rushes move prices. Escort a convoy, or profit from the gap a lost one leaves.
+12. **Mind the rocks.** Asteroids and the station are solid. Bump them gently and you bounce; hit them fast and the hull gives way. The radar, the nearest-object readout and the collision warning help you thread the field. `R` relaunches a lost ship.
 
 <p align="center">
   <img src="docs/screenshots/anomaly.jpg" alt="The scout skirts the gravity well of the Anomaly Zone, with crystal rocks, a violet gas giant and the gravity readout on the HUD" width="920">
@@ -51,6 +52,14 @@
 
 <p align="center">
   <img src="docs/screenshots/map.jpg" alt="The sector map: Outpost Alpha, Industrial Belt, Pirate Territory and Anomaly Zone linked by gates, with danger and discoveries" width="920">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/convoy.jpg" alt="The scout flies beside an Outpost ore hauler while a pirate raider closes in" width="920">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/news.jpg" alt="Frontier news at Outpost Alpha: a platinum rush with its timer above the reputation bars and the contract board" width="920">
 </p>
 
 <p align="center">
@@ -85,7 +94,7 @@ New players get a guided first flight that teaches each of these by doing it. Pr
 
 ## Status
 
-**0.3: depth.** Ships now break where they are hit (engines, reactor, sensors, shield generator, hold, guns), three factions keep their own score of you, and modules fit into engine, utility and defence slots. This builds on 0.2 (four sectors, jump gates, exploration) and the 0.1 vertical slice. Next is the 0.4 dynamic universe: NPC traders and a living economy; see the [roadmap](docs/ROADMAP.md).
+**0.4: a living frontier.** Stations produce and consume on the clock, NPC haulers carry goods between them through pirate-patrolled lanes, events shake up supply and prices, and you can escort convoys for pay and standing. This builds on 0.3 (subsystems, factions, outfitting), 0.2 (four sectors and jump gates) and the 0.1 vertical slice. Next is 0.5: owning several ships; see the [roadmap](docs/ROADMAP.md).
 
 ## Develop
 

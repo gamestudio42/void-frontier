@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0: dynamic universe
+
+- Shared economy with production and consumption at every station.
+- NPC haulers on three routes, real in your sector and simulated elsewhere; pirates hunt them.
+- Seven economy events with news; escort contracts; reputation reacts to haulers.
+- Save format 4 with migration.
+
 ## 0.3.0: depth
 
 - Subsystem damage by hit position, with effects, smoke, alarms and repair.

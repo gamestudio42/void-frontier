@@ -161,3 +161,15 @@ Reputation is a map by faction on the contract board, and each world reads the s
 ## 040. Modules occupy slots
 
 Upgrades became modules with a slot kind. Ships have engine, utility and defence slots, so builds involve trade-offs (scanner or tractor?), and modules can be removed for half their price. Faction-gated modules (the combat computer) give reputation a concrete reward.
+
+## 041. One economy for every sector
+
+Station markets moved out of the sector snapshots into a global economy object passed into every simulation, like the contract board. Production, consumption, events and haulers tick in every sector on one clock, so the world keeps moving while the player is elsewhere.
+
+## 042. Haulers are real where you are, abstract elsewhere
+
+A hauler is a route state. In the simulated sector it is a ship flying its leg with the same thrusters and AI limits as everyone else; outside it advances by the clock and rolls a per-sector pirate risk per leg. Crossing a sector boundary switches between the two without losing progress.
+
+## 043. Events change rates and prices, not the rules
+
+Shortages multiply consumption (and cut stock at once), gluts multiply production, rushes multiply the price a station pays, and raids multiply off-screen risk and spawn real raiders on the busiest lane. They are data in `events.json`, so new ones need no code.
