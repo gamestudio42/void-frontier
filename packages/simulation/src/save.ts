@@ -1,12 +1,13 @@
 import { getSector } from '@void-frontier/content';
 import { createEconomy, detachTraders, type Economy } from './economy.ts';
 import { createFleet, type Fleet } from './fleet.ts';
+import { captureOwned } from './orders.ts';
 import { createBoard, type MissionBoard } from './missions.ts';
 import { applyPlayer, applySectorSnapshot, captureSector, capturePlayer, markDiscovered, type PlayerState, type SectorSnapshot } from './sector.ts';
 import { Simulation } from './simulation.ts';
 
 /** Bump when the save shape changes, and add a migration below. */
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 /** The parts of the contract board that change; drops and stations come from content. */
 export type SavedBoard = Pick<MissionBoard, 'offers' | 'active' | 'history' | 'reputation' | 'nextId' | 'refreshTick'>;
@@ -56,8 +57,23 @@ export function serialize(state: GameState): SaveData {
       detachTraders(copy);
       return copy;
     })() : null,
-    fleet: structuredClone(sim.fleet),
+    fleet: savedFleet(sim),
   };
+}
+
+/** The fleet with every real ship folded back into its stored state; ships re-materialise on load. */
+function savedFleet(sim: Simulation): Fleet {
+  const copy = structuredClone(sim.fleet);
+  copy.ships.forEach((owned, i) => {
+    const live = sim.fleet.ships[i];
+    if (live.run?.shipId !== null && live.run?.shipId !== undefined) {
+      const probe = { ...live, state: structuredClone(live.state) };
+      captureOwned(sim.world, probe);
+      owned.state = probe.state;
+    }
+    if (owned.run) owned.run.shipId = null;
+  });
+  return copy;
 }
 
 /** Rebuilds the current sector from its seed, then applies the saved state on top. */
@@ -108,6 +124,23 @@ const MIGRATIONS: Record<number, (data: Record<string, unknown>) => Record<strin
   3: (v3) => ({ ...v3, economy: null }),
   // 4 → 5: hangars. Older games own only the ship being flown.
   4: (v4) => ({ ...v4, fleet: null }),
+  5: (v5) => {
+    const fleet = v5.fleet as { ships: Record<string, unknown>[] } | null;
+    if (!fleet) return v5;
+    return {
+      ...v5,
+      fleet: {
+        ...fleet,
+        ships: fleet.ships.map((s) => ({ ...s, pilot: null, order: null, run: null, earned: 0 })),
+        crew: [],
+        offers: {},
+        offersTick: 0,
+        nextPilotId: 1,
+        payTick: 0,
+        log: [],
+      },
+    };
+  },
   // 2 → 3: reputation splits by faction (the old single score was the outpost's), ships
   // gain subsystems and weapon-mount health, contracts learn their issuer's faction.
   2: (v2) => {

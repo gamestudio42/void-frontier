@@ -24,6 +24,14 @@ const AI = {
   fireAngleSlack: 2.5,
   /** Seconds of look-ahead for obstacle avoidance. */
   avoidHorizon: 3.5,
+  /** Wingmen drop targets further than this from their leader (m). */
+  escortLeash: 1400,
+  /** Wingmen engage hostiles within this distance of their leader (m). */
+  escortEngage: 700,
+  /** m/s a wingman closes on its formation slot at. */
+  escortCatchUp: 220,
+  /** Fleet miners pick rocks within this distance of their site (m). */
+  mineRadius: 700,
 };
 
 /**
@@ -66,6 +74,10 @@ function think(world: World, id: EntityId, ship: Ship, body: Body, pilot: AiPilo
     travel(world, id, ship, body, pilot.travel);
     return;
   }
+  if (pilot.mine) {
+    mine(world, id, ship, body, pilot.mine);
+    return;
+  }
   const range = sensorRange(ship);
 
   // Keep a target while it stays inside the leash; otherwise take the nearest hostile in sensor range.
@@ -73,9 +85,21 @@ function think(world: World, id: EntityId, ship: Ship, body: Body, pilot: AiPilo
     const t = world.ships.get(pilot.target);
     const tb = world.bodies.get(pilot.target);
     const far = !tb || length({ x: tb.position.x - body.position.x, y: tb.position.y - body.position.y }) > range * AI.leashFactor;
-    if (!t || t.destroyed || far) pilot.target = null;
+    // Wingmen break off rather than chase a fight away from their leader.
+    const leader = pilot.escort ? world.bodies.get(pilot.escort.leader) : undefined;
+    const strayed = !!leader && !!tb && length({ x: tb.position.x - leader.position.x, y: tb.position.y - leader.position.y }) > AI.escortLeash;
+    if (!t || t.destroyed || far || strayed) pilot.target = null;
   }
-  if (pilot.target === null) pilot.target = hostilesNear(world, id, range)[0] ?? null;
+  if (pilot.target === null) {
+    // Wingmen only take on threats close to their leader.
+    const guard = pilot.escort ? world.bodies.get(pilot.escort.leader) : undefined;
+    const near = (other: EntityId) => {
+      if (!guard) return true;
+      const p = world.bodies.get(other)!.position;
+      return length({ x: p.x - guard.position.x, y: p.y - guard.position.y }) <= AI.escortEngage;
+    };
+    pilot.target = hostilesNear(world, id, range).find(near) ?? null;
+  }
 
   const hullRatio = ship.hull / ship.definition.hull.integrity;
   if (pilot.target === null) pilot.mode = 'patrol';
@@ -89,7 +113,18 @@ function think(world: World, id: EntityId, ship: Ship, body: Body, pilot: AiPilo
   let desired: Vec2;
   let aim: Vec2 | null = null;
 
-  if (pilot.mode === 'patrol' || pilot.target === null) {
+  const leader = pilot.escort ? world.bodies.get(pilot.escort.leader) : undefined;
+  if ((pilot.mode === 'patrol' || pilot.target === null) && leader && pilot.escort) {
+    const slot = formationPoint(leader.position, leader.angle, pilot.escort.slot);
+    const gx = slot.x - body.position.x;
+    const gy = slot.y - body.position.y;
+    const gap = Math.sqrt(gx * gx + gy * gy);
+    const catchUp = Math.min(AI.escortCatchUp, gap * 0.6);
+    desired = { x: leader.velocity.x + (gap > 1 ? (gx / gap) * catchUp : 0), y: leader.velocity.y + (gap > 1 ? (gy / gap) * catchUp : 0) };
+    command.boost = gap > 600;
+    const f = forwardOf(leader.angle);
+    aim = gap > 250 ? slot : { x: body.position.x + f.x * 200, y: body.position.y + f.y * 200 };
+  } else if (pilot.mode === 'patrol' || pilot.target === null) {
     const waypoint = pilot.patrol[pilot.waypoint];
     const dx = waypoint.x - body.position.x;
     const dy = waypoint.y - body.position.y;
@@ -140,6 +175,61 @@ function think(world: World, id: EntityId, ship: Ship, body: Body, pilot: AiPilo
   command.thrust = clamp(error.x * AI.steeringGain, -1, 1);
   command.strafe = clamp(error.y * AI.steeringGain, -1, 1);
   if (command.boost && error.x < 40) command.boost = false;
+  command.aim = aim;
+  ship.command = command;
+}
+
+/** Where wingman `slot` flies: behind the leader, alternating sides, further back in pairs. */
+export function formationPoint(leader: Vec2, angle: number, slot: number): Vec2 {
+  const f = forwardOf(angle);
+  const side = slot % 2 === 0 ? 1 : -1;
+  const back = 90 + 50 * Math.floor(slot / 2);
+  const lateral = side * (70 + 20 * Math.floor(slot / 2));
+  // Right of forward (f.x, f.y) is (f.y, -f.x).
+  return { x: leader.x - f.x * back + f.y * lateral, y: leader.y - f.y * back - f.x * lateral };
+}
+
+/** Fleet miners: pick the nearest rock with ore, hold off it at the laser's optimal range, cut it. */
+function mine(world: World, id: EntityId, ship: Ship, body: Body, job: NonNullable<AiPilot['mine']>): void {
+  const command = idleCommand();
+  if (job.rock !== null && !((world.asteroids.get(job.rock)?.ore ?? 0) > 0)) job.rock = null;
+  if (job.rock === null) {
+    let best = Infinity;
+    for (const [rockId, rock] of world.asteroids) {
+      if (rock.ore <= 0) continue;
+      const p = world.bodies.get(rockId)!.position;
+      if (length({ x: p.x - job.site.x, y: p.y - job.site.y }) > AI.mineRadius) continue;
+      const d = length({ x: p.x - body.position.x, y: p.y - body.position.y });
+      if (d < best) {
+        best = d;
+        job.rock = rockId;
+      }
+    }
+  }
+  const laser = ship.weapons.find((w) => w.definition.kind === 'mining');
+  let desired: Vec2 = { x: (job.site.x - body.position.x) * 0.2, y: (job.site.y - body.position.y) * 0.2 };
+  let aim: Vec2 = job.site;
+  if (job.rock !== null && laser && laser.definition.kind === 'mining') {
+    const rockBody = world.bodies.get(job.rock)!;
+    const rock = world.asteroids.get(job.rock)!;
+    const rx = body.position.x - rockBody.position.x;
+    const ry = body.position.y - rockBody.position.y;
+    const d = Math.sqrt(rx * rx + ry * ry) || 1;
+    const standoff = rock.radius + laser.definition.optimalRange * 0.6;
+    const spot = { x: rockBody.position.x + (rx / d) * standoff, y: rockBody.position.y + (ry / d) * standoff };
+    const sx = spot.x - body.position.x;
+    const sy = spot.y - body.position.y;
+    const gap = Math.sqrt(sx * sx + sy * sy);
+    const speed = Math.min(60, gap * 0.5);
+    desired = { x: rockBody.velocity.x + (gap > 1 ? (sx / gap) * speed : 0), y: rockBody.velocity.y + (gap > 1 ? (sy / gap) * speed : 0) };
+    aim = rockBody.position;
+    const error = Math.abs(wrapAngle(atan2(-ry, -rx) - body.angle));
+    command.fireMining = d - rock.radius < laser.definition.range * 0.9 && error < toRadians(laser.definition.gimbal + 4);
+  }
+  if (!command.fireMining) desired = avoid(world, id, body, desired);
+  const error = worldToLocal(forwardOf(body.angle), { x: desired.x - body.velocity.x, y: desired.y - body.velocity.y });
+  command.thrust = clamp(error.x * AI.steeringGain, -1, 1);
+  command.strafe = clamp(error.y * AI.steeringGain, -1, 1);
   command.aim = aim;
   ship.command = command;
 }

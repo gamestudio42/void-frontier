@@ -1,0 +1,87 @@
+{
+  "cycleSeconds": 300,
+  "maxPilots": 6,
+  "hireCycles": 2,
+  "wage": {
+    "base": 60,
+    "perSkill": 12
+  },
+  "commission": 0.25,
+  "offersPerStation": 3,
+  "refreshSeconds": 900,
+  "cruiseSpeed": 55,
+  "speedPerPiloting": 0.06,
+  "riskPerPiloting": 0.12,
+  "fleetRisk": 0.25,
+  "turnaroundSeconds": 60,
+  "miningShare": 0.007,
+  "miningPerSkill": 0.003,
+  "maxWorkSeconds": 300,
+  "tradeReserve": 500,
+  "tradeMargin": 1.08,
+  "tripsPerSkill": 4,
+  "names": [
+    "Ada Ferreira",
+    "Bruno Kessler",
+    "Cleo Marchetti",
+    "Dario Okafor",
+    "Elin Varga",
+    "Farid Haddad",
+    "Greta Lindqvist",
+    "Hugo Tanaka",
+    "Ines Moreau",
+    "Jonas Petrov",
+    "Kaya Morales",
+    "Luca Brandt",
+    "Mira Novak",
+    "Nils Oyelaran",
+    "Odete Campos",
+    "Pavel Hruby",
+    "Quinn Abara",
+    "Rosa Delgado",
+    "Sami Virtanen",
+    "Tomas Reyes",
+    "Uma Castellan",
+    "Vera Sokolova",
+    "Wim de Graaf",
+    "Yara Teixeira"
+  ],
+  "sites": [
+    {
+      "id": "copper_reach",
+      "sector": "outpost_alpha",
+      "field": "copper_reach",
+      "station": "outpost_alpha_station"
+    },
+    {
+      "id": "titan_shoal",
+      "sector": "outpost_alpha",
+      "field": "titan_shoal",
+      "station": "outpost_alpha_station"
+    },
+    {
+      "id": "belt_west",
+      "sector": "industrial_belt",
+      "field": "belt_west",
+      "station": "ferrum_refinery"
+    },
+    {
+      "id": "belt_mid",
+      "sector": "industrial_belt",
+      "field": "belt_mid",
+      "station": "ferrum_refinery"
+    },
+    {
+      "id": "belt_east",
+      "sector": "industrial_belt",
+      "field": "belt_east",
+      "station": "ferrum_refinery"
+    },
+    {
+      "id": "platinum_drift",
+      "sector": "anomaly_zone",
+      "field": "platinum_drift",
+      "station": "ferrum_refinery"
+    }
+  ]
+}

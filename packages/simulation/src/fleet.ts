@@ -4,14 +4,72 @@ import { capturePlayer, applyPlayer, type PlayerState } from './sector.ts';
 import { spawnShip } from './ship.ts';
 import type { Simulation } from './simulation.ts';
 import { dockShip } from './station.ts';
+import type { RouteRun } from './routes.ts';
+import type { EntityId } from './types.ts';
 import type { World } from './world.ts';
 
-/** A ship the player owns but is not flying, parked at a station. */
+export interface PilotSkills {
+  piloting: number;
+  mining: number;
+  combat: number;
+}
+
+/** Someone the player pays to fly one of their ships. */
+export interface Pilot {
+  id: number;
+  name: string;
+  skills: PilotSkills;
+  /** Credits per pay cycle. */
+  wage: number;
+  /** Completed trips (or minutes on escort duty), counting toward the next skill point. */
+  trips: number;
+  /** Missed a payday: leaves at the next station. */
+  unpaid: boolean;
+}
+
+/** Standing instructions for a ship with a pilot aboard. */
+export type FleetOrder =
+  | { kind: 'trade'; from: string; to: string; resource: string }
+  | { kind: 'mine'; site: string }
+  | { kind: 'wingman' };
+
+/** Where a working ship is in its routine; route progress as for haulers. */
+export interface FleetRun extends RouteRun {
+  /** docked: loading or unloading at `station`; travel: flying legs; work: mining at the site; escort: flying with the player. */
+  phase: 'docked' | 'travel' | 'work' | 'escort';
+  /** Station key the ship is heading for (travel) or docked at; null while bound for the site. */
+  target: string | null;
+  /** Tick the current stay (docked, work) ends. */
+  untilTick: number;
+  /** The ship while it flies in the simulated sector, else null. */
+  shipId: EntityId | null;
+}
+
+/** A ship the player owns but is not flying: parked at a station or out working. */
 export interface OwnedShip {
   id: number;
-  /** Station key it is stored at. */
+  /** Station key it is stored at, or last left while it is out working. */
   station: string;
   state: PlayerState;
+  pilot: Pilot | null;
+  order: FleetOrder | null;
+  /** Null while parked with nothing to do. */
+  run: FleetRun | null;
+  /** Net credits the ship has made for the player: sales minus purchases and wages. */
+  earned: number;
+}
+
+/** Something a fleet ship or pilot did that the player should hear about. */
+export interface FleetNote {
+  tick: number;
+  kind: 'hired' | 'sold' | 'bought' | 'lost' | 'quit' | 'unpaid' | 'attacked' | 'skill' | 'idle';
+  ship: string | null;
+  pilot: string | null;
+  station?: string;
+  sector?: string;
+  resource?: string;
+  units?: number;
+  credits?: number;
 }
 
 export interface Fleet {
@@ -19,9 +77,25 @@ export interface Fleet {
   nextId: number;
   /** Id of the ship being flown. */
   activeId: number;
+  /** Hired pilots waiting at a station without a ship. */
+  crew: { pilot: Pilot; station: string }[];
+  /** Pilots for hire, by station key. */
+  offers: Record<string, Pilot[]>;
+  /** Tick the pilots for hire change next. */
+  offersTick: number;
+  nextPilotId: number;
+  /** Tick wages are paid next. */
+  payTick: number;
+  log: FleetNote[];
 }
 
-export const createFleet = (): Fleet => ({ ships: [], nextId: 2, activeId: 1 });
+export const createFleet = (): Fleet => ({ ships: [], nextId: 2, activeId: 1, crew: [], offers: {}, offersTick: 0, nextPilotId: 1, payTick: 0, log: [] });
+
+/** A parked ship that is not out working, as `buyShip` and `boardShip` leave it. */
+export const parked = (id: number, station: string, state: PlayerState): OwnedShip => ({ id, station, state, pilot: null, order: null, run: null, earned: 0 });
+
+/** True when the ship sits in this station's hangar (not out on a run). */
+export const isParkedAt = (owned: OwnedShip, key: string): boolean => owned.station === key && (owned.run === null || (owned.run.phase === 'docked' && owned.run.target === key));
 
 /** Share of a hull's price paid back when it is sold. */
 export const SHIP_RESALE = 0.6;
@@ -82,7 +156,7 @@ export function buyShip(sim: Simulation, shipId: string): ShipyardResult {
   if (world.credits < offer.price) return { ok: false, reason: 'noCredits' };
   world.credits -= offer.price;
   const id = sim.fleet.nextId++;
-  sim.fleet.ships.push({ id, station: key, state: freshShip(shipId) });
+  sim.fleet.ships.push(parked(id, key, freshShip(shipId)));
   return { ok: true, id };
 }
 
@@ -98,7 +172,9 @@ export function sellShip(sim: Simulation, ownedId: number): ShipyardResult {
   if (!key) return { ok: false, reason: 'notDocked' };
   const owned = sim.fleet.ships.find((s) => s.id === ownedId);
   if (!owned) return { ok: false, reason: 'unknown' };
-  if (owned.station !== key) return { ok: false, reason: 'elsewhere' };
+  if (!isParkedAt(owned, key)) return { ok: false, reason: 'elsewhere' };
+  // The pilot stays on the payroll and waits here for another ship.
+  if (owned.pilot) sim.fleet.crew.push({ pilot: owned.pilot, station: key });
   sim.fleet.ships = sim.fleet.ships.filter((s) => s !== owned);
   sim.world.credits += shipValue(owned.state);
   return { ok: true, id: ownedId };
@@ -115,11 +191,12 @@ export function boardShip(sim: Simulation, ownedId: number): ShipyardResult {
   if (!key || !current || current.docked === null) return { ok: false, reason: 'notDocked' };
   const target = sim.fleet.ships.find((s) => s.id === ownedId);
   if (!target) return { ok: false, reason: 'unknown' };
-  if (target.station !== key) return { ok: false, reason: 'elsewhere' };
+  if (!isParkedAt(target, key)) return { ok: false, reason: 'elsewhere' };
   const stationId = current.docked;
-  const parked = capturePlayer(sim);
+  // Its pilot steps out and waits here; the player takes the controls.
+  if (target.pilot) sim.fleet.crew.push({ pilot: target.pilot, station: key });
   sim.fleet.ships = sim.fleet.ships.filter((s) => s !== target);
-  sim.fleet.ships.push({ id: sim.fleet.activeId, station: key, state: parked });
+  sim.fleet.ships.push(parked(sim.fleet.activeId, key, capturePlayer(sim)));
   world.destroyEntity(sim.playerId);
   const id = spawnShip(world, getShip(target.state.ship));
   sim.playerId = id;

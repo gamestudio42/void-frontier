@@ -1,3 +1,4 @@
+import type { FleetNote } from './fleet.ts';
 import type { AsteroidType, EncounterDefinition, ShipDefinition, StationDefinition, WeaponDefinition } from '@void-frontier/content';
 import type { Vec2 } from '@void-frontier/kernel';
 
@@ -184,6 +185,7 @@ export type SimEvent =
   | { type: 'shipDestroyed'; id: EntityId; position: { x: number; y: number }; by: EntityId | null }
   | { type: 'contract'; id: number; kind: 'delivery' | 'mining' | 'bounty' | 'escort'; outcome: 'completed' | 'failed' | 'abandoned'; reward: number }
   | { type: 'news'; item: NewsItem }
+  | { type: 'fleet'; note: FleetNote }
   | { type: 'subsystemDamaged'; ship: EntityId; system: SubsystemId | 'weapon'; health: number }
   | { type: 'discovered'; id: string; kind: 'derelict' | 'deposit' | 'cache'; credits: number }
   | { type: 'docked'; ship: EntityId; station: EntityId }
@@ -227,6 +229,12 @@ export interface AiPilot {
   retreatUntil: number;
   /** +1 or -1: which way this pilot circles a target. */
   orbit: number;
+  /** Owned-ship id when this is one of the player's fleet. */
+  fleet?: number;
+  /** A fleet miner at work: cut rocks near the site and let the tractor gather the ore. */
+  mine?: { site: { x: number; y: number }; rock: EntityId | null };
+  /** A wingman: hold formation on the leader, fight what threatens it. */
+  escort?: { leader: EntityId; slot: number };
 }
 
 export interface EncounterState {

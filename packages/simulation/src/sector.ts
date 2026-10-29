@@ -2,6 +2,7 @@ import { atan2, type Vec2 } from '@void-frontier/kernel';
 import { getSector, type SectorDefinition } from '@void-frontier/content';
 import { resizeRock, spawnPickup } from './mining.ts';
 import type { MissionBoard } from './missions.ts';
+import { stowFleet } from './orders.ts';
 import { Simulation } from './simulation.ts';
 import { dockShip, installUpgrades, undock } from './station.ts';
 import type { FlightMode, SubsystemId } from './types.ts';
@@ -175,6 +176,8 @@ export function jump(
   if (!gate) throw new Error(`Unknown gate ${gateId}`);
   const left = captureSector(sim);
   const player = capturePlayer(sim);
+  // Fleet ships flying here fold back into their routes; wingmen come through the gate with the player.
+  stowFleet(sim);
   const destination = getSector(gate.to);
   const next = Simulation.fromSector(destination, sim.dt, {
     board: sim.missions ?? undefined,

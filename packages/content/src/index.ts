@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import asteroidData from '../data/asteroids.json';
 import contractData from '../data/contracts.json';
+import crewData from '../data/crew.json';
 import eventData from '../data/events.json';
 import factionData from '../data/factions.json';
 import traderData from '../data/traders.json';
@@ -18,6 +19,7 @@ import {
   asteroidTypeSchema,
   collisionRulesSchema,
   contractRulesSchema,
+  crewRulesSchema,
   eventRulesSchema,
   factionSchema,
   traderRouteSchema,
@@ -30,6 +32,7 @@ import {
   type AsteroidType,
   type CollisionRules,
   type ContractRules,
+  type CrewRules,
   type EventRules,
   type FactionDefinition,
   type TraderRoute,
@@ -55,6 +58,7 @@ export const WEAPONS: ReadonlyMap<string, WeaponDefinition> = byId(z.array(weapo
 export const FACTIONS: ReadonlyMap<string, FactionDefinition> = byId(z.array(factionSchema).parse(factionData));
 export const TRADER_ROUTES: readonly TraderRoute[] = z.array(traderRouteSchema).parse(traderData);
 export const EVENT_RULES: EventRules = eventRulesSchema.parse(eventData);
+export const CREW_RULES: CrewRules = crewRulesSchema.parse(crewData);
 export const CONTRACT_RULES: ContractRules = contractRulesSchema.parse(contractData);
 export const COLLISION_RULES: CollisionRules = collisionRulesSchema.parse(physicsData);
 export const OUTPOST_ALPHA: SectorDefinition = sectorDefinitionSchema.parse(outpostAlphaData);
@@ -136,5 +140,15 @@ for (const event of EVENT_RULES.events) {
   if (event.station && !STATION_PLACEMENTS.has(event.station)) throw new Error(`Event ${event.id} names unknown station ${event.station}`);
   if (event.sector) getSector(event.sector);
   if (event.resource) getResource(event.resource);
+}
+for (const site of CREW_RULES.sites) {
+  const field = getSector(site.sector).asteroidFields.find((f) => f.id === site.field);
+  if (!field) throw new Error(`Mining site ${site.id} names unknown field ${site.field}`);
+  const station = STATION_PLACEMENTS.get(site.station);
+  if (!station) throw new Error(`Mining site ${site.id} names unknown station ${site.station}`);
+  const buys = getStation(station.definition).market.filter((m) => m.buys).map((m) => m.resource);
+  for (const type of Object.keys(field.types)) {
+    if (!buys.includes(getAsteroidType(type).resource)) throw new Error(`Mining site ${site.id}: ${site.station} does not buy ${type} ore`);
+  }
 }
 for (const station of STATIONS.values()) for (const r of [...Object.keys(station.economy.produces), ...Object.keys(station.economy.consumes)]) getResource(r);

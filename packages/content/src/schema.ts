@@ -288,6 +288,47 @@ export const eventRulesSchema = z.object({
 
 export type EventRules = z.infer<typeof eventRulesSchema>;
 
+/** Pilots for hire and how the ships they fly for the player perform. */
+export const crewRulesSchema = z.object({
+  /** Seconds between wage payments. */
+  cycleSeconds: positive,
+  maxPilots: z.number().int().min(1),
+  /** Hiring fee, in cycles of the pilot's wage. */
+  hireCycles: z.number().min(0),
+  /** Wage per cycle: base plus this much per skill point. */
+  wage: z.object({ base: positive, perSkill: z.number().min(0) }),
+  /** Share of every sale a pilot keeps on top of the wage. */
+  commission: z.number().min(0).max(1),
+  offersPerStation: z.number().int().min(1),
+  /** Seconds before a station's pilots for hire change. */
+  refreshSeconds: positive,
+  /** m/s a fleet ship cruises at with an average pilot. */
+  cruiseSpeed: positive,
+  /** Cruise speed gained per piloting point above 3. */
+  speedPerPiloting: z.number().min(0),
+  /** Off-screen loss risk shed per piloting or combat point above 1 (as a share). */
+  riskPerPiloting: z.number().min(0).max(0.2),
+  /** Fleet ships are lost off-screen at this fraction of a hauler's risk (they travel light and armed). */
+  fleetRisk: z.number().min(0).max(1),
+  /** Seconds a fleet ship spends docked to load or unload. */
+  turnaroundSeconds: positive,
+  /** Share of the laser's rate a pilot achieves off-screen, plus this much per mining point. */
+  miningShare: positive,
+  miningPerSkill: z.number().min(0),
+  maxWorkSeconds: positive,
+  /** Credits a trading pilot leaves in the player's account. */
+  tradeReserve: z.number().min(0),
+  /** A trading pilot loads a unit only if it sells at the destination for this multiple of its cost. */
+  tradeMargin: z.number().min(1),
+  /** Completed trips per skill point gained. */
+  tripsPerSkill: z.number().int().min(1),
+  names: z.array(z.string()).min(4),
+  /** Asteroid fields pilots can be sent to, each with the station that buys what it yields. */
+  sites: z.array(z.object({ id: z.string(), sector: z.string(), field: z.string(), station: z.string() })),
+});
+
+export type CrewRules = z.infer<typeof crewRulesSchema>;
+
 export const upgradeSchema = z.object({
   id: z.string().regex(/^[a-z][a-z0-9_]*$/),
   /** Which kind of slot the module occupies. */

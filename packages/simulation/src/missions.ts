@@ -1,5 +1,4 @@
 import { CONTRACT_RULES, FACTIONS, SECTORS, getFaction, getResource, getStation, type ContractRules } from '@void-frontier/content';
-import { setContractCloser } from './economy.ts';
 import { holdSpaceFor } from './ship.ts';
 import type { EntityId } from './types.ts';
 import type { World } from './world.ts';
@@ -203,11 +202,11 @@ function close(world: World, board: MissionBoard, contract: Contract, outcome: C
   world.events.push({ type: 'contract', id: contract.id, kind: contract.kind, outcome, reward });
 }
 
-// Escorts are settled by the economy when the hauler arrives or is lost.
-setContractCloser((world, board, id, outcome) => {
+/** Escorts are settled by the economy when the hauler arrives or is lost; the simulation wires this in. */
+export function closeContractById(world: World, board: MissionBoard, id: number, outcome: 'completed' | 'failed'): void {
   const contract = board.active.find((c) => c.id === id);
   if (contract) close(world, board, contract, outcome);
-});
+}
 
 /** Key of the station a ship is docked at, or null. */
 export function dockedStationKey(world: World, shipId: EntityId): string | null {

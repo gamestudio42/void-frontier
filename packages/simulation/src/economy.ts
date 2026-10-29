@@ -8,36 +8,21 @@ import {
   type EconomyEventDefinition,
   type TraderRoute,
 } from '@void-frontier/content';
-import { atan2, cos, sin, toRadians, type Vec2 } from '@void-frontier/kernel';
+import type { Vec2 } from '@void-frontier/kernel';
 import { spawnEncounter } from './ai.ts';
 import { spawnPickup } from './mining.ts';
 import type { MissionBoard } from './missions.ts';
-import { gateExit, nextGate } from './sector.ts';
-import { spawnShip } from './ship.ts';
-import { stationCollider } from './universe.ts';
+import { distance, planRoute, spawnOnLeg, startLeg, type RouteRun } from './routes.ts';
 import type { EntityId, MarketItem, NewsItem } from './types.ts';
 import type { World } from './world.ts';
-import { getSector } from '@void-frontier/content';
 
-/** One stretch of a hauler's route, inside a single sector. */
-export interface Leg {
-  sector: string;
-  from: Vec2;
-  to: Vec2;
-}
-
-export interface TraderState {
+export interface TraderState extends RouteRun {
   route: string;
   /** Outbound legs carry cargo; the return trip runs empty. */
   outbound: boolean;
   phase: 'docked' | 'travel' | 'lost';
   /** Tick the hauler leaves its station (or is replaced after a loss). */
   departTick: number;
-  legs: Leg[];
-  leg: number;
-  legStartTick: number;
-  /** Ticks the leg takes at cruising speed. */
-  legTicks: number;
   units: number;
   /** The hauler's ship while it flies in the simulated sector, else null. */
   shipId: EntityId | null;
@@ -83,74 +68,6 @@ export function createEconomy(): Economy {
   return { markets, traders, events: [], nextEventTick: 60 * EVENT_RULES.minInterval, news: [] };
 }
 
-/** Where a hauler leaves or reaches a station: 40 m out from the bay mouth, plus the bay's outward axis. */
-export function bayApproach(stationKey: string): { sector: string; point: Vec2; axis: Vec2 } {
-  const placement = STATION_PLACEMENTS.get(stationKey)!;
-  const dock = getStation(placement.definition).modules.find((m) => m.kind === 'dock');
-  const angle = toRadians(placement.angle);
-  if (!dock || dock.kind !== 'dock') return { sector: placement.sector, point: { x: placement.x, y: placement.y }, axis: { x: 1, y: 0 } };
-  const ca = cos(angle);
-  const sa = sin(angle);
-  const mouth = { x: placement.x + dock.x * ca - dock.y * sa, y: placement.y + dock.x * sa + dock.y * ca };
-  const axis = { x: cos(angle + dock.angle), y: sin(angle + dock.angle) };
-  return { sector: placement.sector, point: { x: mouth.x + axis.x * 40, y: mouth.y + axis.y * 40 }, axis };
-}
-
-/** Station hulls in a sector, as circles a lane must clear. */
-function stationDiscs(sectorId: string): { centre: Vec2; radius: number }[] {
-  return getSector(sectorId).stations.map((s) => ({ centre: { x: s.x, y: s.y }, radius: stationCollider(getStation(s.definition)).bound + 120 }));
-}
-
-/** Straight path from a to b, bent around any station hull in the way. */
-function lane(sectorId: string, a: Vec2, b: Vec2): Vec2[] {
-  for (const disc of stationDiscs(sectorId)) {
-    const dx = b.x - a.x;
-    const dy = b.y - a.y;
-    const len2 = dx * dx + dy * dy || 1;
-    const t = Math.max(0, Math.min(1, ((disc.centre.x - a.x) * dx + (disc.centre.y - a.y) * dy) / len2));
-    const closest = { x: a.x + dx * t, y: a.y + dy * t };
-    if (t <= 0.02 || t >= 0.98 || distance(closest, disc.centre) >= disc.radius) continue;
-    // Go round on the side the line already leans toward.
-    let nx = closest.x - disc.centre.x;
-    let ny = closest.y - disc.centre.y;
-    const n = Math.sqrt(nx * nx + ny * ny);
-    if (n < 1) {
-      nx = -dy;
-      ny = dx;
-    }
-    const norm = Math.sqrt(nx * nx + ny * ny) || 1;
-    const detour = { x: disc.centre.x + (nx / norm) * (disc.radius + 60), y: disc.centre.y + (ny / norm) * (disc.radius + 60) };
-    return [...lane(sectorId, a, detour), ...lane(sectorId, detour, b).slice(1)];
-  }
-  return [a, b];
-}
-
-/** The legs from one station to another through the gate network, routed around station hulls. */
-export function planRoute(fromKey: string, toKey: string): Leg[] {
-  const start = bayApproach(fromKey);
-  const end = bayApproach(toKey);
-  const legs: Leg[] = [];
-  const push = (sector: string, points: Vec2[]) => {
-    for (let i = 0; i + 1 < points.length; i++) legs.push({ sector, from: points[i], to: points[i + 1] });
-  };
-  // Back straight out of the bay before turning.
-  const out = (p: { point: Vec2; axis: Vec2 }) => ({ x: p.point.x + p.axis.x * 200, y: p.point.y + p.axis.y * 200 });
-  let sector = start.sector;
-  let position = out(start);
-  push(sector, [start.point, position]);
-  for (let hops = 0; sector !== end.sector && hops < 10; hops++) {
-    const gateId = nextGate(sector, end.sector)!;
-    const gate = getSector(sector).gates.find((g) => g.id === gateId)!;
-    push(sector, lane(sector, position, { x: gate.x, y: gate.y }));
-    position = gateExit(getSector(gate.to), gate.toGate).position;
-    sector = gate.to;
-  }
-  push(sector, [...lane(sector, position, out(end)), end.point]);
-  return legs;
-}
-
-const distance = (a: Vec2, b: Vec2) => Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
-
 function news(world: World, economy: Economy, item: Omit<NewsItem, 'tick'>): void {
   const full = { tick: world.tick, ...item };
   economy.news.unshift(full);
@@ -168,7 +85,7 @@ function eventFactor(economy: Economy, kind: 'shortage' | 'surplus', station: st
   return factor;
 }
 
-function raidFactor(economy: Economy, sector: string): number {
+export function raidFactor(economy: Economy, sector: string): number {
   let factor = 1;
   for (const active of economy.events) {
     const def = eventOf(active.id);
@@ -259,14 +176,12 @@ function depart(world: World, economy: Economy, trader: TraderState): void {
   trader.legs = planRoute(from, to);
   trader.leg = 0;
   trader.phase = 'travel';
-  startLeg(world, trader);
+  startTraderLeg(world, trader);
   if (trader.outbound) news(world, economy, { kind: 'traderDeparted', subject: route.id, station: from });
 }
 
-function startLeg(world: World, trader: TraderState): void {
-  const leg = trader.legs[trader.leg];
-  trader.legStartTick = world.tick;
-  trader.legTicks = Math.max(60, Math.round((distance(leg.from, leg.to) / routeOf(trader.route).speed) * 60));
+function startTraderLeg(world: World, trader: TraderState): void {
+  startLeg(world, trader, routeOf(trader.route).speed);
 }
 
 function despawn(world: World, trader: TraderState): void {
@@ -278,7 +193,7 @@ function finishLeg(world: World, economy: Economy, board: MissionBoard | null, t
   despawn(world, trader);
   if (trader.leg + 1 < trader.legs.length) {
     trader.leg++;
-    startLeg(world, trader);
+    startTraderLeg(world, trader);
     return;
   }
   // Arrived.
@@ -332,21 +247,8 @@ export function setContractCloser(fn: typeof closeExternal): void {
 /** Puts a hauler that is flying through the simulated sector into the world as a real ship. */
 function materialise(world: World, trader: TraderState): void {
   const route = routeOf(trader.route);
-  const leg = trader.legs[trader.leg];
-  const t = Math.min(0.95, Math.max(0, (world.tick - trader.legStartTick) / trader.legTicks));
-  const dx = leg.to.x - leg.from.x;
-  const dy = leg.to.y - leg.from.y;
-  const d = Math.sqrt(dx * dx + dy * dy) || 1;
-  const id = spawnShip(world, getShip(route.ship), {
-    position: { x: leg.from.x + dx * t, y: leg.from.y + dy * t },
-    velocity: { x: (dx / d) * route.speed * 0.6, y: (dy / d) * route.speed * 0.6 },
-    angle: atan2(dy, dx),
-    faction: 'trader',
-    allegiance: route.allegiance,
-  });
-  const ship = world.ships.get(id)!;
-  if (trader.units > 0) ship.cargo.set(route.cargo, trader.units);
-  world.pilots.set(id, { mode: 'patrol', patrol: [leg.to], waypoint: 0, target: null, retreatUntil: 0, orbit: 1, travel: { to: leg.to, speed: route.speed } });
+  const id = spawnOnLeg(world, trader, getShip(route.ship), route.speed, 'trader', route.allegiance);
+  if (trader.units > 0) world.ships.get(id)!.cargo.set(route.cargo, trader.units);
   trader.shipId = id;
 }
 
@@ -423,3 +325,4 @@ export function detachTraders(economy: Economy): void {
 }
 
 export { routeOf };
+export { bayApproach, planRoute, type Leg } from './routes.ts';

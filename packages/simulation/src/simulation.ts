@@ -4,10 +4,12 @@ import { spawnShip } from './ship.ts';
 import { aiSystem, encounterSystem, spawnEncounter } from './ai.ts';
 import { projectileSystem, weaponSystem } from './combat.ts';
 import { jettison, pickupSystem, scan, scanExpirySystem } from './mining.ts';
-import { createEconomy, detachTraders, economySystem, type Economy } from './economy.ts';
-import { boardShip, buyShip, createFleet, sellShip, type Fleet } from './fleet.ts';
+import { createEconomy, detachTraders, economySystem, setContractCloser, type Economy } from './economy.ts';
+import { assignPilot, crewOffers, crewSystem, dismissPilot, hirePilot } from './crew.ts';
+import { boardShip, buyShip, createFleet, sellShip, type Fleet, type FleetOrder } from './fleet.ts';
+import { fleetSystem, launchWingmen, setOrder } from './orders.ts';
 import { gravitySystem, explorationSystem } from './exploration.ts';
-import { abandonContract, acceptContract, createBoard, dockedStationKey, fillOffers, handInContract, missionSystem, type MissionBoard } from './missions.ts';
+import { abandonContract, acceptContract, closeContractById, createBoard, dockedStationKey, fillOffers, handInContract, missionSystem, type MissionBoard } from './missions.ts';
 import { buyUpgrade, sellUpgrade, dockShip, marketSystem, requestDock, service, trade, undock } from './station.ts';
 import { collisionSystem } from './systems/collision.ts';
 import { subsystemSystem } from './subsystems.ts';
@@ -38,6 +40,8 @@ export class Simulation {
 
   constructor(dt = FIXED_DT) {
     this.dt = dt;
+    // Wired at run time: the economy and the contract board import each other's types only.
+    setContractCloser(closeContractById);
   }
 
   /**
@@ -83,6 +87,8 @@ export class Simulation {
     }
     sim.world.credits = sector.startingCredits;
     sim.fleet = options.fleet ?? createFleet();
+    // A fresh world holds none of the fleet's old ships; they re-materialise where they are.
+    for (const owned of sim.fleet.ships) if (owned.run) owned.run.shipId = null;
     sim.economy = options.economy ?? createEconomy();
     detachTraders(sim.economy);
     // Stations trade from the shared economy, so stock moves with the player between sectors.
@@ -121,6 +127,10 @@ export class Simulation {
     explorationSystem(this.world, this.playerId);
     if (this.economy) economySystem(this.world, this.economy, this.missions, this.playerId, this.dt);
     if (this.missions) missionSystem(this.world, this.missions, this.playerId, this.dt);
+    if (this.economy) {
+      crewSystem(this.world, this.fleet);
+      fleetSystem(this);
+    }
     this.world.tick++;
   }
 
@@ -149,7 +159,11 @@ export class Simulation {
   }
 
   undock(id: EntityId): boolean {
-    return undock(this.world, id);
+    const key = id === this.playerId ? dockedStationKey(this.world, id) : null;
+    const ok = undock(this.world, id);
+    // Wingmen parked here launch with the player.
+    if (ok && key) launchWingmen(this, key);
+    return ok;
   }
 
   trade(id: EntityId, resource: string, units: number, side: 'buy' | 'sell') {
@@ -199,6 +213,26 @@ export class Simulation {
 
   boardShip(ownedId: number) {
     return boardShip(this, ownedId);
+  }
+
+  crewOffers() {
+    return crewOffers(this);
+  }
+
+  hirePilot(pilotId: number) {
+    return hirePilot(this, pilotId);
+  }
+
+  assignPilot(pilotId: number, ownedId: number) {
+    return assignPilot(this, pilotId, ownedId);
+  }
+
+  dismissPilot(pilotId: number) {
+    return dismissPilot(this, pilotId);
+  }
+
+  setOrder(ownedId: number, order: FleetOrder | null) {
+    return setOrder(this, ownedId, order);
   }
 
   /** Scanner pulse for a ship; false while it recharges. */
