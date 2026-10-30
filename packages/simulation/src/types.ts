@@ -186,6 +186,7 @@ export type SimEvent =
   | { type: 'contract'; id: number; kind: 'delivery' | 'mining' | 'bounty' | 'escort'; outcome: 'completed' | 'failed' | 'abandoned'; reward: number }
   | { type: 'news'; item: NewsItem }
   | { type: 'fleet'; note: FleetNote }
+  | { type: 'campaign'; step: string; credits: number; finished: boolean }
   | { type: 'subsystemDamaged'; ship: EntityId; system: SubsystemId | 'weapon'; health: number }
   | { type: 'discovered'; id: string; kind: 'derelict' | 'deposit' | 'cache'; credits: number }
   | { type: 'docked'; ship: EntityId; station: EntityId }

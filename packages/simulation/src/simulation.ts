@@ -5,6 +5,7 @@ import { aiSystem, encounterSystem, spawnEncounter } from './ai.ts';
 import { projectileSystem, weaponSystem } from './combat.ts';
 import { jettison, pickupSystem, scan, scanExpirySystem } from './mining.ts';
 import { createEconomy, detachTraders, economySystem, setContractCloser, type Economy } from './economy.ts';
+import { campaignSystem, createCampaign, type Campaign } from './campaign.ts';
 import { assignPilot, crewOffers, crewSystem, dismissPilot, hirePilot } from './crew.ts';
 import { boardShip, buyShip, createFleet, sellShip, type Fleet, type FleetOrder } from './fleet.ts';
 import { fleetSystem, launchWingmen, setOrder } from './orders.ts';
@@ -35,6 +36,8 @@ export class Simulation {
   missions: MissionBoard | null = null;
   /** Markets, haulers and events of every sector; null in bare test worlds. */
   economy: Economy | null = null;
+  /** The story; null in bare test worlds. */
+  campaign: Campaign | null = null;
   /** Ships the player owns besides the one being flown. */
   fleet: Fleet = createFleet();
 
@@ -51,7 +54,7 @@ export class Simulation {
   static fromSector(
     sector: SectorDefinition,
     dt = FIXED_DT,
-    options: { board?: MissionBoard; economy?: Economy; fleet?: Fleet; playerShip?: string; startDocked?: boolean } = {},
+    options: { board?: MissionBoard; economy?: Economy; fleet?: Fleet; campaign?: Campaign; playerShip?: string; startDocked?: boolean } = {},
   ): Simulation {
     const sim = new Simulation(dt);
     sim.world.sectorId = sector.id;
@@ -87,6 +90,7 @@ export class Simulation {
     }
     sim.world.credits = sector.startingCredits;
     sim.fleet = options.fleet ?? createFleet();
+    sim.campaign = options.campaign ?? createCampaign();
     // A fresh world holds none of the fleet's old ships; they re-materialise where they are.
     for (const owned of sim.fleet.ships) if (owned.run) owned.run.shipId = null;
     sim.economy = options.economy ?? createEconomy();
@@ -131,6 +135,7 @@ export class Simulation {
       crewSystem(this.world, this.fleet);
       fleetSystem(this);
     }
+    campaignSystem(this);
     this.world.tick++;
   }
 

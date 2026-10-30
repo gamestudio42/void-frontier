@@ -31,5 +31,16 @@
     "units": 35,
     "interval": 320,
     "speed": 55
+  },
+  {
+    "id": "ferrum_bastion_run",
+    "allegiance": "ferrum_combine",
+    "ship": "mule",
+    "from": "ferrum_refinery",
+    "to": "bastion_watch",
+    "cargo": "machine_parts",
+    "units": 40,
+    "interval": 300,
+    "speed": 55
   }
 ]

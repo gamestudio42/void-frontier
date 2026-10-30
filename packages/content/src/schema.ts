@@ -329,6 +329,25 @@ export const crewRulesSchema = z.object({
 
 export type CrewRules = z.infer<typeof crewRulesSchema>;
 
+/** The story: steps taken in order, each one objective and one reward. */
+export const campaignSchema = z.object({
+  steps: z.array(
+    z.object({
+      id: z.string(),
+      objective: z.discriminatedUnion('kind', [
+        z.object({ kind: z.literal('discover'), poi: z.string(), sector: z.string() }),
+        z.object({ kind: z.literal('kill'), count: z.number().int().positive() }),
+        z.object({ kind: z.literal('deliver'), resource: z.string(), units: z.number().int().positive(), station: z.string() }),
+        z.object({ kind: z.literal('boss'), ship: z.string(), sector: z.string(), x: z.number(), y: z.number() }),
+      ]),
+      reward: z.object({ credits: z.number().min(0), faction: z.string(), reputation: z.number() }),
+    }),
+  ).min(1),
+});
+
+export type CampaignDefinition = z.infer<typeof campaignSchema>;
+export type CampaignStep = CampaignDefinition['steps'][number];
+
 export const upgradeSchema = z.object({
   id: z.string().regex(/^[a-z][a-z0-9_]*$/),
   /** Which kind of slot the module occupies. */

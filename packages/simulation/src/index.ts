@@ -25,4 +25,5 @@ export * from './economy.ts';
 export { planToPoint, planFromPoint, distance, type Place, type RouteRun } from './routes.ts';
 export * from './fleet.ts';
 export * from './crew.ts';
+export * from './campaign.ts';
 export { fleetEntities, miningYield, orderProblem, roomFor, siteOf, sitePlace, stowFleet, type OrderResult } from './orders.ts';

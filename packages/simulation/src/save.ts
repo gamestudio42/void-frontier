@@ -1,5 +1,6 @@
 import { getSector } from '@void-frontier/content';
-import { createEconomy, detachTraders, type Economy } from './economy.ts';
+import { createEconomy, detachTraders, reconcileEconomy, type Economy } from './economy.ts';
+import { createCampaign, type Campaign } from './campaign.ts';
 import { createFleet, type Fleet } from './fleet.ts';
 import { captureOwned } from './orders.ts';
 import { createBoard, type MissionBoard } from './missions.ts';
@@ -7,7 +8,7 @@ import { applyPlayer, applySectorSnapshot, captureSector, capturePlayer, markDis
 import { Simulation } from './simulation.ts';
 
 /** Bump when the save shape changes, and add a migration below. */
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 /** The parts of the contract board that change; drops and stations come from content. */
 export type SavedBoard = Pick<MissionBoard, 'offers' | 'active' | 'history' | 'reputation' | 'nextId' | 'refreshTick'>;
@@ -29,6 +30,8 @@ export interface SaveData {
   economy: Economy | null;
   /** Ships parked in hangars; null in saves made before 0.5. */
   fleet: Fleet | null;
+  /** Story progress; null in saves made before 0.7. */
+  campaign: Campaign | null;
 }
 
 export interface GameState {
@@ -58,6 +61,7 @@ export function serialize(state: GameState): SaveData {
       return copy;
     })() : null,
     fleet: savedFleet(sim),
+    campaign: sim.campaign ? { ...sim.campaign } : null,
   };
 }
 
@@ -82,7 +86,7 @@ export function restore(data: SaveData): GameState {
   const board = createBoard();
   if (data.missions) {
     const m = structuredClone(data.missions);
-    Object.assign(board, { offers: m.offers, active: m.active, history: m.history, reputation: m.reputation, nextId: m.nextId, refreshTick: m.refreshTick });
+    Object.assign(board, { offers: m.offers, active: m.active, history: m.history, reputation: { ...board.reputation, ...m.reputation }, nextId: m.nextId, refreshTick: m.refreshTick });
   }
   let economy = data.economy ? structuredClone(data.economy) : null;
   if (!economy) {
@@ -97,9 +101,11 @@ export function restore(data: SaveData): GameState {
       });
     }
   }
+  reconcileEconomy(economy, data.tick);
   const sim = Simulation.fromSector(sector, undefined, {
     board,
     economy,
+    campaign: data.campaign ? { ...data.campaign } : createCampaign(),
     fleet: data.fleet ? structuredClone(data.fleet) : createFleet(),
     playerShip: data.player.ship,
     startDocked: false,
@@ -140,6 +146,12 @@ const MIGRATIONS: Record<number, (data: Record<string, unknown>) => Record<strin
         log: [],
       },
     };
+  },
+  // 6 → 7: the story begins; the Anomaly Zone gained a station, so its rocks are regenerated around it.
+  6: (v6) => {
+    const sectors = { ...(v6.sectors as Record<string, unknown>) };
+    delete sectors.anomaly_zone;
+    return { ...v6, sectors, campaign: null };
   },
   // 2 → 3: reputation splits by faction (the old single score was the outpost's), ships
   // gain subsystems and weapon-mount health, contracts learn their issuer's faction.

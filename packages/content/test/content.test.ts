@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { ASTEROID_TYPES, FACTIONS, OUTPOST_ALPHA, RESOURCES, SECTORS, SHIPS, STATIONS, UPGRADES, getResource, getShip, getUpgrade, getWeapon, shipDefinitionSchema, validateSector } from '../src/index.ts';
 
 describe('content', () => {
-  it('ships four player hulls and two pirate types', () => {
-    expect(SHIPS.size).toBe(6);
+  it('ships four player hulls, two pirate types and the campaign flagship', () => {
+    expect(SHIPS.size).toBe(7);
     expect(getShip('prospector').class).toBe('miner');
     expect(getShip('lancer').class).toBe('fighter');
     expect(getShip('marauder').class).toBe('frigate');
@@ -49,8 +49,8 @@ describe('content', () => {
     expect(station.market.map((m) => m.resource).sort()).toEqual(['copper_ore', 'iron_ore', 'machine_parts', 'salvage', 'titanium_ore']);
   });
 
-  it('defines three factions, one hostile, and gives every station an owner', () => {
-    expect(FACTIONS.size).toBe(3);
+  it('defines four factions, one hostile, and gives every station an owner', () => {
+    expect(FACTIONS.size).toBe(4);
     expect([...FACTIONS.values()].filter((f) => f.hostile).map((f) => f.id)).toEqual(['free_pirates']);
     for (const station of STATIONS.values()) expect(FACTIONS.has(station.faction)).toBe(true);
   });
@@ -63,7 +63,7 @@ describe('content', () => {
   });
 
   it('gives every station a docking bay', () => {
-    expect(STATIONS.size).toBe(3);
+    expect(STATIONS.size).toBe(4);
     for (const station of STATIONS.values()) expect(station.modules.some((m) => m.kind === 'dock')).toBe(true);
   });
 

@@ -257,6 +257,16 @@ function nextStop(owned: OwnedShip): string | 'site' | null {
 function arrive(world: World, sim: Simulation, owned: OwnedShip, key: string): void {
   owned.station = key;
   owned.run = newRun('docked', key, world.tick + CREW_RULES.turnaroundSeconds * 60);
+  // Refuelled and patched up on every stop; the pilot's commission covers it.
+  const def = defOf(owned.state);
+  Object.assign(owned.state, {
+    hull: def.hull.integrity,
+    shield: def.shield.capacity,
+    energy: def.reactor.capacity,
+    fuel: def.fuel.capacity,
+    subsystems: { engines: 1, reactor: 1, sensors: 1, shieldGenerator: 1, cargoHold: 1 },
+    mounts: def.hardpoints.map(() => 1),
+  });
   business(world, sim, owned, key);
 }
 
@@ -351,7 +361,7 @@ function checkLoss(world: World, sim: Simulation, owned: OwnedShip): boolean {
   const ship = world.ships.get(id);
   const body = world.bodies.get(id);
   if (ship && body && !ship.destroyed) {
-    noteAttack(world, sim, owned, ship);
+    noteAttack(world, sim, owned);
     return false;
   }
   if (ship && body) {
@@ -362,9 +372,10 @@ function checkLoss(world: World, sim: Simulation, owned: OwnedShip): boolean {
 }
 
 const attackNoted = new WeakMap<OwnedShip, number>();
-function noteAttack(world: World, sim: Simulation, owned: OwnedShip, ship: Ship): void {
-  if (world.tick - ship.lastDamageTick > 1 || (attackNoted.get(owned) ?? -1e9) > world.tick - 600) return;
-  if (ship.lastDamageTick === 0) return;
+function noteAttack(world: World, sim: Simulation, owned: OwnedShip): void {
+  if ((attackNoted.get(owned) ?? -1e9) > world.tick - 600) return;
+  const id = owned.run?.shipId;
+  if (!world.events.some((e) => e.type === 'hit' && e.target === id)) return;
   attackNoted.set(owned, world.tick);
   note(world, sim.fleet, { kind: 'attacked', ship: owned.state.ship, pilot: owned.pilot?.name ?? null, sector: world.sectorId });
 }

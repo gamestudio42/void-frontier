@@ -183,6 +183,7 @@ export function jump(
     board: sim.missions ?? undefined,
     economy: sim.economy ?? undefined,
     fleet: sim.fleet,
+    campaign: sim.campaign ?? undefined,
     playerShip: player.ship,
     startDocked: false,
   });

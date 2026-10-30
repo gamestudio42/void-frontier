@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import asteroidData from '../data/asteroids.json';
+import campaignData from '../data/campaign.json';
 import contractData from '../data/contracts.json';
 import crewData from '../data/crew.json';
 import eventData from '../data/events.json';
@@ -19,6 +20,7 @@ import {
   asteroidTypeSchema,
   collisionRulesSchema,
   contractRulesSchema,
+  campaignSchema,
   crewRulesSchema,
   eventRulesSchema,
   factionSchema,
@@ -32,6 +34,7 @@ import {
   type AsteroidType,
   type CollisionRules,
   type ContractRules,
+  type CampaignDefinition,
   type CrewRules,
   type EventRules,
   type FactionDefinition,
@@ -59,6 +62,7 @@ export const FACTIONS: ReadonlyMap<string, FactionDefinition> = byId(z.array(fac
 export const TRADER_ROUTES: readonly TraderRoute[] = z.array(traderRouteSchema).parse(traderData);
 export const EVENT_RULES: EventRules = eventRulesSchema.parse(eventData);
 export const CREW_RULES: CrewRules = crewRulesSchema.parse(crewData);
+export const CAMPAIGN: CampaignDefinition = campaignSchema.parse(campaignData);
 export const CONTRACT_RULES: ContractRules = contractRulesSchema.parse(contractData);
 export const COLLISION_RULES: CollisionRules = collisionRulesSchema.parse(physicsData);
 export const OUTPOST_ALPHA: SectorDefinition = sectorDefinitionSchema.parse(outpostAlphaData);
@@ -140,6 +144,18 @@ for (const event of EVENT_RULES.events) {
   if (event.station && !STATION_PLACEMENTS.has(event.station)) throw new Error(`Event ${event.id} names unknown station ${event.station}`);
   if (event.sector) getSector(event.sector);
   if (event.resource) getResource(event.resource);
+}
+for (const { id, objective, reward } of CAMPAIGN.steps) {
+  getFaction(reward.faction);
+  if (objective.kind === 'discover' && !getSector(objective.sector).pointsOfInterest.some((p) => p.id === objective.poi)) throw new Error(`Campaign step ${id} names unknown point ${objective.poi}`);
+  if (objective.kind === 'deliver') {
+    getResource(objective.resource);
+    if (!STATION_PLACEMENTS.has(objective.station)) throw new Error(`Campaign step ${id} names unknown station ${objective.station}`);
+  }
+  if (objective.kind === 'boss') {
+    getShip(objective.ship);
+    getSector(objective.sector);
+  }
 }
 for (const site of CREW_RULES.sites) {
   const field = getSector(site.sector).asteroidFields.find((f) => f.id === site.field);

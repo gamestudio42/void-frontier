@@ -216,7 +216,8 @@ function resolve(world: World, rules: CollisionRules, a: Entry, b: Entry, contac
     for (const id of [a.id, b.id]) {
       const ship = world.ships.get(id);
       if (!ship || ship.destroyed || damage <= 0) continue;
-      ship.hull = Math.max(0, ship.hull - damage);
+      // Fleet pilots graze rocks rather than ram them: off-screen they never crash at all.
+      ship.hull = Math.max(0, ship.hull - (world.pilots.get(id)?.fleet !== undefined ? damage * FLEET_IMPACT_SHARE : damage));
       ship.lastDamageTick = world.tick;
       damageSubsystems(world, id, { x: contact.px, y: contact.py }, damage);
       if (ship.hull === 0) destroyShip(world, id, null);
@@ -257,6 +258,9 @@ function applyImpulse(A: Body, B: Body, jx: number, jy: number, rax: number, ray
     B.angularVelocity -= (rbx * jy - rby * jx) / B.inertia;
   }
 }
+
+/** Share of collision damage a hired pilot's ship takes. */
+const FLEET_IMPACT_SHARE = 0.1;
 
 /** Hull damage from the kinetic energy of the closing motion above the safe speed. */
 export function impactDamage(rules: CollisionRules, closingSpeed: number, inverseMassSum: number): number {

@@ -14,6 +14,13 @@
     "killReward": 0.5
   },
   {
+    "id": "frontier_guard",
+    "hostile": false,
+    "color": "#8fd18a",
+    "dockingThreshold": -25,
+    "killReward": 1.5
+  },
+  {
     "id": "free_pirates",
     "hostile": true,
     "color": "#ff5a4a",

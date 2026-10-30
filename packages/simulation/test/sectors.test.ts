@@ -110,6 +110,7 @@ describe('anomaly zone', () => {
 describe('exploration', () => {
   it('pays for a derelict once, when you fly to it', () => {
     const sim = undocked();
+    sim.campaign = null;
     const poi = sim.world.pointsOfInterest.get('alpha_wreck')!;
     const credits = sim.world.credits;
     body(sim, sim.playerId).position = { x: poi.position.x + 40, y: poi.position.y };

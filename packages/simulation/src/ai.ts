@@ -226,7 +226,7 @@ function mine(world: World, id: EntityId, ship: Ship, body: Body, job: NonNullab
     const error = Math.abs(wrapAngle(atan2(-ry, -rx) - body.angle));
     command.fireMining = d - rock.radius < laser.definition.range * 0.9 && error < toRadians(laser.definition.gimbal + 4);
   }
-  if (!command.fireMining) desired = avoid(world, id, body, desired);
+  desired = avoid(world, id, body, desired);
   const error = worldToLocal(forwardOf(body.angle), { x: desired.x - body.velocity.x, y: desired.y - body.velocity.y });
   command.thrust = clamp(error.x * AI.steeringGain, -1, 1);
   command.strafe = clamp(error.y * AI.steeringGain, -1, 1);

@@ -49,6 +49,15 @@ export interface Economy {
 const routeOf = (id: string): TraderRoute => TRADER_ROUTES.find((r) => r.id === id)!;
 const eventOf = (id: string): EconomyEventDefinition => EVENT_RULES.events.find((e) => e.id === id)!;
 
+/** Stations and routes added to the game since an old save was made join its economy. */
+export function reconcileEconomy(economy: Economy, tick: number): void {
+  const fresh = createEconomy();
+  for (const [key, items] of Object.entries(fresh.markets)) economy.markets[key] ??= items;
+  for (const trader of fresh.traders) {
+    if (!economy.traders.some((t) => t.route === trader.route)) economy.traders.push({ ...trader, departTick: tick + trader.departTick });
+  }
+}
+
 export function createEconomy(): Economy {
   const markets: Record<string, MarketItem[]> = {};
   for (const [key, placement] of STATION_PLACEMENTS) markets[key] = getStation(placement.definition).market.map((item) => ({ ...item }));
@@ -303,8 +312,10 @@ export function economySystem(world: World, economy: Economy, board: MissionBoar
     }
     if (world.tick < trader.legStartTick + trader.legTicks) continue;
     // Off-screen: pirates in this sector may take an unescorted hauler.
+    // One roll per sector crossed, on the way out of it.
+    const leaving = trader.leg + 1 >= trader.legs.length || trader.legs[trader.leg + 1].sector !== leg.sector;
     const risk = (EVENT_RULES.sectorRisk[leg.sector] ?? 0) * raidFactor(economy, leg.sector);
-    if (trader.escort === null && world.rng.next() < risk) lose(world, economy, board, trader, playerId);
+    if (leaving && trader.escort === null && world.rng.next() < risk) lose(world, economy, board, trader, playerId);
     else finishLeg(world, economy, board, trader, playerId);
   }
 }

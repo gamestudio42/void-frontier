@@ -1,0 +1,84 @@
+{
+  "steps": [
+    {
+      "id": "distress",
+      "objective": {
+        "kind": "discover",
+        "poi": "alpha_wreck",
+        "sector": "outpost_alpha"
+      },
+      "reward": {
+        "credits": 600,
+        "faction": "outpost_authority",
+        "reputation": 4
+      }
+    },
+    {
+      "id": "raiders",
+      "objective": {
+        "kind": "kill",
+        "count": 2
+      },
+      "reward": {
+        "credits": 900,
+        "faction": "outpost_authority",
+        "reputation": 6
+      }
+    },
+    {
+      "id": "parts",
+      "objective": {
+        "kind": "deliver",
+        "resource": "machine_parts",
+        "units": 20,
+        "station": "bastion_watch"
+      },
+      "reward": {
+        "credits": 1800,
+        "faction": "frontier_guard",
+        "reputation": 10
+      }
+    },
+    {
+      "id": "signal",
+      "objective": {
+        "kind": "discover",
+        "poi": "ancient_structure",
+        "sector": "anomaly_zone"
+      },
+      "reward": {
+        "credits": 1200,
+        "faction": "frontier_guard",
+        "reputation": 5
+      }
+    },
+    {
+      "id": "trail",
+      "objective": {
+        "kind": "discover",
+        "poi": "gunship_wreck",
+        "sector": "pirate_territory"
+      },
+      "reward": {
+        "credits": 1500,
+        "faction": "frontier_guard",
+        "reputation": 5
+      }
+    },
+    {
+      "id": "flagship",
+      "objective": {
+        "kind": "boss",
+        "ship": "dreadmaw",
+        "sector": "pirate_territory",
+        "x": 0,
+        "y": 1000
+      },
+      "reward": {
+        "credits": 6000,
+        "faction": "frontier_guard",
+        "reputation": 15
+      }
+    }
+  ]
+}

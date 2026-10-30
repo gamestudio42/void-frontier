@@ -417,7 +417,7 @@
     ],
     "economy": {
       "produces": {
-        "machine_parts": 10
+        "machine_parts": 14
       },
       "consumes": {
         "iron_ore": 6,
@@ -543,5 +543,200 @@
       "consumes": {}
     },
     "shipyard": []
+  },
+  {
+    "id": "bastion",
+    "faction": "frontier_guard",
+    "modules": [
+      {
+        "kind": "core",
+        "x": 0,
+        "y": 0,
+        "r": 58
+      },
+      {
+        "kind": "tank",
+        "x": 90,
+        "y": 60,
+        "r": 22
+      },
+      {
+        "kind": "tank",
+        "x": 90,
+        "y": -60,
+        "r": 22
+      },
+      {
+        "kind": "truss",
+        "from": [
+          -50,
+          0
+        ],
+        "to": [
+          -176,
+          0
+        ],
+        "width": 16
+      },
+      {
+        "kind": "dock",
+        "x": -212,
+        "y": 0,
+        "angle": 3.141592653589793,
+        "width": 44,
+        "depth": 34
+      },
+      {
+        "kind": "truss",
+        "from": [
+          0,
+          50
+        ],
+        "to": [
+          0,
+          200
+        ],
+        "width": 14
+      },
+      {
+        "kind": "truss",
+        "from": [
+          0,
+          -50
+        ],
+        "to": [
+          0,
+          -200
+        ],
+        "width": 14
+      },
+      {
+        "kind": "tank",
+        "x": 0,
+        "y": 214,
+        "r": 26
+      },
+      {
+        "kind": "tank",
+        "x": 0,
+        "y": -214,
+        "r": 26
+      },
+      {
+        "kind": "panel",
+        "from": [
+          40,
+          90
+        ],
+        "to": [
+          40,
+          190
+        ],
+        "width": 40
+      },
+      {
+        "kind": "panel",
+        "from": [
+          40,
+          -90
+        ],
+        "to": [
+          40,
+          -190
+        ],
+        "width": 40
+      },
+      {
+        "kind": "truss",
+        "from": [
+          110,
+          0
+        ],
+        "to": [
+          220,
+          0
+        ],
+        "width": 10
+      },
+      {
+        "kind": "tank",
+        "x": 232,
+        "y": 0,
+        "r": 18
+      }
+    ],
+    "docking": {
+      "maxDistance": 12,
+      "maxRelativeSpeed": 3,
+      "maxAngle": 15,
+      "hostileClearance": 450
+    },
+    "services": {
+      "repairPerHull": 1.2,
+      "fuelPerKg": 0.9
+    },
+    "market": [
+      {
+        "resource": "machine_parts",
+        "stock": 200,
+        "baseStock": 200,
+        "buys": true,
+        "sells": false
+      },
+      {
+        "resource": "titanium_ore",
+        "stock": 80,
+        "baseStock": 150,
+        "buys": true,
+        "sells": false
+      },
+      {
+        "resource": "platinum_ore",
+        "stock": 30,
+        "baseStock": 60,
+        "buys": true,
+        "sells": false
+      },
+      {
+        "resource": "salvage",
+        "stock": 60,
+        "baseStock": 120,
+        "buys": true,
+        "sells": false
+      },
+      {
+        "resource": "exotic_matter",
+        "stock": 10,
+        "baseStock": 40,
+        "buys": true,
+        "sells": false
+      }
+    ],
+    "upgrades": [
+      "armor_plating",
+      "shield_capacitor",
+      "afterburner",
+      "combat_computer",
+      "repair_drones"
+    ],
+    "economy": {
+      "produces": {},
+      "consumes": {
+        "machine_parts": 7,
+        "titanium_ore": 1
+      }
+    },
+    "shipyard": [
+      {
+        "ship": "kestrel"
+      },
+      {
+        "ship": "lancer",
+        "requires": {
+          "faction": "frontier_guard",
+          "reputation": 15
+        }
+      }
+    ]
   }
 ]
