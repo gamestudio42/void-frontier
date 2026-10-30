@@ -80,10 +80,22 @@ export function App() {
       <Notices notices={hud.notices} t={t} locale={locale} />
       <div key={`jump-${hud.jumpedAt}`} className={hud.jumpedAt > 0 ? 'jump-flash' : ''} aria-hidden="true" />
       {hud.mapOpen && hud.menu === null && (
-        <SectorMap events={hud.events} fleet={hud.fleet} current={hud.sectorId} visited={hud.visited} discovered={hud.discovered} contracts={hud.contracts} t={t} onClose={() => store.update({ mapOpen: false })} />
+        <SectorMap events={hud.events} fleet={hud.fleet} missionSector={hud.campaignSector} current={hud.sectorId} visited={hud.visited} discovered={hud.discovered} contracts={hud.contracts} t={t} onClose={() => store.update({ mapOpen: false })} />
       )}
       {hud.fleetOpen && hud.fleet && hud.menu === null && game && (
         <FleetPanel fleet={hud.fleet} actions={game} t={t} locale={locale} onClose={() => store.update({ fleetOpen: false })} />
+      )}
+      {hud.campaignEnding && !hud.menu && (
+        <div className="map-backdrop" data-testid="campaign-ending">
+          <section className="map campaign-ending">
+            <span className="label">{t('campaign.title')}</span>
+            <h2>{t('campaign.ending.title')}</h2>
+            <p>{t('campaign.ending.body')}</p>
+            <button className="primary" onClick={() => store.update({ campaignEnding: false })}>
+              {t('campaign.ending.close')}
+            </button>
+          </section>
+        </div>
       )}
       <figure className="radar" aria-label={t('hud.radar')} hidden={hud.menu === 'main'}>
         <canvas ref={radarRef} data-testid="radar" />

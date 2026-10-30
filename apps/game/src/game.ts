@@ -415,6 +415,7 @@ export class Game {
             this.notices.push({ text: `fleet:${n.kind}:${n.ship ?? ''}:${n.pilot ?? ''}`, kind: bad ? 'failed' : 'abandoned', reward: 0, at: this.clock, id: -9000 - n.tick });
           }
           if (event.type === 'campaign') {
+            if (event.finished) this.store.update({ campaignEnding: true });
             this.notices.push({ text: `campaign:${event.step}`, kind: 'completed', reward: event.credits, at: this.clock, id: -7000 - this.sim.campaign!.step });
           }
           if (event.type === 'contract') {
@@ -740,6 +741,7 @@ export class Game {
       events: (this.sim.economy?.events ?? []).map((e) => ({ id: e.id, secondsLeft: Math.max(0, (e.endsTick - this.sim.world.tick) / 60) })),
       fleet: this.fleetView(),
       campaign: this.campaignView(),
+      campaignSector: campaignTarget(this.sim)?.sector ?? null,
       visited: [...new Set([...Object.keys(this.memory), this.sim.world.sectorId])],
       dockRefused: this.dockRefused && this.clock - this.dockRefused.at < 3 ? this.dockRefused.refusals : null,
       station: this.stationView(),

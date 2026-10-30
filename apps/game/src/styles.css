@@ -1823,6 +1823,7 @@ button {
 .hull dl {
   margin: 0;
   display: grid;
+  align-content: start;
   gap: 2px;
   font-size: 12px;
   flex: 1;
@@ -2032,4 +2033,14 @@ button {
 .campaign button {
   align-self: flex-start;
   font-size: 11px;
+}
+
+.campaign-ending {
+  max-width: 460px;
+  text-align: center;
+}
+
+.campaign-ending p {
+  color: var(--text);
+  line-height: 1.5;
 }

@@ -18,3 +18,20 @@ test('shows the story after undocking and moves on when the objective is met', a
   });
   await expect(page.getByTestId('campaign')).toContainText('Whoever did this');
 });
+
+test('closes the story with an ending card when the last mission is done', async ({ page }) => {
+  test.slow();
+  await page.goto('/?quality=low');
+  await page.getByTestId('tutorial-toggle').uncheck();
+  await page.getByTestId('start').click();
+  await page.getByTestId('undock').click();
+  await page.evaluate(() => {
+    const game = (window as unknown as { voidFrontier: { sim: { campaign: { step: number }; world: { events: unknown[] } }; store: { update(p: object): void } } }).voidFrontier;
+    game.sim.campaign.step = 6;
+    game.sim.world.events.push({ type: 'campaign', step: 'flagship', credits: 6000, finished: true });
+  });
+  await expect(page.getByTestId('campaign-ending')).toBeVisible({ timeout: 30_000 });
+  await page.getByTestId('campaign-ending').getByRole('button').click();
+  await expect(page.getByTestId('campaign-ending')).toHaveCount(0);
+  await expect(page.getByTestId('campaign')).toHaveCount(0);
+});

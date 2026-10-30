@@ -148,6 +148,10 @@ export interface HudState {
   fleet: FleetView | null;
   /** Current story step; null once the story is over. */
   campaign: CampaignView | null;
+  /** The story just ended: show its closing card. */
+  campaignEnding: boolean;
+  /** Sector the current story step leads to, if any. */
+  campaignSector: string | null;
   /** Latest economy news, newest first. */
   news: { tick: number; kind: string; subject: string; station?: string; sector?: string; resource?: string }[];
   /** Active economy events. */
@@ -208,6 +212,8 @@ export const initialHudState = (): HudState => ({
   fleetOpen: false,
   fleet: null,
   campaign: null,
+  campaignEnding: false,
+  campaignSector: null,
   news: [],
   events: [],
   hits: 0,

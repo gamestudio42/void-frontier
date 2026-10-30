@@ -2,7 +2,7 @@ import type { MessageKey } from './en.ts';
 
 export const ptBR: Record<MessageKey, string> = {
   'app.title': 'Void Frontier',
-  'app.subtitle': 'Outpost Alpha · protótipo',
+  'app.subtitle': 'Um RPG de ação espacial newtoniano',
   'hud.speed': 'Velocidade',
   'hud.heading': 'Proa',
   'hud.course': 'Rumo',
@@ -326,7 +326,7 @@ export const ptBR: Record<MessageKey, string> = {
   'help.debug': 'Painel de depuração',
   'help.pause': 'Pausa',
   'help.close': 'Voar',
-  'help.intro': 'Não há atrito no espaço. A nave continua se movendo até que os propulsores a empurrem no sentido contrário. A linha âmbar mostra para onde você vai, a linha azul para onde o nariz aponta e o anel vermelho onde o freio faria você parar. Rochas e a estação são sólidas: bata rápido e o casco cede. Piratas patrulham o setor: o laser derruba escudos e o autocanhão quebra cascos. Escaneie rochas com R e corte minério com o laser de mineração: cada tonelada no porão deixa a nave mais lenta. Atraque na estação com F para vender, reparar, reabastecer, melhorar a nave e pegar contratos.',
+  'help.intro': 'Não há atrito no espaço. A nave continua se movendo até que os propulsores a empurrem no sentido contrário. A linha âmbar mostra para onde você vai, a linha azul para onde o nariz aponta e o anel vermelho onde o freio faria você parar. Rochas e a estação são sólidas: bata rápido e o casco cede. Piratas patrulham o setor: o laser derruba escudos e o autocanhão quebra cascos. Escaneie rochas com R e corte minério com o laser de mineração: cada tonelada no porão deixa a nave mais lenta. Atraque na estação com F para vender, reparar, reabastecer, melhorar a nave e pegar contratos. Siga o cartão de missão para acompanhar a história, compre mais naves no estaleiro e contrate pilotos para voarem por você (O mostra sua frota).',
   'help.language': 'Idioma',
   'pause.title': 'Pausado',
   'pause.resume': 'Pressione Esc para continuar',
@@ -402,6 +402,9 @@ export const ptBR: Record<MessageKey, string> = {
   'site.belt_mid': 'Cinturão Central',
   'site.belt_east': 'Cinturão Leste',
   'site.platinum_drift': 'Deriva de Platina',
+  'campaign.ending.title': 'Os ataques se calam',
+  'campaign.ending.body': 'A Dreadmaw caiu e Kess Varo com ela. Os comboios voltaram a chegar a Bastion, e a Guarda tem seu nome no quadro. A fronteira continua sendo sua: contratos, sua frota e o resto do mapa esperam.',
+  'campaign.ending.close': 'Voltar à fronteira',
   'campaign.title': 'O Sinal de Bastion',
   'campaign.marker': 'Missão',
   'campaign.done': 'Missão concluída',

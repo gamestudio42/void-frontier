@@ -1,7 +1,7 @@
 /** English is the source language; other locales translate these keys. */
 export const en = {
   'app.title': 'Void Frontier',
-  'app.subtitle': 'Outpost Alpha · prototype',
+  'app.subtitle': 'A Newtonian space action RPG',
   'hud.speed': 'Speed',
   'hud.heading': 'Heading',
   'hud.course': 'Course',
@@ -325,7 +325,7 @@ export const en = {
   'help.debug': 'Debug overlay',
   'help.pause': 'Pause',
   'help.close': 'Fly',
-  'help.intro': 'There is no friction in space. Your ship keeps moving until thrusters push it the other way. The amber line shows where you are going, the blue line where the nose points, and the red ring where the brake would stop you. Rocks and the station are solid: hit them fast and the hull gives way. Pirates patrol the sector: lasers strip shields, autocannons break hulls. Scan rocks with R and cut ore with the mining laser: every tonne in the hold makes the ship slower. Dock at the station with F to sell, repair, refuel, upgrade and take contracts.',
+  'help.intro': 'There is no friction in space. Your ship keeps moving until thrusters push it the other way. The amber line shows where you are going, the blue line where the nose points, and the red ring where the brake would stop you. Rocks and the station are solid: hit them fast and the hull gives way. Pirates patrol the sector: lasers strip shields, autocannons break hulls. Scan rocks with R and cut ore with the mining laser: every tonne in the hold makes the ship slower. Dock at the station with F to sell, repair, refuel, upgrade and take contracts. Follow the mission card for the story, buy more ships at a shipyard, and hire pilots to fly them for you (O shows your fleet).',
   'help.language': 'Language',
   'pause.title': 'Paused',
   'pause.resume': 'Press Esc to resume',
@@ -401,6 +401,9 @@ export const en = {
   'site.belt_mid': 'Mid Belt',
   'site.belt_east': 'East Belt',
   'site.platinum_drift': 'Platinum Drift',
+  'campaign.ending.title': 'The raids fall silent',
+  'campaign.ending.body': 'The Dreadmaw is gone and Kess Varo with it. Convoys are reaching Bastion again, and the Guard has your name on its board. The frontier is still yours to work: contracts, your fleet and the rest of the map are waiting.',
+  'campaign.ending.close': 'Back to the frontier',
   'campaign.title': 'The Bastion Signal',
   'campaign.marker': 'Mission',
   'campaign.done': 'Mission complete',

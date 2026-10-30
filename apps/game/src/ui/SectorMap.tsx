@@ -9,6 +9,7 @@ interface SectorMapProps {
   discovered: string[];
   contracts: ContractsView | null;
   fleet: FleetView | null;
+  missionSector: string | null;
   t: Translate;
   onClose(): void;
 }
@@ -21,7 +22,7 @@ function danger(sectorId: string): 'low' | 'medium' | 'high' {
 }
 
 /** The gate network: sectors as nodes on their map positions, gates as links. */
-export function SectorMap({ events, fleet, current, visited, discovered, contracts, t, onClose }: SectorMapProps) {
+export function SectorMap({ events, fleet, missionSector, current, visited, discovered, contracts, t, onClose }: SectorMapProps) {
   const sectors = [...SECTORS.values()];
   const scale = 230;
   const cx = 360;
@@ -33,6 +34,7 @@ export function SectorMap({ events, fleet, current, visited, discovered, contrac
   const links = new Set<string>();
   for (const s of sectors) for (const g of s.gates) links.add([s.id, g.to].sort().join('|'));
   const targets = new Set((contracts?.active ?? []).filter((c) => c.sector).map((c) => c.sector!));
+  if (missionSector) targets.add(missionSector);
 
   return (
     <div className="map-backdrop" onClick={onClose} data-testid="map">
