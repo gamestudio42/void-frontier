@@ -1,37 +1,40 @@
 import type { Locale, MessageKey, Translate } from '../i18n.ts';
+import { DEFAULT_BINDINGS, type BindingAction, type Bindings } from '../input.ts';
 
 interface ControlsPanelProps {
   t: Translate;
+  bindings?: Partial<Bindings>;
   locale: Locale;
   locales: Locale[];
   onLocale(locale: Locale): void;
   onClose(): void;
 }
 
-const BINDINGS: [string[], MessageKey][] = [
-  [['W', 'S'], 'help.thrust'],
-  [['A', 'D'], 'help.strafe'],
-  [['Q', 'E'], 'help.turn'],
+/** Rows of the help panel; a rebindable key is named by its action, so the panel shows the player's own keys. */
+const ROWS: [(string | { action: BindingAction })[], MessageKey][] = [
+  [[{ action: 'thrust' }, { action: 'reverse' }], 'help.thrust'],
+  [[{ action: 'strafeLeft' }, { action: 'strafeRight' }], 'help.strafe'],
+  [[{ action: 'turnLeft' }, { action: 'turnRight' }], 'help.turn'],
   [['Mouse'], 'help.mouse'],
   [['LMB', 'Ctrl'], 'help.fire'],
   [['RMB', 'Alt'], 'help.laser'],
   [['Tab'], 'help.target'],
-  [['MMB', 'X'], 'help.mine'],
-  [['R'], 'help.scan'],
-  [['K'], 'help.jettison'],
-  [['F'], 'help.dock'],
-  [['M'], 'help.map'],
-  [['O'], 'help.fleet'],
+  [['MMB', { action: 'mine' }], 'help.mine'],
+  [[{ action: 'scan' }], 'help.scan'],
+  [[{ action: 'jettison' }], 'help.jettison'],
+  [[{ action: 'dock' }], 'help.dock'],
+  [[{ action: 'map' }], 'help.map'],
+  [[{ action: 'fleet' }], 'help.fleet'],
   [['Shift'], 'help.boost'],
-  [['Space'], 'help.brake'],
-  [['C'], 'help.mode'],
+  [[{ action: 'brake' }], 'help.brake'],
+  [[{ action: 'mode' }], 'help.mode'],
   [['Wheel', '+', '−'], 'help.zoom'],
   [['G'], 'help.quality'],
   [['F3'], 'help.debug'],
   [['Esc'], 'help.pause'],
 ];
 
-export function ControlsPanel({ t, locale, locales, onLocale, onClose }: ControlsPanelProps) {
+export function ControlsPanel({ t, bindings, locale, locales, onLocale, onClose }: ControlsPanelProps) {
   return (
     <div className="modal-backdrop">
       <section className="modal" role="dialog" aria-labelledby="controls-title" data-testid="controls">
@@ -51,9 +54,14 @@ export function ControlsPanel({ t, locale, locales, onLocale, onClose }: Control
         <p className="intro">{t('help.intro')}</p>
         <h2 id="controls-title">{t('help.title')}</h2>
         <dl className="bindings">
-          {BINDINGS.map(([keys, label]) => (
+          {ROWS.map(([keys, label]) => (
             <div key={label}>
-              <dt>{keys.map((key) => <kbd key={key}>{key}</kbd>)}</dt>
+              <dt>
+                {keys.map((key) => {
+                  const name = typeof key === 'string' ? key : (bindings?.[key.action] ?? DEFAULT_BINDINGS[key.action]).replace(/^Key/, '');
+                  return <kbd key={name}>{name}</kbd>;
+                })}
+              </dt>
               <dd>{t(label)}</dd>
             </div>
           ))}

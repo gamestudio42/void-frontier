@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Game } from '../game.ts';
 import { LOCALES, type Locale, type MessageKey, type Translate } from '../i18n.ts';
 import { SLOTS, downloadSave, saveStore, type SlotId, type SlotRecord } from '../saves.ts';
+import { DEFAULT_BINDINGS, type BindingAction, type Bindings } from '../input.ts';
 import type { Settings } from '../settings.ts';
 
 type View = 'root' | 'load' | 'save' | 'settings';
@@ -102,6 +103,46 @@ function SaveSlots({ game, t, locale, mode, onDone }: { game: Game; t: Translate
   );
 }
 
+const keyName = (code: string) => code.replace(/^Key/, '').replace(/^Digit/, '');
+
+/** Click an action, then press its new key; Esc cancels. A key taken by another action swaps with it. */
+function KeyBindings({ settings, onSettings, t }: { settings: Settings; onSettings(s: Settings): void; t: Translate }) {
+  const [waiting, setWaiting] = useState<BindingAction | null>(null);
+  const bound = { ...DEFAULT_BINDINGS, ...settings.bindings } as Bindings;
+  useEffect(() => {
+    if (!waiting) return;
+    const onKey = (event: KeyboardEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setWaiting(null);
+      if (event.code === 'Escape') return;
+      const next: Bindings = { ...bound };
+      const clash = (Object.keys(next) as BindingAction[]).find((a) => next[a] === event.code);
+      if (clash) next[clash] = next[waiting];
+      next[waiting] = event.code;
+      onSettings({ ...settings, bindings: next });
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  });
+  return (
+    <details className="key-bindings" data-testid="key-bindings">
+      <summary>{t('settings.keys')}</summary>
+      {(Object.keys(DEFAULT_BINDINGS) as BindingAction[]).map((action) => (
+        <div key={action}>
+          <span>{t(`key.${action}` as MessageKey)}</span>
+          <button onClick={() => setWaiting(action)} data-testid={`bind-${action}`}>
+            {waiting === action ? t('settings.pressKey') : keyName(bound[action])}
+          </button>
+        </div>
+      ))}
+      <button className="ghost" onClick={() => onSettings({ ...settings, bindings: {} })}>
+        {t('settings.resetKeys')}
+      </button>
+    </details>
+  );
+}
+
 export function SettingsPanel({ settings, onSettings, t }: { settings: Settings; onSettings(s: Settings): void; t: Translate }) {
   const set = (patch: Partial<Settings>) => onSettings({ ...settings, ...patch });
   const slider = (key: 'masterVolume' | 'effectsVolume' | 'musicVolume', label: MessageKey) => (
@@ -133,6 +174,19 @@ export function SettingsPanel({ settings, onSettings, t }: { settings: Settings;
         <span>{t('settings.steering')}</span>
         <input type="checkbox" checked={settings.mouseSteering} onChange={(e) => set({ mouseSteering: e.target.checked })} />
       </label>
+      <label className="setting">
+        <span>{t('settings.flashes')}</span>
+        <input type="checkbox" checked={settings.reduceFlashes} onChange={(e) => set({ reduceFlashes: e.target.checked })} data-testid="reduce-flashes" />
+      </label>
+      <label className="setting">
+        <span>{t('settings.text')}</span>
+        <select value={settings.textScale} onChange={(e) => set({ textScale: Number(e.target.value) })} data-testid="text-scale">
+          <option value={1}>100%</option>
+          <option value={1.15}>115%</option>
+          <option value={1.3}>130%</option>
+        </select>
+      </label>
+      <KeyBindings settings={settings} onSettings={onSettings} t={t} />
       <label className="setting">
         <span>{t('settings.language')}</span>
         <select value={settings.locale ?? ''} onChange={(e) => set({ locale: (e.target.value || null) as Locale | null })}>

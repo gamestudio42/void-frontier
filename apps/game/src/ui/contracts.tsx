@@ -24,7 +24,9 @@ export function objective(c: ContractView, t: Translate): string {
       .replace('{station}', t(`station.${c.station}` as MessageKey))
       .replace('{sector}', t(`sector.${c.sector}` as MessageKey));
   if (c.kind === 'delivery') return t('contract.delivery.objective').replace('{units}', String(c.units)).replace('{drop}', t(`drop.${c.drop}` as MessageKey));
-  if (c.kind === 'mining') return t('contract.mining.objective').replace('{units}', String(c.units)).replace('{resource}', t(`resource.${c.resource}` as MessageKey));
+  if (c.kind === 'patrol') return t('contract.patrol.objective').replace('{count}', String(c.units)).replace('{drop}', t(`drop.${c.drop}` as MessageKey));
+  if (c.kind === 'recon') return t('contract.recon.objective').replace('{drop}', t(`drop.${c.drop}` as MessageKey));
+  if (c.kind === 'mining' || c.kind === 'salvage') return t('contract.mining.objective').replace('{units}', String(c.units)).replace('{resource}', t(`resource.${c.resource}` as MessageKey));
   return t('contract.bounty.objective').replace('{count}', String(c.units));
 }
 
@@ -62,7 +64,7 @@ export function ContractsTab({ view, actions, t, locale }: { view: ContractsView
               </div>
               <div className="contract-actions">
                 <strong>{formatNumber(locale, c.reward)} cr</strong>
-                {c.kind !== 'delivery' && (
+                {c.kind !== 'delivery' && c.kind !== 'patrol' && c.kind !== 'recon' && (
                   <button disabled={!c.canHandIn} onClick={() => actions.handInContract(c.id)} data-testid={`handin-${c.id}`}>
                     {t('contract.handIn')}
                   </button>
@@ -135,7 +137,7 @@ export function ContractTracker({ active, t }: { active: ActiveContractView[]; t
 }
 
 /** The current story step: the briefing until dismissed, then just the objective. */
-export function CampaignCard({ campaign, t }: { campaign: CampaignView; t: Translate }) {
+export function CampaignCard({ campaign, onChoose, t, locale }: { campaign: CampaignView; onChoose(option: string): void; t: Translate; locale: string }) {
   const [open, setOpen] = useState(true);
   return (
     <aside className="campaign" data-testid="campaign">
@@ -148,6 +150,12 @@ export function CampaignCard({ campaign, t }: { campaign: CampaignView; t: Trans
         {t(`campaign.${campaign.step}.objective` as MessageKey)}
         {campaign.progress && ` · ${campaign.progress.current}/${campaign.progress.target}`}
       </span>
+      {campaign.options?.map((o) => (
+        <button key={o.id} onClick={() => onChoose(o.id)} data-testid={`choice-${o.id}`}>
+          {t(`campaign.${campaign.step}.${o.id}` as MessageKey)}
+          {o.credits > 0 && ` · +${formatNumber(locale, o.credits)} cr`}
+        </button>
+      ))}
       <button className="ghost" onClick={() => setOpen(!open)} data-testid="campaign-toggle">
         {open ? t('campaign.hide') : t('campaign.show')}
       </button>
@@ -162,6 +170,8 @@ export function Notices({ notices, t, locale }: { notices: { id: number; kind: s
         <div key={`${n.id}-${n.outcome}`} className={`notice ${n.outcome}`} data-testid="notice">
           {n.kind === 'tutorial' ? (
             <strong>{t('tutorial.done')}</strong>
+          ) : n.kind.startsWith('rule:') ? (
+            <strong>{t(`sector.rule.${n.kind.slice(5)}` as MessageKey)}</strong>
           ) : n.kind.startsWith('campaign:') ? (
             <>
               <strong>{t('campaign.done')}: {t(`campaign.${n.kind.slice(9)}.title` as MessageKey)}</strong>

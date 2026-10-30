@@ -13,6 +13,7 @@ export interface StationActions extends ContractActions, ShipyardActions, FleetA
   trade(resource: string, units: number, side: 'buy' | 'sell'): void;
   service(kind: 'repair' | 'refuel'): void;
   buyUpgrade(id: string): void;
+  buyWeapon(index: number, weapon: string): void;
 }
 
 interface StationPanelProps {
@@ -46,6 +47,10 @@ function effectLines(id: string, t: Translate, locale: string): string[] {
   if (e.sensorRangeBonus) lines.push(`${t('upgrade.effect.sensors')} +${e.sensorRangeBonus} m`);
   if (e.tractorMultiplier) lines.push(`${t('upgrade.effect.tractor')} ×${e.tractorMultiplier}`);
   if (e.gimbalBonus) lines.push(`${t('upgrade.effect.gimbal')} +${e.gimbalBonus}°`);
+  if (e.coolingMultiplier) lines.push(`${t('upgrade.effect.cooling')} ×${e.coolingMultiplier}`);
+  if (e.missileEvasion) lines.push(`${t('upgrade.effect.evasion')} ${formatNumber(locale, e.missileEvasion * 100)}%`);
+  if (e.salvageBonus) lines.push(`${t('upgrade.effect.salvage')} +${e.salvageBonus}`);
+  if (e.fuelEfficiency) lines.push(`${t('upgrade.effect.fuel')} ×${e.fuelEfficiency}`);
   if (e.repairRate) lines.push(`${t('upgrade.effect.repair')} ${formatNumber(locale, e.repairRate * 100, 1)}%/s`);
   lines.push(`${t('hud.mass')} +${formatNumber(locale, getUpgrade(id).equipmentMass / 1000, 2)} ${t('unit.mass')}`);
   return lines;
@@ -162,6 +167,22 @@ export function StationPanel({ view, contracts, fleet, news, events, hull, fuel,
                 </span>
               ))}
             </div>
+            <h3>{t('station.weapons')}</h3>
+            <div className="mounts">
+              {view.mounts.map((m) => (
+                <article key={m.index} data-testid={`mount-${m.index}`}>
+                  <span className="slot-tag">{t(`mount.${m.group}` as MessageKey)}</span>
+                  <strong>{t(`hud.weapon.${m.weapon}` as MessageKey)}</strong>
+                  {m.offers.length === 0 && <p>{t('station.noRefit')}</p>}
+                  {m.offers.map((o) => (
+                    <button key={o.weapon} disabled={view.credits < o.cost} onClick={() => actions.buyWeapon(m.index, o.weapon)} data-testid={`fit-${m.index}-${o.weapon}`}>
+                      {t(`hud.weapon.${o.weapon}` as MessageKey)} · {cr(o.cost)}
+                    </button>
+                  ))}
+                </article>
+              ))}
+            </div>
+            <h3>{t('station.modules')}</h3>
             <div className="upgrades">
               {view.upgrades.map((u) => {
                 const noSlot = !u.installed && view.slots[u.slot].used >= view.slots[u.slot].total;

@@ -1,4 +1,4 @@
-import type { SimEvent, Simulation } from '@void-frontier/simulation';
+import { hostilesNear, type SimEvent, type Simulation } from '@void-frontier/simulation';
 
 /**
  * Procedural sound: every effect is synthesised with Web Audio, so the game ships no
@@ -18,6 +18,7 @@ export class AudioEngine {
   private drill!: { gain: GainNode; osc: OscillatorNode };
   private musicTimer = 0;
   private chord = 0;
+  private mood: 'flight' | 'combat' | 'station' = 'flight';
   private volumes = { master: 0.8, effects: 0.9, music: 0.5 };
 
   /** Browsers only allow audio after a user gesture; call this from one. */
@@ -130,10 +131,14 @@ export class AudioEngine {
     this.drill.gain.gain.setTargetAtTime(drill ? 0.045 : 0, t, 0.05);
     this.drill.osc.frequency.setTargetAtTime(140 + Math.sin(t * 23) * 18, t, 0.02);
 
+    // The score follows the moment: calm in dock, restless when someone is shooting nearby.
+    const previous = this.mood;
+    this.mood = ship?.docked !== null ? 'station' : ship && !ship.destroyed && hostilesNear(sim.world, sim.playerId, 900).length > 0 ? 'combat' : 'flight';
     this.musicTimer -= dt;
+    if (this.mood === 'combat' && previous !== 'combat') this.musicTimer = 0;
     if (this.musicTimer <= 0) {
       this.playPad();
-      this.musicTimer = 14;
+      this.musicTimer = this.mood === 'combat' ? 4 : 14;
     }
   }
 
@@ -302,6 +307,20 @@ export class AudioEngine {
   }
 
   /** Ambient score: slow, quiet pad chords that drift through a minor progression. */
+  private pulse(at: number): void {
+    const ctx = this.ctx!;
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = 55;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, at);
+    gain.gain.linearRampToValueAtTime(0.14, at + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.3);
+    osc.connect(gain).connect(this.music);
+    osc.start(at);
+    osc.stop(at + 0.32);
+  }
+
   private playPad(): void {
     const ctx = this.ctx!;
     const progressions = [
@@ -311,24 +330,30 @@ export class AudioEngine {
       [98, 146.8, 196, 246.9],
     ];
     const notes = progressions[this.chord++ % progressions.length];
+    const combat = this.mood === 'combat';
+    // In dock the same chords sit an octave up, softer and brighter.
+    const shift = this.mood === 'station' ? 2 : 1;
+    const length = combat ? 5 : 16;
     const t = ctx.currentTime;
     const filter = ctx.createBiquadFilter();
     filter.type = 'lowpass';
-    filter.frequency.value = 700;
+    filter.frequency.value = combat ? 420 : this.mood === 'station' ? 1100 : 700;
     const gain = ctx.createGain();
     gain.gain.setValueAtTime(0.0001, t);
-    gain.gain.linearRampToValueAtTime(0.12, t + 4);
-    gain.gain.linearRampToValueAtTime(0.0001, t + 16);
+    gain.gain.linearRampToValueAtTime(combat ? 0.1 : this.mood === 'station' ? 0.07 : 0.12, t + (combat ? 0.8 : 4));
+    gain.gain.linearRampToValueAtTime(0.0001, t + length);
+    // A low pulse under the chord while fighting.
+    if (combat) for (let beat = 0; beat < 8; beat++) this.pulse(t + beat * 0.5);
     filter.connect(gain).connect(this.music);
     for (const freq of notes) {
       for (const detune of [-6, 6]) {
         const osc = ctx.createOscillator();
         osc.type = 'triangle';
-        osc.frequency.value = freq;
+        osc.frequency.value = freq * shift;
         osc.detune.value = detune;
         osc.connect(filter);
         osc.start(t);
-        osc.stop(t + 16.2);
+        osc.stop(t + length + 0.2);
       }
     }
   }

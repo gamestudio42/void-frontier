@@ -6,11 +6,11 @@ test('opens on the main menu and walks the first tutorial steps', async ({ page 
   await page.getByTestId('start').click();
   await expect(page.getByTestId('main-menu')).toBeHidden();
   const card = page.getByTestId('tutorial');
-  await expect(card).toContainText('1/10');
+  await expect(card).toContainText('1/12');
   await page.getByTestId('undock').click();
-  await expect(card).toContainText('2/10');
+  await expect(card).toContainText('2/12');
   await page.keyboard.down('w');
-  await expect(card).toContainText('3/10', { timeout: 30_000 });
+  await expect(card).toContainText('3/12', { timeout: 30_000 });
   await page.keyboard.up('w');
 });
 

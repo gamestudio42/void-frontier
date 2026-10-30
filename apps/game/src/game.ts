@@ -1,10 +1,10 @@
 import { CAMPAIGN, CREW_RULES, OUTPOST_ALPHA, STATION_PLACEMENTS, getFaction, getSector } from '@void-frontier/content';
 import { FIXED_DT, FixedStepper, type Vec2 } from '@void-frontier/kernel';
-import { getUpgrade } from '@void-frontier/content';
-import { Simulation, campaignStep, campaignTarget, fleetEntities, hireFee, isParkedAt, orderProblem, payroll, shipValue, shipyardOffers, type FleetOrder, slotUsage, applySectorSnapshot, captureSector, gateStatus, gravityAt, jump, markDiscovered, nextGate, dockedStationKey, type SectorSnapshot, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, installUpgrades, hostilesNear, nearestObstacle, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
+import { getUpgrade, getWeapon, weaponGroup } from '@void-frontier/content';
+import { Simulation, WEAPON_RESALE, campaignStep, campaignTarget, fleetEntities, hireFee, isParkedAt, orderProblem, payroll, shipValue, shipyardOffers, type FleetOrder, slotUsage, applySectorSnapshot, captureSector, gateStatus, gravityAt, jump, markDiscovered, nextGate, dockedStationKey, type SectorSnapshot, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, installUpgrades, hostilesNear, nearestObstacle, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
 import { SpaceRenderer, type Quality } from '@void-frontier/view3d';
 import { AudioEngine } from './audio.ts';
-import { InputController } from './input.ts';
+import { DEFAULT_BINDINGS, InputController } from './input.ts';
 import { saveStore, type SlotId } from './saves.ts';
 import type { Settings } from './settings.ts';
 import { TUTORIAL } from './tutorial.ts';
@@ -204,6 +204,16 @@ export class Game {
     this.publish();
   }
 
+  buyWeapon(index: number, weapon: string): void {
+    this.sim.buyWeapon(index, weapon);
+    this.publish();
+  }
+
+  chooseCampaign(option: string): void {
+    this.sim.chooseCampaign(option);
+    this.publish();
+  }
+
   sellUpgrade(id: string): void {
     this.sim.sellUpgrade(this.sim.playerId, id);
     this.publish();
@@ -239,6 +249,7 @@ export class Game {
     const oldShip = this.sim.world.ships.get(this.sim.playerId);
     const upgrades = oldShip ? [...oldShip.upgrades] : [];
     const credits = Math.floor(this.sim.world.credits * 0.9);
+    if (this.sim.campaign) this.sim.campaign.stats.deaths++;
     const board = this.sim.missions ? carryBoard(this.sim.missions, oldShip?.kills ?? 0) : undefined;
     // The insurer always relaunches you at Outpost Alpha; the clock and every sector's memory carry on.
     this.memory[this.sim.world.sectorId] = captureSector(this.sim);
@@ -294,6 +305,7 @@ export class Game {
 
   applySettings(settings: Settings): void {
     this.audio.setVolumes(settings.masterVolume, settings.effectsVolume, settings.musicVolume);
+    this.input.bindings = { ...DEFAULT_BINDINGS, ...settings.bindings };
     this.shakeEnabled = settings.cameraShake;
     this.renderer.rig.shakeEnabled = settings.cameraShake;
     this.input.steering = settings.mouseSteering;
@@ -329,6 +341,8 @@ export class Game {
     this.replaceSim(sim);
     this.jumpedAt = this.clock;
     this.audio.jump();
+    // Sectors with their own physics say so on arrival.
+    if (getSector(sim.world.sectorId).rules) this.notices.push({ text: `rule:${sim.world.sectorId}`, kind: 'abandoned', reward: 0, at: this.clock, id: -8000 - Math.round(this.clock) });
     this.publish();
     void this.saveTo('auto').catch(() => undefined);
   }
@@ -415,7 +429,10 @@ export class Game {
             this.notices.push({ text: `fleet:${n.kind}:${n.ship ?? ''}:${n.pilot ?? ''}`, kind: bad ? 'failed' : 'abandoned', reward: 0, at: this.clock, id: -9000 - n.tick });
           }
           if (event.type === 'campaign') {
-            if (event.finished) this.store.update({ campaignEnding: true });
+            if (event.finished) {
+              const c = this.sim.campaign!;
+              this.store.update({ campaignEnding: { branch: c.branch, minutes: Math.round((this.sim.world.tick - c.stats.startTick) / 3600), deaths: c.stats.deaths } });
+            }
             this.notices.push({ text: `campaign:${event.step}`, kind: 'completed', reward: event.credits, at: this.clock, id: -7000 - this.sim.campaign!.step });
           }
           if (event.type === 'contract') {
@@ -469,7 +486,7 @@ export class Game {
     const telemetry = readTelemetry(this.sim.world, this.sim.playerId);
     if (!telemetry) return;
     const step = TUTORIAL[this.tutorialStep];
-    const done = step.done({ telemetry, events, playerId: this.sim.playerId, stepTime: this.clock - this.tutorialStarted, start: this.tutorialStart });
+    const done = step.done({ telemetry, events, playerId: this.sim.playerId, stepTime: this.clock - this.tutorialStarted, fleetOpen: this.store.getSnapshot().fleetOpen, start: this.tutorialStart });
     if (!done) return;
     this.audio.click();
     this.tutorialStep = this.tutorialStep + 1 < TUTORIAL.length ? this.tutorialStep + 1 : null;
@@ -538,6 +555,18 @@ export class Game {
         if (b) points.push({ label: this.labels.route(c.escort.route), position: b.position });
         continue;
       }
+      const stop = c.recon?.drop ?? c.patrol?.stops[c.patrol.next];
+      if (stop) {
+        const place = board.drops.find((p) => p.id === stop)!;
+        const label = this.labels.drop(stop);
+        if (place.sector === here) points.push({ label, position: place.position });
+        else {
+          const gateId = nextGate(here, place.sector);
+          const gate = gateId ? this.sim.world.gates.get(gateId) : undefined;
+          if (gate) points.push({ label: `${label} → ${this.labels.sector(gate.to)}`, position: gate.position });
+        }
+        continue;
+      }
       const d = c.delivery;
       if (!d) continue;
       const label = d.drop ? this.labels.drop(d.drop) : this.labels.station(d.station!);
@@ -582,17 +611,21 @@ export class Game {
     const id = this.sim.playerId;
     const docked = world.ships.get(id)?.docked !== null;
     const stationKey = dockedStationKey(world, id);
+    const scouted = (c: (typeof board.active)[number]) => {
+      const stop = c.recon?.drop ?? c.patrol?.stops[c.patrol.next];
+      return stop ? (board.drops.find((d) => d.id === stop)?.sector ?? null) : null;
+    };
     const describe = (c: (typeof board.active)[number]) => ({
       id: c.id,
       kind: c.kind,
       elite: c.elite,
       reward: payout(board, c),
       seconds: c.duration,
-      units: c.delivery?.units ?? c.mining?.units ?? c.bounty?.count ?? 0,
+      units: c.delivery?.units ?? c.mining?.units ?? c.bounty?.count ?? c.patrol?.stops.length ?? 0,
       resource: c.mining?.resource ?? null,
-      drop: c.delivery?.drop ?? null,
+      drop: c.delivery?.drop ?? c.recon?.drop ?? (c.patrol ? (c.patrol.stops[c.patrol.next] ?? null) : null),
       station: c.delivery?.station ?? null,
-      sector: c.delivery?.sector ?? (c.escort ? STATION_PLACEMENTS.get(c.escort.to)!.sector : null),
+      sector: c.delivery?.sector ?? (c.escort ? STATION_PLACEMENTS.get(c.escort.to)!.sector : scouted(c)),
       route: c.escort?.route ?? null,
       ...(c.escort ? { station: c.escort.to } : {}),
     });
@@ -607,7 +640,7 @@ export class Game {
           timeLeft: Math.max(0, (c.deadlineTick - world.tick) / 60),
           current: progress.current,
           target: progress.target,
-          canHandIn: docked && !c.delivery && progress.current >= progress.target,
+          canHandIn: docked && !c.delivery && !c.patrol && !c.recon && progress.current >= progress.target,
           dropPosition: null,
         };
       }),
@@ -624,7 +657,12 @@ export class Game {
     let progress = null;
     if (objective.kind === 'kill') progress = { current: campaign.progress, target: objective.count };
     if (objective.kind === 'deliver') progress = { current: Math.min(objective.units, ship?.cargo.get(objective.resource) ?? 0), target: objective.units };
-    return { step: step.id, index: campaign.step, total: CAMPAIGN.steps.length, progress };
+    const options = objective.kind === 'choice' ? objective.options.map((o) => ({ id: o.id, credits: o.credits })) : null;
+    // A route through the story skips the other branch's steps.
+    const route = CAMPAIGN.steps.filter((s) => !s.when || !campaign.branch || s.when === campaign.branch);
+    const shared = CAMPAIGN.steps.filter((s) => !s.when).length;
+    const total = campaign.branch ? route.length : shared + CAMPAIGN.steps.filter((s) => s.when === CAMPAIGN.steps.find((x) => x.when)?.when).length;
+    return { step: step.id, index: route.indexOf(step), total, progress, options };
   }
 
   private fleetView() {
@@ -703,6 +741,15 @@ export class Game {
         cargo: owned.state.cargo.reduce((sum, [, units]) => sum + units, 0),
       })),
       flying: ship.baseDefinition.id,
+      mounts: ship.weapons.map((mount, index) => ({
+        index,
+        weapon: mount.definition.id,
+        group: mount.hardpoint.group,
+        offers: station.definition.weapons
+          .map(getWeapon)
+          .filter((w) => w.id !== mount.definition.id && weaponGroup(w) === mount.hardpoint.group)
+          .map((w) => ({ weapon: w.id, cost: w.price - Math.round(mount.definition.price * WEAPON_RESALE) })),
+      })),
     };
   }
 

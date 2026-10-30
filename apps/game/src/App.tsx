@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { StationPanel } from './ui/StationPanel.tsx';
 import { CampaignCard, ContractTracker, Notices } from './ui/contracts.tsx';
 import { Game } from './game.ts';
@@ -68,17 +68,17 @@ export function App() {
   }
 
   return (
-    <div className="app">
+    <div className="app" style={{ '--ui-scale': settings.textScale } as CSSProperties}>
       <canvas ref={canvasRef} className="viewport" data-testid="viewport" />
       <canvas ref={overlayRef} className="targeting" aria-hidden="true" />
-      <div key={hud.hits} className={hud.hits > 0 ? 'damage-flash' : ''} aria-hidden="true" />
+      <div key={hud.hits} className={hud.hits > 0 && !settings.reduceFlashes ? 'damage-flash' : ''} aria-hidden="true" />
       {hud.menu !== 'main' && <FlightHud hud={hud} t={t} locale={locale} />}
       <div className="left-stack">
-        {hud.campaign && !hud.station && !hud.menu && !hud.tutorial && <CampaignCard key={hud.campaign.step} campaign={hud.campaign} t={t} />}
+        {hud.campaign && !hud.station && !hud.menu && !hud.tutorial && <CampaignCard key={hud.campaign.step} campaign={hud.campaign} onChoose={(option) => game?.chooseCampaign(option)} t={t} locale={locale} />}
         {hud.contracts && !hud.station && <ContractTracker active={hud.contracts.active} t={t} />}
       </div>
       <Notices notices={hud.notices} t={t} locale={locale} />
-      <div key={`jump-${hud.jumpedAt}`} className={hud.jumpedAt > 0 ? 'jump-flash' : ''} aria-hidden="true" />
+      <div key={`jump-${hud.jumpedAt}`} className={hud.jumpedAt > 0 && !settings.reduceFlashes ? 'jump-flash' : ''} aria-hidden="true" />
       {hud.mapOpen && hud.menu === null && (
         <SectorMap events={hud.events} fleet={hud.fleet} missionSector={hud.campaignSector} current={hud.sectorId} visited={hud.visited} discovered={hud.discovered} contracts={hud.contracts} t={t} onClose={() => store.update({ mapOpen: false })} />
       )}
@@ -89,9 +89,12 @@ export function App() {
         <div className="map-backdrop" data-testid="campaign-ending">
           <section className="map campaign-ending">
             <span className="label">{t('campaign.title')}</span>
-            <h2>{t('campaign.ending.title')}</h2>
-            <p>{t('campaign.ending.body')}</p>
-            <button className="primary" onClick={() => store.update({ campaignEnding: false })}>
+            <h2>{t(`campaign.ending.${hud.campaignEnding.branch ?? 'justice'}.title` as MessageKey)}</h2>
+            <p>{t(`campaign.ending.${hud.campaignEnding.branch ?? 'justice'}.body` as MessageKey)}</p>
+            <p className="meta">
+              {hud.campaignEnding.minutes} min · {t('campaign.ending.deaths')}: {hud.campaignEnding.deaths}
+            </p>
+            <button className="primary" onClick={() => store.update({ campaignEnding: null })}>
               {t('campaign.ending.close')}
             </button>
           </section>
@@ -126,6 +129,7 @@ export function App() {
       {hud.help && (
         <ControlsPanel
           t={t}
+          bindings={settings.bindings}
           locale={locale}
           locales={LOCALES}
           onLocale={chooseLocale}

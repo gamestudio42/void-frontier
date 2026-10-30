@@ -2044,3 +2044,63 @@ button {
   color: var(--text);
   line-height: 1.5;
 }
+
+/* Weapon mounts ------------------------------------------------------------- */
+
+.mounts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.mounts article {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--panel-edge);
+  border-radius: 6px;
+}
+
+.mounts p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.mounts button {
+  width: 100%;
+}
+
+.map-rule {
+  fill: var(--amber);
+}
+
+/* Accessibility and key bindings -------------------------------------------- */
+
+.station,
+.map,
+.modal,
+.menu,
+.left-stack,
+.notices {
+  zoom: var(--ui-scale, 1);
+}
+
+.key-bindings {
+  font-size: 12px;
+}
+
+.key-bindings > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+}
+
+.key-bindings button {
+  min-width: 90px;
+}

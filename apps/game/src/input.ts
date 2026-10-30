@@ -17,6 +17,28 @@ export interface InputActions {
   zoom(factor: number): void;
 }
 
+/** Actions a player can move to another key, with their default physical key codes. */
+export const DEFAULT_BINDINGS = {
+  thrust: 'KeyW',
+  reverse: 'KeyS',
+  strafeRight: 'KeyD',
+  strafeLeft: 'KeyA',
+  turnLeft: 'KeyQ',
+  turnRight: 'KeyE',
+  mine: 'KeyX',
+  scan: 'KeyR',
+  jettison: 'KeyK',
+  dock: 'KeyF',
+  map: 'KeyM',
+  fleet: 'KeyO',
+  mode: 'KeyC',
+  steering: 'KeyV',
+  brake: 'Space',
+} as const;
+
+export type BindingAction = keyof typeof DEFAULT_BINDINGS;
+export type Bindings = Record<BindingAction, string>;
+
 /** Keys the browser would otherwise use for scrolling or its own shortcuts. */
 const CAPTURED = new Set(['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'F3', 'Tab', 'AltLeft']);
 
@@ -30,25 +52,29 @@ export class InputController {
   /** Cursor in normalised device coordinates, or null when it is outside the canvas. */
   pointer: { x: number; y: number } | null = null;
   steering = true;
+  bindings: Bindings = { ...DEFAULT_BINDINGS };
 
   private readonly onKeyDown = (event: KeyboardEvent) => {
     if (isTyping(event)) return;
     if (CAPTURED.has(event.code)) event.preventDefault();
     if (event.repeat) return;
     this.held.add(event.code);
+    const bound = this.bindings;
+    if (event.code === bound.mode) this.actions.toggleFlightMode();
+    else if (event.code === bound.steering) {
+      this.steering = !this.steering;
+      this.actions.toggleSteering();
+    } else if (event.code === bound.scan) this.actions.scanOrRelaunch();
+    else if (event.code === bound.jettison) this.actions.jettison();
+    else if (event.code === bound.dock) this.actions.dockOrUndock();
+    else if (event.code === bound.map) this.actions.toggleMap();
+    else if (event.code === bound.fleet) this.actions.toggleFleet();
     switch (event.code) {
-      case 'KeyC': this.actions.toggleFlightMode(); break;
-      case 'KeyV': this.steering = !this.steering; this.actions.toggleSteering(); break;
       case 'KeyH': this.actions.toggleHelp(); break;
       case 'F3':
       case 'Backquote': this.actions.toggleDebug(); break;
       case 'Escape':
       case 'KeyP': this.actions.togglePause(); break;
-      case 'KeyR': this.actions.scanOrRelaunch(); break;
-      case 'KeyK': this.actions.jettison(); break;
-      case 'KeyF': this.actions.dockOrUndock(); break;
-      case 'KeyM': this.actions.toggleMap(); break;
-      case 'KeyO': this.actions.toggleFleet(); break;
       case 'KeyG': this.actions.cycleQuality(); break;
       case 'Tab': this.actions.cycleTarget(); break;
       case 'Equal':
@@ -117,17 +143,17 @@ export class InputController {
     const axis = (positive: string[], negative: string[]) =>
       (positive.some((code) => this.held.has(code)) ? 1 : 0) - (negative.some((code) => this.held.has(code)) ? 1 : 0);
     return {
-      thrust: axis(['KeyW', 'ArrowUp'], ['KeyS', 'ArrowDown']),
-      strafe: axis(['KeyD', 'ArrowRight'], ['KeyA', 'ArrowLeft']),
-      turn: axis(['KeyQ'], ['KeyE']),
+      thrust: axis([this.bindings.thrust, 'ArrowUp'], [this.bindings.reverse, 'ArrowDown']),
+      strafe: axis([this.bindings.strafeRight, 'ArrowRight'], [this.bindings.strafeLeft, 'ArrowLeft']),
+      turn: axis([this.bindings.turnLeft], [this.bindings.turnRight]),
       aim: this.steering ? aim : null,
       // Left mouse or Ctrl: guns. Right mouse or Alt: laser.
       firePrimary: this.buttons.has(0) || this.held.has('ControlLeft'),
       fireSecondary: this.buttons.has(2) || this.held.has('AltLeft'),
       target: null,
       // Middle mouse or X: mining laser.
-      fireMining: this.buttons.has(1) || this.held.has('KeyX'),
-      brake: this.held.has('Space'),
+      fireMining: this.buttons.has(1) || this.held.has(this.bindings.mine),
+      brake: this.held.has(this.bindings.brake),
       boost: this.held.has('ShiftLeft') || this.held.has('ShiftRight'),
     };
   }

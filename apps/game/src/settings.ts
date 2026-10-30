@@ -1,4 +1,5 @@
 import type { Locale } from './i18n.ts';
+import type { Bindings } from './input.ts';
 
 export interface Settings {
   quality: 'auto' | 'high' | 'medium' | 'low';
@@ -8,6 +9,12 @@ export interface Settings {
   cameraShake: boolean;
   mouseSteering: boolean;
   locale: Locale | null;
+  /** No full-screen flashes on damage and jumps. */
+  reduceFlashes: boolean;
+  /** Interface text size, as a multiple. */
+  textScale: number;
+  /** Keys moved from their defaults, by action. */
+  bindings: Partial<Bindings>;
 }
 
 const KEY = 'void-frontier.settings';
@@ -20,6 +27,9 @@ export const DEFAULT_SETTINGS: Settings = {
   cameraShake: true,
   mouseSteering: true,
   locale: null,
+  reduceFlashes: false,
+  textScale: 1,
+  bindings: {},
 };
 
 export function loadSettings(): Settings {
