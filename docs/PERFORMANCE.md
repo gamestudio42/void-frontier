@@ -15,3 +15,19 @@ Measured on 2026-10-30 on a laptop's integrated Intel UHD (Raptor Lake-P), in Ch
 ## Not measured
 
 Dedicated graphics cards, Windows, macOS, Firefox, Safari and phones. The laptop's RTX 4050 could not be reached from a headless browser.
+
+## 0.95 measurements (2026-10-30)
+
+Same chip, on an otherwise idle machine, at 1920x1080. Twenty ships in a fight beside a 620-rock sector, measured with a development build.
+
+| Measure | Result | Spec target |
+| --- | --- | --- |
+| Frame rate, high, medium and low | 60 fps | 60 |
+| Active ships | 20 | 20 |
+| Rocks in the sector | 620 | 500 visible |
+| Rounds in flight, natural fight | 47 at peak | 200 |
+| Rounds injected on purpose, 98 to 210 in flight, high quality | 52 fps with other work running | 200 at 60 fps (not shown) |
+| JavaScript heap | 43 to 54 MB | Under 1 GB |
+| Load to main menu, production build from localhost | 354 to 549 ms | Under 10 s |
+
+Load time excludes the network. The earlier table above was taken with other applications open, which is why high is slower there.

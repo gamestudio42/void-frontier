@@ -221,3 +221,23 @@ Measured hand mining paid for every hull within minutes. Raising prices leaves h
 ## 055. Hired pilots graze rocks and are serviced at every stop
 
 Heavy hulls took hundreds of hull points from 15 m/s rock contacts, so a real fleet miner died in minutes while its off-screen twin never crashed. Fleet ships now take 10% of collision damage in flight and are refuelled and repaired free at each stop, paid for by the commission.
+
+## 056. Weapons refit per mount, within its trigger group
+
+A mount answers to one trigger (primary, secondary, mining), so it only takes weapons of that group: guns on primary, lasers and missiles on secondary, mining lasers on mining. This adds real choice without any new input, and a saved `loadout` beside the mount health carries it through jumps, saves and parking.
+
+## 057. Missiles are projectiles that steer
+
+A missile is a projectile with a target and a turn rate at constant speed. Countermeasures roll once, at launch, so the outcome is decided and deterministic. The AI fires its secondary with its guns, which is how the Dreadmaw uses missiles and also makes wingmen use their lasers.
+
+## 058. New sectors change one rule each
+
+The Graveyard halves shield recharge and Ember Reach slows weapon cooling. One rule per sector is easy to explain on arrival and on the map, and it changes which ship and fit suit the place.
+
+## 059. One choice, late in the story
+
+The verdict on Kess Varo comes after the Dreadmaw and leads to three different missions and an ending on each branch. A single late choice keeps both routes testable: a test plays each to the end.
+
+## 060. The boss's difficulty is measured by scripted duels, not play
+
+Scripted pilots fly each hull against the Dreadmaw and its escort. They are cruder than a person, so the numbers set a floor for tuning, not the final word; see `docs/BALANCE.md`.

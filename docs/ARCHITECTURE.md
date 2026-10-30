@@ -85,7 +85,7 @@ The collision system also publishes its grid as `world.spatial`; weapons, projec
 - `subsystems.ts`: zone-based subsystem damage (`damageSubsystems`, called for weapon and collision hull damage) and ongoing effects. Thrust, energy, shields, sensors and guns read subsystem health where they are computed.
 - `economy.ts`: the shared economy (markets by station key, haulers, events, news), route planning through gates and around stations, and the switch between real and abstract haulers. `Simulation.economy` is passed across jumps and saved.
 - `fleet.ts`: owned ships as `PlayerState` by station key, with pilot, order and run; shipyard offers, buy, sell and boarding. `Simulation.fleet` is passed across jumps and saved.
-- `campaign.ts`: the story's current step, its objective check and reward, and the boss encounter. `Simulation.campaign` is passed across jumps and restarts and saved.
+- `campaign.ts`: the story's current step and branch, its objective check and reward, boss encounters and the play record. `Simulation.campaign` is passed across jumps and restarts and saved.
 - `routes.ts`: legs between stations and points through the gate network, cruising on the clock and spawning a ship along a leg; shared by haulers and the fleet.
 - `crew.ts`: crew boards (seeded per station and refresh, apart from the gameplay RNG), hiring, assigning, wages.
 - `orders.ts`: the fleet routines (mine, trade, wingman), real in the simulated sector and clock-driven elsewhere, losses, and folding real ships back into their stored state before a jump or a save.

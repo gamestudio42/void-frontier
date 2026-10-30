@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.95.0: release candidate
+
+- Campaign of 15 missions with a choice that changes the ending.
+- Weapons: gatling, railgun, homing missiles; refit each mount at a station.
+- Hulls: Bulwark frigate and Magpie salvager. Four new modules.
+- Contracts: salvage, patrol and recon. Sectors: the Graveyard and Ember Reach, with their own rules.
+- Music follows the moment; rebindable keys, text size, reduced flashes; longer tutorial.
+- A tougher Dreadmaw, now with an escort and missiles.
+- Save format 8 with migration.
+
 ## 0.7.1: polish
 
 - Medium graphics quality is now faster than high on ordinary screens; first frame rates measured on a real graphics chip (`docs/PERFORMANCE.md`).

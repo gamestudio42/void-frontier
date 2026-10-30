@@ -25,8 +25,19 @@ Hand mining was paying for every hull within minutes, so hull prices went up ins
 | Prospector | 11,000 | 25,000 |
 | Lancer | 14,500 | 30,000 |
 
-The whole campaign pays 12,000 cr.
+The whole campaign pays 39,200 cr on the justice route and 49,200 cr on the deal route.
 
 ## Still open
 
 - Whether hand mining is still too rich needs real play; the script is only a ceiling.
+
+## The Dreadmaw, by scripted duel
+
+Scripted pilots circle and fire everything they have; a person can do better and worse. Figures are from three seeds before the final reinforcement (hull 4,200, shield 1,200): the flagship now has hull 6,500 and shield 1,800, so fights run longer. Re-measure after any change.
+
+| Attacker | Result |
+| --- | --- |
+| Kestrel or Lancer alone | Loses in 15 to 23 s |
+| Bulwark alone | Wins in 27 to 29 s |
+| Kestrel with two wingmen | Wins in 13 s |
+| Lancer or Bulwark with two wingmen | Wins in 9 to 10 s |

@@ -198,6 +198,21 @@ Known limits: one hand-built set of sectors (no procedural universe yet); NPC tr
 
 Medium quality fixed and frame rate measured on a real chip, campaign ending, mission on the map, new sounds, small interface fixes.
 
+## 0.8 to 0.95: towards 1.0 (done)
+
+- [x] Flagship fight measured with scripted duels and reinforced; a play record in each save (deaths, time per mission)
+- [x] Gatling, railgun and homing missiles; weapons can be refitted per mount at stations
+- [x] Bulwark frigate and Magpie salvager; heat sink, countermeasures, salvage rig, fuel optimiser
+- [x] Salvage, patrol and recon contracts
+- [x] The Graveyard and Ember Reach, each with its own rule
+- [x] Campaign of 15 missions on either route, with a choice that changes the ending
+- [x] Music that follows the moment, rebindable keys, text size, fewer flashes, a longer tutorial
+- [x] Load time, memory and stress measured on an integrated GPU (`docs/PERFORMANCE.md`)
+- [x] Save format 8 with a migration from version 7
+
 ## 1.0: complete game (next)
 
-More content, narrative and polish, per the spec. To be planned.
+- [ ] A person plays the campaign to the end (the spec's acceptance has never been tried)
+- [ ] 3 to 5 outside players complete the main loop without help
+- [ ] Measure a dedicated GPU, Firefox and Safari
+- [ ] Final balance from those results, freeze the save format, tag `v1.0.0`
