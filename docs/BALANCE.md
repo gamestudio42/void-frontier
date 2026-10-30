@@ -30,4 +30,3 @@ The whole campaign pays 12,000 cr.
 ## Still open
 
 - Whether hand mining is still too rich needs real play; the script is only a ceiling.
-- Frame rate on real graphics cards has not been measured.

@@ -194,6 +194,10 @@ Known limits: one hand-built set of sectors (no procedural universe yet); NPC tr
 - [x] Fixes: haulers roll pirate risk once per sector; fleet ships refuel and repair at every stop, survive rock grazes, and only report real attacks
 - [x] Save format 7 with a migration from version 6
 
+## 0.7.1: polish (done)
+
+Medium quality fixed and frame rate measured on a real chip, campaign ending, mission on the map, new sounds, small interface fixes.
+
 ## 1.0: complete game (next)
 
 More content, narrative and polish, per the spec. To be planned.

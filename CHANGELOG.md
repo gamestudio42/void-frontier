@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.1: polish
+
+- Medium graphics quality is now faster than high on ordinary screens; first frame rates measured on a real graphics chip (`docs/PERFORMANCE.md`).
+- An ending card closes the campaign; the map marks the current mission's sector.
+- Sounds for missions, the end of the story and fleet events.
+- Hangar cards no longer stretch their rows; the menu no longer says "prototype".
+
 ## 0.7.0: campaign and content
 
 - Campaign "The Bastion Signal": six missions ending with the Dreadmaw flagship.
