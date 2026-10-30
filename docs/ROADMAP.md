@@ -184,6 +184,16 @@ Known limits: one hand-built set of sectors (no procedural universe yet); NPC tr
 - [x] Crew tab, orders on hangar cards, fleet panel (O) with net earnings and a log, gold fleet markers on radar and screen, fleet counts on the map, notices
 - [x] Save format 6 with a migration from version 5
 
+## 0.7: campaign and content (done)
+
+- [x] Campaign "The Bastion Signal": six data-driven missions (discover, kill, deliver, boss), with a card, briefings and an on-screen marker
+- [x] Bastion Watch: a military station of the new Frontier Guard in the Anomaly Zone, with a crew board, combat modules and the Lancer
+- [x] A hauler route carries parts from Ferrum Refinery to Bastion Watch, completing the spec's ore, parts, garrison chain
+- [x] The Dreadmaw, a boss flagship that returns repaired if you leave its sector
+- [x] Income measured (`docs/BALANCE.md`), hull prices raised
+- [x] Fixes: haulers roll pirate risk once per sector; fleet ships refuel and repair at every stop, survive rock grazes, and only report real attacks
+- [x] Save format 7 with a migration from version 6
+
 ## 1.0: complete game (next)
 
-Content, balance, narrative and polish, per the spec. To be planned.
+More content, narrative and polish, per the spec. To be planned.

@@ -48,6 +48,7 @@ Instructions for AI coding agents working on Void Frontier. Read `docs/GDD.md`, 
 - A ship never holds more modules of a kind than it has slots.
 - Station markets are the economy's objects: never copy them into a sector; a hauler's cargo leaves one market and reaches the other, or is lost.
 - Owned ships are the fleet's `PlayerState` records: a ship is boarded or sold only at the station where it is parked, and exactly one fleet entry is flying.
+- Campaign steps use objectives the game already has; a new objective kind needs schema, `campaign.ts`, locale strings and a test that plays through it.
 - A fleet ship exists as an entity only in the simulated sector; elsewhere it is route state. Call `stowFleet` (or capture its state) before a world is dropped, and never keep fleet entity ids across worlds.
 
 ## Commands

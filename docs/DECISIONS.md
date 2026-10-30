@@ -196,12 +196,28 @@ A crewed ship follows one of three routines (mine, trade, wingman) as a small st
 
 ## 049. Pirate risk once per sector, at a quarter of a hauler's
 
-Fleet ships roll for pirates once per sector crossed (on the way out), scaled by `fleetRisk` (0.25) and reduced by piloting skill, plus combat skill if armed. Rolling per route segment, as haulers do, lost most fleet ships within an hour of play.
+Fleet ships roll for pirates once per sector crossed (on the way out), scaled by `fleetRisk` (0.25) and reduced by piloting skill, plus combat skill if armed. Rolling per route segment lost most fleet ships within an hour of play. Since 0.7 haulers roll once per sector too.
 
 ## 050. Passive income stays below active play
 
-Fleet miners work at a small share of their laser's rate, pilots keep a 25% commission and draw a wage every 5 minutes. With an average pilot a Prospector nets about 3,000 cr an hour near Outpost Alpha and 10,000 to 12,000 in the belt fields; a test keeps the belt figure under 14,500. The fleet is worth building, but flying still pays better.
+Fleet miners work at a small share of their laser's rate, pilots keep a 25% commission and draw a wage every 5 minutes. With an average pilot a Prospector nets about 3,000 cr an hour near Outpost Alpha and 10,000 to 12,000 in the belt fields; a test keeps the belt figure under 14,500. The fleet is worth building, but flying still pays better: measured in 0.7, see `docs/BALANCE.md`.
 
 ## 051. A lost ship's pilot survives
 
 When a fleet ship is destroyed, half its hold spills (in the simulated sector), the ship is gone and the pilot ejects and waits at the nearest station on the payroll. Losing a ship costs the hull and cargo, not the crew's experience.
+
+## 052. The campaign is data on top of existing verbs
+
+Six steps in `campaign.json`, each one objective (discover, kill, deliver, boss) and one reward. It uses only mechanics the game already has, advances by itself and has no failure state, so it runs alongside contracts and the fleet. Kills count for the ship being flown, so wingmen do not finish a kill objective.
+
+## 053. The boss is a pirate like any other
+
+The Dreadmaw is an encounter spawned when the player is in its sector during its step. Pirates are not saved, so leaving or reloading brings it back repaired. This costs no special case and keeps the fight from being whittled down across visits.
+
+## 054. Hull prices rose instead of lasers falling
+
+Measured hand mining paid for every hull within minutes. Raising prices leaves how mining feels untouched, and it also makes a fleet a real investment. The measurement is a scripted ceiling, not human play, so this may need another pass.
+
+## 055. Hired pilots graze rocks and are serviced at every stop
+
+Heavy hulls took hundreds of hull points from 15 m/s rock contacts, so a real fleet miner died in minutes while its off-screen twin never crashed. Fleet ships now take 10% of collision damage in flight and are refuelled and repaired free at each stop, paid for by the commission.

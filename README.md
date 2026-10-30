@@ -55,6 +55,10 @@
 </p>
 
 <p align="center">
+  <img src="docs/screenshots/campaign.jpg" alt="The campaign card over the scout leaving Outpost Alpha: the first mission's briefing and objective" width="920">
+</p>
+
+<p align="center">
   <img src="docs/screenshots/fleet.jpg" alt="The fleet panel: a Prospector mining the Mid Belt, a Mule waiting for a profitable cargo and a Kestrel wingman, with net earnings and the fleet log" width="920">
 </p>
 
@@ -110,7 +114,7 @@ New players get a guided first flight that teaches each of these by doing it. Pr
 
 ## Status
 
-**0.6: a fleet that works for you.** Hire pilots at station crew boards and give your ships orders: mine a field, run a trade route or fly beside you as a wingman. In your sector they fly for real; elsewhere they work on the clock and can meet pirates. The fleet panel (O) shows every ship, its order and what it has earned. This builds on 0.5 (owning several ships), 0.4 (living economy), 0.3 (subsystems, factions, outfitting), 0.2 (four sectors and gates) and the 0.1 vertical slice. See the [roadmap](docs/ROADMAP.md).
+**0.7: a story to follow.** The Bastion Signal is a six-mission campaign from a distress call near the Outpost to the warlord's flagship, with a new military station, Bastion Watch, in the Anomaly Zone. This builds on 0.6 (pilots and fleet orders), 0.5 (owning several ships), 0.4 (living economy), 0.3 (subsystems, factions, outfitting), 0.2 (four sectors and gates) and the 0.1 vertical slice. See the [roadmap](docs/ROADMAP.md).
 
 ## Develop
 

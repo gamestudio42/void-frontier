@@ -144,7 +144,7 @@ Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kes
 ## Advanced sandbox (0.5)
 
 - **Fleet.** Buy hulls at a station shipyard. Every ship you own stays where you left it, with its cargo, modules and damage. Dock where it is parked to fly it or sell it.
-- **Hulls.** Kestrel scout (6,000 cr, all-rounder), Mule hauler (9,500 cr, 20 t hold), Prospector miner (11,000 cr, mining laser Mk II, long tractor), Lancer fighter (14,500 cr at Ferrum Refinery, needs Ferrum standing +15, three autocannons).
+- **Hulls.** Kestrel scout (8,000 cr, all-rounder), Mule hauler (15,000 cr, 20 t hold), Prospector miner (25,000 cr, mining laser Mk II, long tractor), Lancer fighter (30,000 cr at Ferrum Refinery with Ferrum standing +15, or at Bastion Watch with Guard standing +15; three autocannons).
 
 ## Autonomous fleet (0.6)
 
@@ -152,6 +152,11 @@ Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kes
 - **Orders.** Put a pilot aboard a parked ship and give it an order: *mine* one of six fields and sell the ore at that field's station; *trade* one good between two stations; or *wingman*, flying beside you. Recall sends a ship to the next station.
 - **Where they are.** In your sector fleet ships fly for real (gold on the radar, pilot name on screen); elsewhere they run on the clock and may meet pirates once per sector they cross.
 - **Money.** Sales go straight to your account, less the pilot's 25% commission. The fleet panel (O) shows each ship's net earnings and a log.
+
+## Campaign (0.7)
+
+- **The Bastion Signal.** A distress call leads from a wreck near the Outpost to a starving garrison, an ancient relay and the warlord Kess Varo's flagship, the Dreadmaw. Six missions, 12,000 cr in all, and enough Guard standing to buy the Lancer at Bastion Watch.
+- **Bastion Watch.** The Frontier Guard's station in the Anomaly Zone buys parts, titanium, platinum, salvage and exotic matter. If its parts convoy is lost, it runs short and pays more.
 
 ## Not yet
 

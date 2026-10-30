@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.0: campaign and content
+
+- Campaign "The Bastion Signal": six missions ending with the Dreadmaw flagship.
+- Bastion Watch, a military station of the new Frontier Guard, with its own hauler route.
+- Higher hull prices, from measured income (`docs/BALANCE.md`).
+- Fleet ships refuel and repair at every stop and survive rock grazes; haulers roll pirate risk once per sector.
+- Save format 7 with migration.
+
 ## 0.6.0: autonomous fleet
 
 - Hire pilots at station crew boards; wages every 5 minutes and a commission on sales.
