@@ -1,7 +1,7 @@
-import { CREW_RULES, OUTPOST_ALPHA, STATION_PLACEMENTS, getFaction, getSector } from '@void-frontier/content';
+import { CAMPAIGN, CREW_RULES, OUTPOST_ALPHA, STATION_PLACEMENTS, getFaction, getSector } from '@void-frontier/content';
 import { FIXED_DT, FixedStepper, type Vec2 } from '@void-frontier/kernel';
 import { getUpgrade } from '@void-frontier/content';
-import { Simulation, fleetEntities, hireFee, isParkedAt, orderProblem, payroll, shipValue, shipyardOffers, type FleetOrder, slotUsage, applySectorSnapshot, captureSector, gateStatus, gravityAt, jump, markDiscovered, nextGate, dockedStationKey, type SectorSnapshot, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, installUpgrades, hostilesNear, nearestObstacle, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
+import { Simulation, campaignStep, campaignTarget, fleetEntities, hireFee, isParkedAt, orderProblem, payroll, shipValue, shipyardOffers, type FleetOrder, slotUsage, applySectorSnapshot, captureSector, gateStatus, gravityAt, jump, markDiscovered, nextGate, dockedStationKey, type SectorSnapshot, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, installUpgrades, hostilesNear, nearestObstacle, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
 import { SpaceRenderer, type Quality } from '@void-frontier/view3d';
 import { AudioEngine } from './audio.ts';
 import { InputController } from './input.ts';
@@ -247,6 +247,7 @@ export class Game {
       board,
       economy: this.sim.economy ?? undefined,
       fleet: this.sim.fleet,
+      campaign: this.sim.campaign ?? undefined,
       playerShip: oldShip?.baseDefinition.id,
       startDocked: true,
     });
@@ -413,6 +414,9 @@ export class Game {
             const bad = n.kind === 'lost' || n.kind === 'quit' || n.kind === 'unpaid';
             this.notices.push({ text: `fleet:${n.kind}:${n.ship ?? ''}:${n.pilot ?? ''}`, kind: bad ? 'failed' : 'abandoned', reward: 0, at: this.clock, id: -9000 - n.tick });
           }
+          if (event.type === 'campaign') {
+            this.notices.push({ text: `campaign:${event.step}`, kind: 'completed', reward: event.credits, at: this.clock, id: -7000 - this.sim.campaign!.step });
+          }
           if (event.type === 'contract') {
             this.notices.push({ text: event.kind, kind: event.outcome, reward: event.reward, at: this.clock, id: event.id });
           }
@@ -515,6 +519,17 @@ export class Game {
     if (!board) return [];
     const here = this.sim.world.sectorId;
     const points: { label: string; position: { x: number; y: number } }[] = [];
+    const story = campaignTarget(this.sim);
+    if (story) {
+      const label = this.labels.campaign();
+      if (story.sector === here) {
+        if (story.position) points.push({ label, position: story.position });
+      } else {
+        const gateId = nextGate(here, story.sector);
+        const gate = gateId ? this.sim.world.gates.get(gateId) : undefined;
+        if (gate) points.push({ label: `${label} → ${this.labels.sector(gate.to)}`, position: gate.position });
+      }
+    }
     for (const c of board.active) {
       if (c.escort) {
         const t = this.sim.economy?.traders.find((tr) => tr.route === c.escort!.route);
@@ -557,7 +572,7 @@ export class Game {
   }
 
   /** Set by the UI so canvas labels follow the chosen language. */
-  labels = { drop: (id: string) => id, station: (id: string) => id, sector: (id: string) => id, route: (id: string) => id };
+  labels = { drop: (id: string) => id, station: (id: string) => id, sector: (id: string) => id, route: (id: string) => id, campaign: () => '' };
 
   private contractsView() {
     const board = this.sim.missions;
@@ -597,6 +612,18 @@ export class Game {
       }),
       history: board.history.slice(0, 6),
     };
+  }
+
+  private campaignView() {
+    const campaign = this.sim.campaign;
+    const step = campaign && campaignStep(campaign);
+    if (!campaign || !step) return null;
+    const objective = step.objective;
+    const ship = this.sim.world.ships.get(this.sim.playerId);
+    let progress = null;
+    if (objective.kind === 'kill') progress = { current: campaign.progress, target: objective.count };
+    if (objective.kind === 'deliver') progress = { current: Math.min(objective.units, ship?.cargo.get(objective.resource) ?? 0), target: objective.units };
+    return { step: step.id, index: campaign.step, total: CAMPAIGN.steps.length, progress };
   }
 
   private fleetView() {
@@ -712,6 +739,7 @@ export class Game {
       news: (this.sim.economy?.news ?? []).slice(0, 8),
       events: (this.sim.economy?.events ?? []).map((e) => ({ id: e.id, secondsLeft: Math.max(0, (e.endsTick - this.sim.world.tick) / 60) })),
       fleet: this.fleetView(),
+      campaign: this.campaignView(),
       visited: [...new Set([...Object.keys(this.memory), this.sim.world.sectorId])],
       dockRefused: this.dockRefused && this.clock - this.dockRefused.at < 3 ? this.dockRefused.refusals : null,
       station: this.stationView(),

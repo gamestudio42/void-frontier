@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import type { MessageKey, Translate } from '../i18n.ts';
-import type { ActiveContractView, ContractView, ContractsView } from '../store.ts';
+import type { ActiveContractView, CampaignView, ContractView, ContractsView } from '../store.ts';
 import { formatNumber } from './format.ts';
 import { fleetNotice } from './Fleet.tsx';
 
@@ -133,6 +134,27 @@ export function ContractTracker({ active, t }: { active: ActiveContractView[]; t
   );
 }
 
+/** The current story step: the briefing until dismissed, then just the objective. */
+export function CampaignCard({ campaign, t }: { campaign: CampaignView; t: Translate }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <aside className="campaign" data-testid="campaign">
+      <span className="kind">
+        {t('campaign.title')} · {campaign.index + 1}/{campaign.total}
+      </span>
+      <strong>{t(`campaign.${campaign.step}.title` as MessageKey)}</strong>
+      {open && <p>{t(`campaign.${campaign.step}.brief` as MessageKey)}</p>}
+      <span className="meta">
+        {t(`campaign.${campaign.step}.objective` as MessageKey)}
+        {campaign.progress && ` · ${campaign.progress.current}/${campaign.progress.target}`}
+      </span>
+      <button className="ghost" onClick={() => setOpen(!open)} data-testid="campaign-toggle">
+        {open ? t('campaign.hide') : t('campaign.show')}
+      </button>
+    </aside>
+  );
+}
+
 export function Notices({ notices, t, locale }: { notices: { id: number; kind: string; outcome: string; reward: number }[]; t: Translate; locale: string }) {
   return (
     <div className="notices" aria-live="polite">
@@ -140,6 +162,11 @@ export function Notices({ notices, t, locale }: { notices: { id: number; kind: s
         <div key={`${n.id}-${n.outcome}`} className={`notice ${n.outcome}`} data-testid="notice">
           {n.kind === 'tutorial' ? (
             <strong>{t('tutorial.done')}</strong>
+          ) : n.kind.startsWith('campaign:') ? (
+            <>
+              <strong>{t('campaign.done')}: {t(`campaign.${n.kind.slice(9)}.title` as MessageKey)}</strong>
+              {n.reward > 0 && <span> +{formatNumber(locale, n.reward)} cr</span>}
+            </>
           ) : n.kind.startsWith('fleet:') ? (
             <strong>{fleetNotice(n.kind.split(':')[1], n.kind.split(':')[2], n.kind.split(':')[3], t)}</strong>
           ) : n.kind.startsWith('news:') ? (

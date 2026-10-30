@@ -73,6 +73,14 @@ export interface FleetView {
   log: FleetNote[];
 }
 
+export interface CampaignView {
+  step: string;
+  index: number;
+  total: number;
+  /** Progress toward a counted objective, or null when it is all or nothing. */
+  progress: { current: number; target: number } | null;
+}
+
 export interface ContractView {
   id: number;
   kind: 'delivery' | 'mining' | 'bounty' | 'escort';
@@ -138,6 +146,8 @@ export interface HudState {
   mapOpen: boolean;
   fleetOpen: boolean;
   fleet: FleetView | null;
+  /** Current story step; null once the story is over. */
+  campaign: CampaignView | null;
   /** Latest economy news, newest first. */
   news: { tick: number; kind: string; subject: string; station?: string; sector?: string; resource?: string }[];
   /** Active economy events. */
@@ -197,6 +207,7 @@ export const initialHudState = (): HudState => ({
   mapOpen: false,
   fleetOpen: false,
   fleet: null,
+  campaign: null,
   news: [],
   events: [],
   hits: 0,

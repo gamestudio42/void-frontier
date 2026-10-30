@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { StationPanel } from './ui/StationPanel.tsx';
-import { ContractTracker, Notices } from './ui/contracts.tsx';
+import { CampaignCard, ContractTracker, Notices } from './ui/contracts.tsx';
 import { Game } from './game.ts';
 import { LOCALES, detectLocale, saveLocale, translator, type Locale, type MessageKey } from './i18n.ts';
 import { HudStore, initialHudState } from './store.ts';
@@ -58,6 +58,7 @@ export function App() {
         station: (id) => t(`station.${id}` as MessageKey),
         sector: (id) => t(`sector.${id}` as MessageKey),
         route: (id) => t(`route.${id}` as MessageKey),
+        campaign: () => t('campaign.marker'),
       };
   }, [game, t]);
 
@@ -72,7 +73,10 @@ export function App() {
       <canvas ref={overlayRef} className="targeting" aria-hidden="true" />
       <div key={hud.hits} className={hud.hits > 0 ? 'damage-flash' : ''} aria-hidden="true" />
       {hud.menu !== 'main' && <FlightHud hud={hud} t={t} locale={locale} />}
-      {hud.contracts && !hud.station && <ContractTracker active={hud.contracts.active} t={t} />}
+      <div className="left-stack">
+        {hud.campaign && !hud.station && !hud.menu && !hud.tutorial && <CampaignCard key={hud.campaign.step} campaign={hud.campaign} t={t} />}
+        {hud.contracts && !hud.station && <ContractTracker active={hud.contracts.active} t={t} />}
+      </div>
       <Notices notices={hud.notices} t={t} locale={locale} />
       <div key={`jump-${hud.jumpedAt}`} className={hud.jumpedAt > 0 ? 'jump-flash' : ''} aria-hidden="true" />
       {hud.mapOpen && hud.menu === null && (

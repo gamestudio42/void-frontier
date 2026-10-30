@@ -1980,3 +1980,56 @@ button {
     padding: 4px;
   }
 }
+
+/* Campaign card ------------------------------------------------------------- */
+
+.left-stack {
+  position: absolute;
+  top: 60px;
+  left: 16px;
+  width: min(300px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.left-stack .tracker {
+  position: static;
+  width: auto;
+}
+
+.campaign {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  pointer-events: auto;
+  padding: 10px 12px;
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-left: 2px solid var(--amber);
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.campaign .kind {
+  color: var(--amber);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.campaign p {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.campaign .meta {
+  color: var(--blue);
+}
+
+.campaign button {
+  align-self: flex-start;
+  font-size: 11px;
+}

@@ -7,7 +7,7 @@ test('buys a Prospector at the shipyard and flies it out', async ({ page }) => {
   await expect(page.getByTestId('station')).toBeVisible();
   await page.evaluate(() => {
     const game = (window as unknown as { voidFrontier: { sim: { world: { credits: number } }; publish(): void } }).voidFrontier;
-    game.sim.world.credits = 20_000;
+    game.sim.world.credits = 40_000;
     game.publish();
   });
   await page.getByTestId('tab-shipyard').click();

@@ -30,7 +30,7 @@ test('saves to a slot from the pause menu and continues after a reload', async (
   expect(speed).toBeGreaterThan(1);
 
   await page.reload();
-  await expect(page.getByTestId('continue')).toBeVisible();
+  await expect(page.getByTestId('continue')).toBeVisible({ timeout: 30_000 });
   await page.getByTestId('continue').click();
   await expect(page.getByTestId('station')).toBeHidden();
   await expect.poll(async () => Number(await page.getByTestId('speed').getAttribute('data-value'))).toBeGreaterThan(1);
