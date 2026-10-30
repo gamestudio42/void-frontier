@@ -211,6 +211,16 @@ export class AudioEngine {
         case 'discovered':
           this.chime([392, 523, 659, 784, 1047], 0.06);
           break;
+        case 'campaign':
+          // A rising figure for a mission, the full fanfare for the end of the story.
+          this.chime(e.finished ? [392, 523, 659, 784, 1047, 1319] : [523, 659, 784], 0.08);
+          this.thump(70, 0.5, 0.25, 0);
+          break;
+        case 'fleet':
+          if (e.note.kind === 'lost') this.chime([440, 349, 262], 0.08);
+          else if (e.note.kind === 'attacked' || e.note.kind === 'unpaid' || e.note.kind === 'quit') this.chime([659, 523], 0.05);
+          else if (e.note.kind === 'skill') this.chime([659, 880], 0.04);
+          break;
         case 'contract':
           this.chime(e.outcome === 'completed' ? [523, 659, 784, 1047] : [440, 349, 294], 0.07);
           break;

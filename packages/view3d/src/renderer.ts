@@ -188,7 +188,8 @@ export class SpaceRenderer {
 
   /**
    * Trade fidelity for frame rate: high = full resolution, 2048 shadows and bloom;
-   * medium = 1x resolution, 1024 shadows; low = reduced resolution, no shadows or bloom.
+   * medium = slightly reduced resolution, 1024 shadows, half-resolution bloom;
+   * low = reduced resolution, no shadows or bloom.
    */
   setQuality(quality: Quality): void {
     if (quality === this.quality) return;
@@ -212,12 +213,14 @@ export class SpaceRenderer {
 
   resize(width: number, height: number, pixelRatio: number): void {
     this.size = { width, height, pixelRatio };
-    const cap = this.quality === 'high' ? 2 : this.quality === 'medium' ? 1 : 0.75;
+    const cap = this.quality === 'high' ? 2 : this.quality === 'medium' ? 0.85 : 0.75;
     const ratio = Math.min(pixelRatio, cap);
     this.renderer.setPixelRatio(ratio);
     this.renderer.setSize(width, height, false);
     this.composer.setPixelRatio(ratio);
     this.composer.setSize(width, height);
+    // On a 1x screen shadows alone made medium no faster than high: its bloom runs at half size.
+    if (this.quality === 'medium') this.bloom.setSize(Math.round((width * ratio) / 2), Math.round((height * ratio) / 2));
     this.rig.setAspect(width / Math.max(1, height));
     this.particles.setScale(height * ratio);
   }
