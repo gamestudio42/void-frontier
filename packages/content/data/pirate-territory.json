@@ -97,6 +97,11 @@
       "x": -600,
       "y": 1300,
       "radius": 150
+    },
+    {
+      "x": -1700,
+      "y": 1500,
+      "radius": 220
     }
   ],
   "beacons": [
@@ -204,6 +209,13 @@
       "toGate": "anomaly_to_pirate",
       "x": 1400,
       "y": -600
+    },
+    {
+      "id": "pirate_to_ember",
+      "to": "ember_reach",
+      "toGate": "ember_to_pirate",
+      "x": -1700,
+      "y": 1500
     }
   ],
   "anomalies": [],

@@ -183,7 +183,7 @@ export type SimEvent =
       damage: number;
     }
   | { type: 'shipDestroyed'; id: EntityId; position: { x: number; y: number }; by: EntityId | null }
-  | { type: 'contract'; id: number; kind: 'delivery' | 'mining' | 'bounty' | 'escort'; outcome: 'completed' | 'failed' | 'abandoned'; reward: number }
+  | { type: 'contract'; id: number; kind: 'delivery' | 'mining' | 'bounty' | 'escort' | 'salvage' | 'patrol' | 'recon'; outcome: 'completed' | 'failed' | 'abandoned'; reward: number }
   | { type: 'news'; item: NewsItem }
   | { type: 'fleet'; note: FleetNote }
   | { type: 'campaign'; step: string; credits: number; finished: boolean }
@@ -215,6 +215,8 @@ export interface Projectile {
   life: number;
   damage: number;
   multipliers: { shield: number; hull: number };
+  /** Missiles steer toward their target; with none, or once it is gone, they fly straight. */
+  homing?: { target: EntityId | null; turnRate: number };
 }
 
 export type AiMode = 'patrol' | 'engage' | 'retreat';

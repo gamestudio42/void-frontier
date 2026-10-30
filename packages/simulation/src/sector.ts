@@ -1,5 +1,5 @@
 import { atan2, type Vec2 } from '@void-frontier/kernel';
-import { getSector, type SectorDefinition } from '@void-frontier/content';
+import { getSector, getWeapon, type SectorDefinition } from '@void-frontier/content';
 import { resizeRock, spawnPickup } from './mining.ts';
 import type { MissionBoard } from './missions.ts';
 import { stowFleet } from './orders.ts';
@@ -40,6 +40,8 @@ export interface PlayerState {
   subsystems: Record<SubsystemId, number>;
   /** Weapon mount health, in hardpoint order. */
   mounts: number[];
+  /** Weapon on each mount, in hardpoint order; absent means the hull's stock fit. */
+  loadout?: string[];
 }
 
 export function captureSector(sim: Simulation): SectorSnapshot {
@@ -113,6 +115,7 @@ export function capturePlayer(sim: Simulation): PlayerState {
     scanReadyTick: ship.scanReadyTick,
     subsystems: { ...ship.subsystems },
     mounts: ship.weapons.map((w) => w.health),
+    loadout: ship.weapons.map((w) => w.definition.id),
   };
 }
 
@@ -134,7 +137,10 @@ export function applyPlayer(sim: Simulation, player: PlayerState, placeAt?: { po
     scanReadyTick: player.scanReadyTick,
     subsystems: { ...player.subsystems },
   });
-  ship.weapons.forEach((mount, i) => (mount.health = player.mounts[i] ?? 1));
+  ship.weapons.forEach((mount, i) => {
+    mount.health = player.mounts[i] ?? 1;
+    if (player.loadout?.[i]) mount.definition = getWeapon(player.loadout[i]);
+  });
   const stationIds = [...world.stations.keys()];
   if (!placeAt && player.dockedAt !== null && stationIds[player.dockedAt] !== undefined) {
     if (ship.docked !== stationIds[player.dockedAt]) {

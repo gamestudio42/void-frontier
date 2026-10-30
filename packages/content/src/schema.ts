@@ -6,6 +6,8 @@ export const shipDefinitionSchema = z.object({
   id: z.string().regex(/^[a-z][a-z0-9_]*$/),
   /** Credits at a shipyard; 0 for ships that are never sold. */
   price: z.number().min(0),
+  /** Salvage units gained per unit collected. */
+  salvageYield: z.number().min(1).default(1),
   class: z.enum(['scout', 'interceptor', 'fighter', 'miner', 'hauler', 'frigate', 'salvager']),
   hull: z.object({
     integrity: positive,
@@ -94,6 +96,7 @@ const damageMultipliers = z.object({ shield: positive, hull: positive });
 export const weaponDefinitionSchema = z.discriminatedUnion('kind', [
   z.object({
     id: z.string(),
+    price: z.number().min(0).default(0),
     kind: z.literal('projectile'),
     damage: positive,
     /** shots per second */
@@ -117,6 +120,7 @@ export const weaponDefinitionSchema = z.discriminatedUnion('kind', [
   }),
   z.object({
     id: z.string(),
+    price: z.number().min(0).default(0),
     kind: z.literal('mining'),
     /** ore units per second at the optimal range */
     extractionRate: positive,
@@ -134,6 +138,27 @@ export const weaponDefinitionSchema = z.discriminatedUnion('kind', [
   }),
   z.object({
     id: z.string(),
+    price: z.number().min(0).default(0),
+    kind: z.literal('missile'),
+    damage: positive,
+    /** shots per second */
+    fireRate: positive,
+    /** m/s */
+    speed: positive,
+    /** seconds */
+    lifetime: positive,
+    /** radians per second it can turn toward the target */
+    turnRate: positive,
+    gimbal: z.number().min(0).max(45),
+    heatPerShot: z.number().min(0),
+    maxHeat: positive,
+    coolingRate: positive,
+    energyPerShot: z.number().min(0),
+    multipliers: damageMultipliers,
+  }),
+  z.object({
+    id: z.string(),
+    price: z.number().min(0).default(0),
     kind: z.literal('beam'),
     damagePerSecond: positive,
     /** metres */
@@ -239,6 +264,8 @@ export const stationDefinitionSchema = z.object({
     }),
   ),
   upgrades: z.array(z.string()),
+  /** Weapons this station fits. */
+  weapons: z.array(z.string()).default([]),
   /** Hulls this station sells, some only to pilots in good standing. */
   shipyard: z.array(z.object({ ship: z.string(), requires: z.object({ faction: z.string(), reputation: z.number() }).optional() })),
   /** Units per minute the station makes and uses, whether or not the player is there. */
@@ -334,11 +361,15 @@ export const campaignSchema = z.object({
   steps: z.array(
     z.object({
       id: z.string(),
+      /** Only on this branch of the story; every branch otherwise. */
+      when: z.string().optional(),
       objective: z.discriminatedUnion('kind', [
         z.object({ kind: z.literal('discover'), poi: z.string(), sector: z.string() }),
         z.object({ kind: z.literal('kill'), count: z.number().int().positive() }),
         z.object({ kind: z.literal('deliver'), resource: z.string(), units: z.number().int().positive(), station: z.string() }),
-        z.object({ kind: z.literal('boss'), ship: z.string(), sector: z.string(), x: z.number(), y: z.number() }),
+        z.object({ kind: z.literal('boss'), ship: z.string(), escort: z.object({ ship: z.string(), count: z.number().int().positive() }).optional(), sector: z.string(), x: z.number(), y: z.number() }),
+        /** The player picks a branch; each option pays its own reward. */
+        z.object({ kind: z.literal('choice'), options: z.array(z.object({ id: z.string(), credits: z.number().min(0), faction: z.string(), reputation: z.number() })).min(2) }),
       ]),
       reward: z.object({ credits: z.number().min(0), faction: z.string(), reputation: z.number() }),
     }),
@@ -358,6 +389,14 @@ export const upgradeSchema = z.object({
   /** kg the upgrade adds to the ship */
   equipmentMass: z.number().min(0),
   effects: z.object({
+    /** Multiplies weapon cooling. */
+    coolingMultiplier: z.number().optional(),
+    /** Chance an incoming missile loses its lock, 0..1. */
+    missileEvasion: z.number().min(0).max(1).optional(),
+    /** Extra salvage units per unit collected. */
+    salvageBonus: z.number().optional(),
+    /** Multiplies fuel use. */
+    fuelEfficiency: z.number().optional(),
     thrustMultiplier: z.number().min(1).optional(),
     hullBonus: z.number().min(0).optional(),
     armorBonus: z.number().min(0).max(0.5).optional(),
@@ -485,6 +524,8 @@ export const sectorDefinitionSchema = z.object({
   /** The player begins docked at the first station. */
   startDocked: z.boolean(),
   startingCredits: z.number().int().min(0),
+  /** What makes the sector different: shields recharge and weapons cool at these rates. */
+  rules: z.object({ shieldFactor: z.number().positive().optional(), coolingFactor: z.number().positive().optional() }).optional(),
 });
 
 export type SectorDefinition = z.infer<typeof sectorDefinitionSchema>;
@@ -535,6 +576,9 @@ export const contractRulesSchema = z.object({
   }),
   elite: z.object({ unitsMultiplier: z.number().min(1), rewardMultiplier: z.number().min(1) }),
   penalty: z.object({ failed: z.number().min(0), abandoned: z.number().min(0) }),
+  salvage: z.object({ minUnits: positive, maxUnits: positive, priceMultiplier: positive, seconds: positive, repGain: positive }),
+  patrol: z.object({ minStops: z.number().int().min(1), maxStops: z.number().int().min(1), rewardPerStop: positive, seconds: positive, repGain: positive, radius: positive }),
+  recon: z.object({ baseReward: positive, rewardPerHop: positive, seconds: positive, repGain: positive, radius: positive }),
   escort: z.object({
     baseReward: positive,
     rewardPerHop: positive,

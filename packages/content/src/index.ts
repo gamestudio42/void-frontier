@@ -7,6 +7,8 @@ import eventData from '../data/events.json';
 import factionData from '../data/factions.json';
 import traderData from '../data/traders.json';
 import anomalyZoneData from '../data/anomaly-zone.json';
+import emberReachData from '../data/ember-reach.json';
+import graveyardData from '../data/graveyard.json';
 import industrialBeltData from '../data/industrial-belt.json';
 import outpostAlphaData from '../data/outpost-alpha.json';
 import pirateTerritoryData from '../data/pirate-territory.json';
@@ -69,7 +71,7 @@ export const OUTPOST_ALPHA: SectorDefinition = sectorDefinitionSchema.parse(outp
 
 /** Every sector, keyed by id. Outpost Alpha is where a new game starts. */
 export const SECTORS: ReadonlyMap<string, SectorDefinition> = byId(
-  [outpostAlphaData, industrialBeltData, pirateTerritoryData, anomalyZoneData].map((data) => sectorDefinitionSchema.parse(data)),
+  [outpostAlphaData, industrialBeltData, pirateTerritoryData, anomalyZoneData, graveyardData, emberReachData].map((data) => sectorDefinitionSchema.parse(data)),
 );
 
 export const getSector = (id: string): SectorDefinition => lookup(SECTORS, 'sector', id);
@@ -145,6 +147,16 @@ for (const event of EVENT_RULES.events) {
   if (event.sector) getSector(event.sector);
   if (event.resource) getResource(event.resource);
 }
+/** The trigger a weapon answers to: a mount only takes weapons of its own group. */
+export const weaponGroup = (weapon: WeaponDefinition): 'primary' | 'secondary' | 'mining' => (weapon.kind === 'projectile' ? 'primary' : weapon.kind === 'mining' ? 'mining' : 'secondary');
+
+for (const station of STATIONS.values()) for (const weapon of station.weapons) getWeapon(weapon);
+for (const ship of SHIPS.values()) {
+  for (const h of ship.hardpoints) {
+    // Pirate frigates mix their guns freely; only player hulls are refittable.
+    if (ship.price > 0 && weaponGroup(getWeapon(h.weapon)) !== h.group) throw new Error(`${ship.id}: ${h.weapon} does not fit the ${h.group} mount ${h.id}`);
+  }
+}
 for (const { id, objective, reward } of CAMPAIGN.steps) {
   getFaction(reward.faction);
   if (objective.kind === 'discover' && !getSector(objective.sector).pointsOfInterest.some((p) => p.id === objective.poi)) throw new Error(`Campaign step ${id} names unknown point ${objective.poi}`);
@@ -154,8 +166,10 @@ for (const { id, objective, reward } of CAMPAIGN.steps) {
   }
   if (objective.kind === 'boss') {
     getShip(objective.ship);
+    if (objective.escort) getShip(objective.escort.ship);
     getSector(objective.sector);
   }
+  if (objective.kind === 'choice') for (const option of objective.options) getFaction(option.faction);
 }
 for (const site of CREW_RULES.sites) {
   const field = getSector(site.sector).asteroidFields.find((f) => f.id === site.field);

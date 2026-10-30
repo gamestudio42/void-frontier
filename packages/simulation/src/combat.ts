@@ -4,7 +4,7 @@ import { moduleModifiers } from './station.ts';
 import { sensorRange, shieldCapacity } from './ship.ts';
 import { extractOre } from './mining.ts';
 import { raycast } from './spatial.ts';
-import { isHostile, type Body, type EntityId, type Ship, type WeaponMount } from './types.ts';
+import { isHostile, type Body, type EntityId, type Projectile, type Ship, type WeaponMount } from './types.ts';
 import type { World } from './world.ts';
 
 /** World position of a hardpoint (ship-local x forward, y right). */
@@ -91,15 +91,17 @@ export function weaponSystem(world: World, dt: number): void {
     ship.energy = Math.min(reactor.capacity, ship.energy + reactor.rechargeRate * ship.subsystems.reactor * dt);
     const shieldDef = ship.definition.shield;
     if (!ship.destroyed && (world.tick - ship.lastDamageTick) * dt >= shieldDef.rechargeDelay) {
-      ship.shield = Math.min(shieldCapacity(ship), ship.shield + shieldDef.rechargeRate * ship.subsystems.shieldGenerator * dt);
+      ship.shield = Math.min(shieldCapacity(ship), ship.shield + shieldDef.rechargeRate * ship.subsystems.shieldGenerator * world.rules.shieldFactor * dt);
     }
     // A damaged generator cannot hold its full charge.
     ship.shield = Math.min(ship.shield, shieldCapacity(ship));
-    const gimbalBonus = moduleModifiers(ship.upgrades).gimbal;
+    const modifiers = moduleModifiers(ship.upgrades);
+    const gimbalBonus = modifiers.gimbal;
+    const cooling = modifiers.cooling * world.rules.coolingFactor;
 
     for (const mount of ship.weapons) {
       const def = mount.definition;
-      mount.heat = Math.max(0, mount.heat - def.coolingRate * dt);
+      mount.heat = Math.max(0, mount.heat - def.coolingRate * cooling * dt);
       if (mount.overheated && mount.heat <= def.maxHeat * 0.3) mount.overheated = false;
       mount.cooldown = Math.max(0, mount.cooldown - dt);
       mount.beam = null;
@@ -126,6 +128,26 @@ export function weaponSystem(world: World, dt: number): void {
           life: def.projectileLifetime,
           damage: def.damage,
           multipliers: def.multipliers,
+        });
+        mount.cooldown += 1 / def.fireRate;
+        mount.heat += def.heatPerShot;
+        ship.energy -= def.energyPerShot;
+        world.events.push({ type: 'shot', owner: id, position: { ...muzzle }, direction: dir });
+      } else if (def.kind === 'missile') {
+        if (mount.cooldown > 0 || ship.energy < def.energyPerShot) continue;
+        const dir = { x: cos(angle), y: sin(angle) };
+        let target = ship.command.target;
+        // Countermeasures can break the lock as the missile leaves the rack.
+        const evasion = target !== null ? moduleModifiers(world.ships.get(target)?.upgrades ?? []).missileEvasion : 0;
+        if (evasion > 0 && world.rng.next() < evasion) target = null;
+        world.projectiles.set(world.createEntity(), {
+          owner: id,
+          position: muzzle,
+          velocity: { x: dir.x * def.speed + body.velocity.x * 0.3, y: dir.y * def.speed + body.velocity.y * 0.3 },
+          life: def.lifetime,
+          damage: def.damage,
+          multipliers: def.multipliers,
+          homing: { target, turnRate: def.turnRate },
         });
         mount.cooldown += 1 / def.fireRate;
         mount.heat += def.heatPerShot;
@@ -164,6 +186,24 @@ export function weaponSystem(world: World, dt: number): void {
   }
 }
 
+/** Turns a missile toward its target, as far as its turn rate allows; its speed never changes. */
+function steer(world: World, round: Projectile, dt: number): void {
+  const homing = round.homing!;
+  if (homing.target === null) return;
+  const target = world.ships.get(homing.target);
+  const place = world.bodies.get(homing.target)?.position;
+  if (!target || target.destroyed || !place) {
+    homing.target = null;
+    return;
+  }
+  const speed = Math.sqrt(round.velocity.x * round.velocity.x + round.velocity.y * round.velocity.y);
+  const heading = atan2(round.velocity.y, round.velocity.x);
+  const error = wrapAngle(atan2(place.y - round.position.y, place.x - round.position.x) - heading);
+  const limit = homing.turnRate * dt;
+  const next = heading + Math.max(-limit, Math.min(limit, error));
+  round.velocity = { x: cos(next) * speed, y: sin(next) * speed };
+}
+
 /** Moves rounds and resolves hits with a swept test, so fast rounds never skip a thin target. */
 export function projectileSystem(world: World, dt: number): void {
   for (const [id, round] of world.projectiles) {
@@ -172,6 +212,7 @@ export function projectileSystem(world: World, dt: number): void {
       world.projectiles.delete(id);
       continue;
     }
+    if (round.homing) steer(world, round, dt);
     const from = round.position;
     const to = { x: from.x + round.velocity.x * dt, y: from.y + round.velocity.y * dt };
     const hit = raycast(world, from, to, round.owner);

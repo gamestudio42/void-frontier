@@ -438,7 +438,7 @@
     "id": "dreadmaw",
     "class": "frigate",
     "hull": {
-      "integrity": 2600,
+      "integrity": 6500,
       "dryMass": 16000,
       "length": 22,
       "collisionRadius": 9,
@@ -463,8 +463,8 @@
       "maxVolume": 20
     },
     "shield": {
-      "capacity": 800,
-      "rechargeRate": 25,
+      "capacity": 1800,
+      "rechargeRate": 40,
       "rechargeDelay": 5
     },
     "reactor": {
@@ -499,8 +499,8 @@
         "id": "gun_centre",
         "x": 9,
         "y": 0,
-        "weapon": "pirate_autocannon",
-        "group": "primary"
+        "weapon": "pirate_missile",
+        "group": "secondary"
       }
     ],
     "slots": {
@@ -509,5 +509,158 @@
       "defense": 2
     },
     "price": 0
+  },
+  {
+    "id": "bulwark",
+    "class": "frigate",
+    "hull": {
+      "integrity": 3000,
+      "dryMass": 16000,
+      "length": 22,
+      "collisionRadius": 9,
+      "armor": 0.25
+    },
+    "movement": {
+      "mainThrust": 220000,
+      "reverseThrust": 110000,
+      "lateralThrust": 80000,
+      "rotationalTorque": 700000,
+      "gyrationRadius": 5,
+      "maxAngularVelocity": 1.2,
+      "boostMultiplier": 1.3,
+      "boostFuelMultiplier": 2.5
+    },
+    "fuel": {
+      "capacity": 900,
+      "consumptionPerMegaNewtonSecond": 10
+    },
+    "cargo": {
+      "maxMass": 8000,
+      "maxVolume": 40
+    },
+    "shield": {
+      "capacity": 700,
+      "rechargeRate": 25,
+      "rechargeDelay": 5
+    },
+    "reactor": {
+      "capacity": 220,
+      "rechargeRate": 22
+    },
+    "sensors": {
+      "range": 1100,
+      "scanRange": 600,
+      "scanCooldown": 6
+    },
+    "tractor": {
+      "range": 90,
+      "collectRadius": 12
+    },
+    "hardpoints": [
+      {
+        "id": "gun_left",
+        "x": 8,
+        "y": -3,
+        "weapon": "autocannon_mk1",
+        "group": "primary"
+      },
+      {
+        "id": "gun_right",
+        "x": 8,
+        "y": 3,
+        "weapon": "autocannon_mk1",
+        "group": "primary"
+      },
+      {
+        "id": "turret",
+        "x": 4,
+        "y": 0,
+        "weapon": "laser_mk1",
+        "group": "secondary"
+      },
+      {
+        "id": "turret_rear",
+        "x": 0,
+        "y": 0,
+        "weapon": "missile_rack",
+        "group": "secondary"
+      }
+    ],
+    "slots": {
+      "engine": 1,
+      "utility": 2,
+      "defense": 3
+    },
+    "price": 60000
+  },
+  {
+    "id": "magpie",
+    "class": "salvager",
+    "hull": {
+      "integrity": 2400,
+      "dryMass": 22000,
+      "length": 26,
+      "collisionRadius": 12,
+      "armor": 0.25
+    },
+    "movement": {
+      "mainThrust": 300000,
+      "reverseThrust": 120000,
+      "lateralThrust": 70000,
+      "rotationalTorque": 700000,
+      "gyrationRadius": 6,
+      "maxAngularVelocity": 0.9,
+      "boostMultiplier": 1.4,
+      "boostFuelMultiplier": 2.5
+    },
+    "fuel": {
+      "capacity": 1200,
+      "consumptionPerMegaNewtonSecond": 12
+    },
+    "cargo": {
+      "maxMass": 16000,
+      "maxVolume": 120
+    },
+    "shield": {
+      "capacity": 500,
+      "rechargeRate": 25,
+      "rechargeDelay": 4
+    },
+    "reactor": {
+      "capacity": 140,
+      "rechargeRate": 14
+    },
+    "sensors": {
+      "range": 1200,
+      "scanRange": 600,
+      "scanCooldown": 6
+    },
+    "hardpoints": [
+      {
+        "id": "turret",
+        "x": 10,
+        "y": 0,
+        "weapon": "autocannon_mk1",
+        "group": "primary"
+      },
+      {
+        "id": "mining_laser",
+        "x": 11.700000000000001,
+        "y": 0,
+        "weapon": "mining_laser_mk1",
+        "group": "mining"
+      }
+    ],
+    "tractor": {
+      "range": 180,
+      "collectRadius": 12
+    },
+    "slots": {
+      "engine": 1,
+      "utility": 3,
+      "defense": 1
+    },
+    "price": 20000,
+    "salvageYield": 2
   }
 ]

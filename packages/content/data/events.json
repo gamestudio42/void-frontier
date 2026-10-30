@@ -6,7 +6,9 @@
     "outpost_alpha": 0.04,
     "industrial_belt": 0.03,
     "pirate_territory": 0.4,
-    "anomaly_zone": 0.1
+    "anomaly_zone": 0.1,
+    "graveyard": 0.15,
+    "ember_reach": 0.25
   },
   "events": [
     {

@@ -58,5 +58,17 @@
       "metalness": 0.3,
       "roughness": 0.35
     }
+  },
+  {
+    "id": "hulk",
+    "resource": "salvage",
+    "density": 2600,
+    "look": {
+      "base": "#4c5158",
+      "vein": "#a06a3a",
+      "metalness": 0.7,
+      "roughness": 0.55
+    },
+    "oreUnitsPerSquareMetre": 0.5
   }
 ]

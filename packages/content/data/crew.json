@@ -82,6 +82,18 @@
       "sector": "anomaly_zone",
       "field": "platinum_drift",
       "station": "ferrum_refinery"
+    },
+    {
+      "id": "hulk_yard",
+      "sector": "graveyard",
+      "field": "hulk_yard",
+      "station": "outpost_alpha_station"
+    },
+    {
+      "id": "ember_vein",
+      "sector": "ember_reach",
+      "field": "ember_vein",
+      "station": "ferrum_refinery"
     }
   ]
 }

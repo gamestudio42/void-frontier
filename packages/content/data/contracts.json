@@ -54,5 +54,27 @@
     "rewardPerHop": 250,
     "repGain": 6,
     "range": 2000
+  },
+  "salvage": {
+    "minUnits": 15,
+    "maxUnits": 40,
+    "priceMultiplier": 1.5,
+    "seconds": 900,
+    "repGain": 3
+  },
+  "patrol": {
+    "minStops": 2,
+    "maxStops": 3,
+    "rewardPerStop": 380,
+    "seconds": 900,
+    "repGain": 4,
+    "radius": 180
+  },
+  "recon": {
+    "baseReward": 500,
+    "rewardPerHop": 300,
+    "seconds": 900,
+    "repGain": 4,
+    "radius": 300
   }
 }

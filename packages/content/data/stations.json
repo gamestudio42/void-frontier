@@ -212,7 +212,8 @@
       "reinforced_hull",
       "cargo_frame",
       "shield_capacitor",
-      "deep_scanner"
+      "deep_scanner",
+      "salvage_rig"
     ],
     "faction": "outpost_authority",
     "economy": {
@@ -235,6 +236,11 @@
       {
         "ship": "prospector"
       }
+    ],
+    "weapons": [
+      "autocannon_mk1",
+      "gatling_mk1",
+      "mining_laser_mk1"
     ]
   },
   {
@@ -413,7 +419,9 @@
       "armor_plating",
       "repair_drones",
       "afterburner",
-      "combat_computer"
+      "combat_computer",
+      "heat_sink",
+      "fuel_optimizer"
     ],
     "economy": {
       "produces": {
@@ -439,7 +447,17 @@
           "faction": "ferrum_combine",
           "reputation": 15
         }
+      },
+      {
+        "ship": "magpie"
       }
+    ],
+    "weapons": [
+      "autocannon_mk1",
+      "gatling_mk1",
+      "laser_mk1",
+      "mining_laser_mk1",
+      "mining_laser_mk2"
     ]
   },
   {
@@ -542,7 +560,8 @@
       "produces": {},
       "consumes": {}
     },
-    "shipyard": []
+    "shipyard": [],
+    "weapons": []
   },
   {
     "id": "bastion",
@@ -717,7 +736,9 @@
       "shield_capacitor",
       "afterburner",
       "combat_computer",
-      "repair_drones"
+      "repair_drones",
+      "countermeasures",
+      "heat_sink"
     ],
     "economy": {
       "produces": {},
@@ -736,7 +757,20 @@
           "faction": "frontier_guard",
           "reputation": 15
         }
+      },
+      {
+        "ship": "bulwark",
+        "requires": {
+          "faction": "frontier_guard",
+          "reputation": 30
+        }
       }
+    ],
+    "weapons": [
+      "gatling_mk1",
+      "railgun_mk1",
+      "laser_mk1",
+      "missile_rack"
     ]
   }
 ]

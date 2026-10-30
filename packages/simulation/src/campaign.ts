@@ -14,34 +14,43 @@ export interface Campaign {
   /** Player kills already counted, and the owned ship they belong to (hulls keep their own tally). */
   killsSeen: number;
   shipSeen: number;
+  /** The branch the player chose, once they have. */
+  branch: string | null;
+  /** How the playthrough went, read back from a save when balancing. */
+  stats: { deaths: number; startTick: number; steps: { id: string; tick: number }[] };
 }
 
-export const createCampaign = (): Campaign => ({ step: 0, progress: 0, killsSeen: 0, shipSeen: 1 });
+export const createCampaign = (): Campaign => ({ step: 0, progress: 0, killsSeen: 0, shipSeen: 1, branch: null, stats: { deaths: 0, startTick: 0, steps: [] } });
 
 export const campaignStep = (campaign: Campaign): CampaignStep | null => CAMPAIGN.steps[campaign.step] ?? null;
 
-const BOSS_ENCOUNTER = 'campaign_boss';
-
-function bossEncounter(world: World): EncounterState | undefined {
-  return world.encounters.find((e) => e.definition.id === BOSS_ENCOUNTER);
+function bossEncounter(world: World, stepId: string): EncounterState | undefined {
+  return world.encounters.find((e) => e.definition.id === `campaign_boss_${stepId}`);
 }
 
-/** The boss waits in its sector; leaving and coming back finds it repaired, as with any pirate. */
-function bossFallen(world: World, objective: Extract<CampaignStep['objective'], { kind: 'boss' }>): boolean {
-  if (world.sectorId !== objective.sector) return false;
-  const existing = bossEncounter(world);
-  if (existing) return existing.members.every((id) => world.ships.get(id)?.destroyed ?? true);
+function spawnGroup(world: World, id: string, ship: string, count: number, x: number, y: number): EncounterState {
   const definition = {
-    id: BOSS_ENCOUNTER,
-    ship: getShip(objective.ship).id,
+    id,
+    ship: getShip(ship).id,
     faction: 'pirate' as const,
-    count: 1,
-    spawn: { x: objective.x, y: objective.y },
-    patrol: [[objective.x, objective.y], [objective.x + 500, objective.y - 300]] as [number, number][],
+    count,
+    spawn: { x, y },
+    patrol: [[x, y], [x + 500, y - 300]] as [number, number][],
     // It never returns once beaten.
     respawnDelay: 1e6,
   };
-  world.encounters.push({ definition, members: spawnEncounter(world, definition), respawnAt: null });
+  const state = { definition, members: spawnEncounter(world, definition), respawnAt: null };
+  world.encounters.push(state);
+  return state;
+}
+
+/** The boss waits in its sector; leaving and coming back finds it repaired, as with any pirate. */
+function bossFallen(world: World, stepId: string, objective: Extract<CampaignStep['objective'], { kind: 'boss' }>): boolean {
+  if (world.sectorId !== objective.sector) return false;
+  const existing = bossEncounter(world, stepId);
+  if (existing) return existing.members.every((id) => world.ships.get(id)?.destroyed ?? true);
+  spawnGroup(world, `campaign_boss_${stepId}`, objective.ship, 1, objective.x, objective.y);
+  if (objective.escort) spawnGroup(world, `campaign_escort_${stepId}`, objective.escort.ship, objective.escort.count, objective.x + 90, objective.y + 90);
   return false;
 }
 
@@ -50,7 +59,9 @@ function objectiveMet(sim: Simulation, campaign: Campaign, step: CampaignStep): 
   const objective = step.objective;
   if (objective.kind === 'discover') return world.sectorId === objective.sector && !!world.pointsOfInterest.get(objective.poi)?.found;
   if (objective.kind === 'kill') return campaign.progress >= objective.count;
-  if (objective.kind === 'boss') return bossFallen(world, objective);
+  if (objective.kind === 'boss') return bossFallen(world, step.id, objective);
+  // Waits for chooseCampaign.
+  if (objective.kind === 'choice') return false;
   if (dockedStationKey(world, sim.playerId) !== objective.station) return false;
   const ship = world.ships.get(sim.playerId)!;
   const held = ship.cargo.get(objective.resource) ?? 0;
@@ -82,11 +93,30 @@ export function campaignSystem(sim: Simulation): void {
   countKills(sim, campaign);
   const step = campaignStep(campaign);
   if (!step || !objectiveMet(sim, campaign, step)) return;
-  sim.world.credits += step.reward.credits;
-  sim.world.standing[step.reward.faction] = Math.min(100, (sim.world.standing[step.reward.faction] ?? 0) + step.reward.reputation);
+  finishStep(sim, campaign, step, step.reward);
+}
+
+function finishStep(sim: Simulation, campaign: Campaign, step: CampaignStep, reward: { credits: number; faction: string; reputation: number }): void {
+  sim.world.credits += reward.credits;
+  sim.world.standing[reward.faction] = Math.max(-100, Math.min(100, (sim.world.standing[reward.faction] ?? 0) + reward.reputation));
+  campaign.stats.steps.push({ id: step.id, tick: sim.world.tick });
   campaign.step++;
+  // Steps on the other branch are passed over.
+  while (CAMPAIGN.steps[campaign.step]?.when && CAMPAIGN.steps[campaign.step].when !== campaign.branch) campaign.step++;
   campaign.progress = 0;
-  sim.world.events.push({ type: 'campaign', step: step.id, credits: step.reward.credits, finished: campaignStep(campaign) === null });
+  sim.world.events.push({ type: 'campaign', step: step.id, credits: reward.credits, finished: campaignStep(campaign) === null });
+}
+
+/** The player's answer to a choice step: pays that option and sets the branch for the rest of the story. */
+export function chooseCampaign(sim: Simulation, optionId: string): boolean {
+  const campaign = sim.campaign;
+  const step = campaign && campaignStep(campaign);
+  if (!campaign || !step || step.objective.kind !== 'choice') return false;
+  const option = step.objective.options.find((o) => o.id === optionId);
+  if (!option) return false;
+  campaign.branch = option.id;
+  finishStep(sim, campaign, step, option);
+  return true;
 }
 
 /** Where the current step leads, for the on-screen marker: a sector, and a point when one is known. */
@@ -94,13 +124,13 @@ export function campaignTarget(sim: Simulation): { sector: string; position: { x
   const step = sim.campaign && campaignStep(sim.campaign);
   if (!step) return null;
   const objective = step.objective;
-  if (objective.kind === 'kill') return null;
+  if (objective.kind === 'kill' || objective.kind === 'choice') return null;
   if (objective.kind === 'deliver') {
     const place = STATION_PLACEMENTS.get(objective.station)!;
     return { sector: place.sector, position: { x: place.x, y: place.y } };
   }
   if (objective.kind === 'boss') {
-    const id = bossEncounter(sim.world)?.members[0];
+    const id = bossEncounter(sim.world, step.id)?.members[0];
     const body = id !== undefined ? sim.world.bodies.get(id) : undefined;
     return { sector: objective.sector, position: body?.position ?? { x: objective.x, y: objective.y } };
   }

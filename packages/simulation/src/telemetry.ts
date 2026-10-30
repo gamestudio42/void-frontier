@@ -23,7 +23,7 @@ export interface FlightTelemetry {
   shieldMax: number;
   energy: number;
   energyMax: number;
-  weapons: { id: string; group: 'primary' | 'secondary' | 'mining'; kind: 'projectile' | 'beam' | 'mining'; heat: number; overheated: boolean }[];
+  weapons: { id: string; group: 'primary' | 'secondary' | 'mining'; kind: 'projectile' | 'beam' | 'mining' | 'missile'; heat: number; overheated: boolean }[];
   kills: number;
   subsystems: Record<SubsystemId, number>;
   /** Health of each weapon mount, in hardpoint order. */

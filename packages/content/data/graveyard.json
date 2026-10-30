@@ -1,0 +1,143 @@
+{
+  "playerShip": "kestrel",
+  "startDocked": false,
+  "startingCredits": 0,
+  "stations": [],
+  "anomalies": [],
+  "id": "graveyard",
+  "name": "graveyard",
+  "seed": 9101,
+  "playerStart": {
+    "x": -1300,
+    "y": 1200,
+    "heading": 90
+  },
+  "mapPosition": {
+    "x": 1,
+    "y": 0
+  },
+  "environment": {
+    "nebulaSeed": 9101,
+    "planet": {
+      "hue": 0.58,
+      "x": 7000,
+      "y": -11000,
+      "z": -8000,
+      "radius": 2600
+    }
+  },
+  "rules": {
+    "shieldFactor": 0.5
+  },
+  "controllingFaction": null,
+  "clearZones": [
+    {
+      "x": -1600,
+      "y": 1200,
+      "radius": 220
+    },
+    {
+      "x": 600,
+      "y": -700,
+      "radius": 140
+    },
+    {
+      "x": -300,
+      "y": -1200,
+      "radius": 120
+    }
+  ],
+  "beacons": [
+    {
+      "id": "graveyard_marker",
+      "x": -300,
+      "y": -1200
+    }
+  ],
+  "dropPoints": [
+    {
+      "id": "graveyard_drop",
+      "beacon": "graveyard_marker",
+      "risk": 1.4
+    }
+  ],
+  "gates": [
+    {
+      "id": "graveyard_to_anomaly",
+      "to": "anomaly_zone",
+      "toGate": "anomaly_to_graveyard",
+      "x": -1600,
+      "y": 1200
+    }
+  ],
+  "asteroidFields": [
+    {
+      "id": "hulk_yard",
+      "center": {
+        "x": 500,
+        "y": 500
+      },
+      "radius": 800,
+      "count": 180,
+      "minRadius": 4,
+      "maxRadius": 22,
+      "maxDrift": 1.2,
+      "types": {
+        "hulk": 0.8,
+        "ferrous": 0.2
+      }
+    },
+    {
+      "id": "graveyard_scatter",
+      "center": {
+        "x": 0,
+        "y": 0
+      },
+      "radius": 2300,
+      "count": 120,
+      "minRadius": 3,
+      "maxRadius": 14,
+      "maxDrift": 1.2,
+      "types": {
+        "hulk": 0.6,
+        "ferrous": 0.4
+      }
+    }
+  ],
+  "encounters": [
+    {
+      "id": "scrappers",
+      "ship": "jackal",
+      "faction": "pirate",
+      "count": 2,
+      "spawn": {
+        "x": 900,
+        "y": -200
+      },
+      "patrol": [
+        [
+          900,
+          -200
+        ],
+        [
+          200,
+          800
+        ]
+      ],
+      "respawnDelay": 240
+    }
+  ],
+  "pointsOfInterest": [
+    {
+      "id": "graveyard_beacon",
+      "kind": "derelict",
+      "x": 600,
+      "y": -700,
+      "reward": {
+        "credits": 700,
+        "resource": "salvage",
+        "units": 20
+      }
+    }
+  ]
+}
