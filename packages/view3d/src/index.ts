@@ -1,4 +1,4 @@
-export { SpaceRenderer, type Quality, type RenderOptions, type RenderStats } from './renderer.ts';
+export { SpaceRenderer, type SectorLook, type Quality, type RenderOptions, type RenderStats } from './renderer.ts';
 export { CameraRig, DEFAULT_CAMERA, type CameraSettings } from './camera.ts';
 export { toScene, fromScene } from './coords.ts';
 export type { PlanetLook } from './environment.ts';

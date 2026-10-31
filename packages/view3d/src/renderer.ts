@@ -1,3 +1,4 @@
+import type { SectorDefinition } from '@void-frontier/content';
 import type { Vec2 } from '@void-frontier/kernel';
 import { readTelemetry, type EntityId, type SimEvent, type Simulation, type ThrusterOutput } from '@void-frontier/simulation';
 import {
@@ -15,6 +16,7 @@ import {
   Raycaster,
   RingGeometry,
   Scene,
+  SphereGeometry,
   Vector2,
   Vector3,
   WebGLRenderer,
@@ -24,6 +26,7 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { AsteroidRenderer } from './asteroids.ts';
+import { createGiant } from './giants.ts';
 import { createCache, createDerelict, createGate, createWell, type Landmark } from './landmarks.ts';
 import { BeamRenderer, ShieldBubble, TracerRenderer } from './combatFx.ts';
 import { PickupRenderer } from './mining.ts';
@@ -43,6 +46,9 @@ export interface RenderOptions {
   /** Combat target to keep in frame, if any. */
   frame?: Vec2 | null;
 }
+
+/** What a sector's own colour needs from its data. */
+export type SectorLook = NonNullable<SectorDefinition['environment']['look']>;
 
 export type Quality = 'high' | 'medium' | 'low';
 
@@ -70,6 +76,8 @@ const RCS = { r: 0.35, g: 0.38, b: 0.42 };
 const RCS_END = { r: 0.02, g: 0.02, b: 0.03 };
 const SPARK = { r: 2.2, g: 1.3, b: 0.5 };
 const SPARK_END = { r: 0.5, g: 0.06, b: 0.0 };
+const MISSILE_SMOKE = { r: 0.9, g: 0.75, b: 0.6 };
+const MISSILE_SMOKE_END = { r: 0.06, g: 0.06, b: 0.07 };
 const DUST = { r: 0.28, g: 0.26, b: 0.24 };
 const DUST_END = { r: 0.0, g: 0.0, b: 0.0 };
 const FIRE = { r: 2.4, g: 1.4, b: 0.5 };
@@ -115,7 +123,7 @@ export class SpaceRenderer {
   private quality: Quality = 'high';
   private size = { width: 1, height: 1, pixelRatio: 1 };
 
-  constructor(canvas: HTMLCanvasElement, sim: Simulation, seed: number, planet?: PlanetLook) {
+  constructor(canvas: HTMLCanvasElement, sim: Simulation, seed: number, planet?: PlanetLook, look?: SectorLook) {
     this.renderer = new WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
     this.renderer.toneMapping = ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.05;
@@ -125,7 +133,7 @@ export class SpaceRenderer {
     this.renderer.info.autoReset = false;
     this.scene.background = new Color(PALETTE.space);
 
-    this.sun = new DirectionalLight(0xfff1dc, 3.2);
+    this.sun = new DirectionalLight(look?.sun ?? 0xfff1dc, look?.sunIntensity ?? 3.2);
     this.sun.castShadow = true;
     this.sun.shadow.mapSize.set(2048, 2048);
     const shadowCamera = this.sun.shadow.camera;
@@ -140,7 +148,7 @@ export class SpaceRenderer {
     this.scene.add(this.sun, this.sun.target);
     this.scene.add(new HemisphereLight(0x7f9fc8, 0x1a1410, 0.5), new AmbientLight(0x404858, 0.35));
 
-    this.nebula = createNebula(seed);
+    this.nebula = createNebula(seed, look?.tint, look?.tintStrength);
     this.starfield = createStarfield(seed);
     this.dust = new DustField(seed + 1);
     this.scene.add(this.nebula, this.starfield, this.dust.points, this.grid.lines, createPlanet(seed + 2, planet), this.overlay.root, this.particles.points);
@@ -166,6 +174,17 @@ export class SpaceRenderer {
       this.landmarks.push(landmark);
     };
     for (const gate of sim.world.gates.values()) place(createGate(), gate.position);
+    (look?.giants ?? []).forEach((giant, i) => {
+      const landmark = createGiant(giant.kind, seed + i * 31, giant.scale, giant.angle);
+      const depth = landmark.root.position.y;
+      place(landmark, { x: giant.x, y: giant.y });
+      landmark.root.position.y = depth;
+    });
+    if (look?.star) {
+      const star = new Mesh(new SphereGeometry(look.star.radius, 40, 20), new MeshBasicMaterial({ color: new Color(look.star.color).multiplyScalar(3), fog: false }));
+      star.position.set(look.star.x, look.star.y, look.star.z);
+      this.scene.add(star);
+    }
     for (const well of sim.world.anomalies) place(createWell(well.radius * 0.55), well.position);
     for (const poi of sim.world.pointsOfInterest.values()) {
       if (poi.kind === 'derelict') place(createDerelict(), poi.position);
@@ -268,6 +287,12 @@ export class SpaceRenderer {
         }
       } else if (event.type === 'shipDestroyed') {
         this.explode(event.position);
+        // Big ships go up in stages.
+        const size = sim.world.ships.get(event.id)?.definition.hull.length ?? 0;
+        if (size > 18) {
+          for (let i = 0; i < 3; i++) this.explode({ x: event.position.x + (Math.random() - 0.5) * size * 1.4, y: event.position.y + (Math.random() - 0.5) * size * 1.4 });
+          this.rig.shake(0.5);
+        }
         if (event.id === sim.playerId) this.rig.shake(1);
       }
     }
@@ -311,6 +336,10 @@ export class SpaceRenderer {
     }
 
     this.tracers.update(sim.world, sim.playerId, alpha, sim.dt);
+    // Missiles leave a smoke trail that lingers after them.
+    for (const round of sim.world.projectiles.values()) {
+      if (round.homing) this.particles.emit(round.position.x, 1, -round.position.y, (Math.random() - 0.5) * 3, Math.random(), (Math.random() - 0.5) * 3, MISSILE_SMOKE, MISSILE_SMOKE_END, 2.4, 1.3, 0.3);
+    }
     this.pickups.update(sim.world, sim.playerId, this.time);
     for (const impact of this.beams.update(sim.world, this.time)) {
       const p = toScene(impact, 1);
@@ -343,6 +372,13 @@ export class SpaceRenderer {
     const x = (this.projected.x * 0.5 + 0.5) * width;
     const y = (-this.projected.y * 0.5 + 0.5) * height;
     return { x, y, behind, onScreen: !behind && x >= 0 && x <= width && y >= 0 && y <= height };
+  }
+
+  /** Docked, the scene slides right so the ship stays in view beside the station panel. */
+  setSceneShift(share: number): void {
+    const { width, height } = this.size;
+    if (share === 0) this.rig.camera.clearViewOffset();
+    else this.rig.camera.setViewOffset(width, height, -width * share, 0, width, height);
   }
 
   dispose(): void {
