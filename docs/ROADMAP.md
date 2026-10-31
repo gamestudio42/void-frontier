@@ -222,5 +222,6 @@ Medium quality fixed and frame rate measured on a real chip, campaign ending, mi
 
 - [ ] A person plays the campaign to the end (the spec's acceptance has never been tried)
 - [ ] 3 to 5 outside players complete the main loop without help
-- [ ] Measure a dedicated GPU, Firefox and Safari
+- [x] Measure a dedicated GPU (RTX 4050) and Firefox
+- [ ] Check Safari on a real Mac
 - [ ] Final balance from those results, freeze the save format, tag `v1.0.0`
