@@ -181,7 +181,7 @@
     {
       "id": "reach_relay",
       "beacon": "reach",
-      "risk": 1.0
+      "risk": 1
     },
     {
       "id": "shoal_relay",
@@ -207,6 +207,25 @@
       "y": -12000,
       "z": -9500,
       "radius": 2300
+    },
+    "look": {
+      "tint": [
+        0.05,
+        0.13,
+        0.2
+      ],
+      "tintStrength": 0.5,
+      "sun": "#fff1dc",
+      "sunIntensity": 3.2,
+      "giants": [
+        {
+          "kind": "ring",
+          "x": -1500,
+          "y": 1500,
+          "scale": 1,
+          "angle": 0.4
+        }
+      ]
     }
   },
   "gates": [

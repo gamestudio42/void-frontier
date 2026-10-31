@@ -11,7 +11,8 @@
         "credits": 600,
         "faction": "outpost_authority",
         "reputation": 4
-      }
+      },
+      "speaker": "dispatcher"
     },
     {
       "id": "raiders",
@@ -23,7 +24,8 @@
         "credits": 900,
         "faction": "outpost_authority",
         "reputation": 6
-      }
+      },
+      "speaker": "dispatcher"
     },
     {
       "id": "parts",
@@ -37,7 +39,8 @@
         "credits": 1800,
         "faction": "frontier_guard",
         "reputation": 10
-      }
+      },
+      "speaker": "oyelaran"
     },
     {
       "id": "signal",
@@ -50,7 +53,8 @@
         "credits": 1200,
         "faction": "frontier_guard",
         "reputation": 5
-      }
+      },
+      "speaker": "oyelaran"
     },
     {
       "id": "trail",
@@ -63,7 +67,8 @@
         "credits": 1500,
         "faction": "frontier_guard",
         "reputation": 5
-      }
+      },
+      "speaker": "oyelaran"
     },
     {
       "id": "graveyard",
@@ -76,7 +81,8 @@
         "credits": 1600,
         "faction": "frontier_guard",
         "reputation": 5
-      }
+      },
+      "speaker": "oyelaran"
     },
     {
       "id": "logs",
@@ -90,7 +96,8 @@
         "credits": 2200,
         "faction": "frontier_guard",
         "reputation": 5
-      }
+      },
+      "speaker": "oyelaran"
     },
     {
       "id": "forge",
@@ -103,7 +110,8 @@
         "credits": 2400,
         "faction": "frontier_guard",
         "reputation": 5
-      }
+      },
+      "speaker": "oyelaran"
     },
     {
       "id": "supply",
@@ -117,7 +125,8 @@
         "credits": 2600,
         "faction": "ferrum_combine",
         "reputation": 10
-      }
+      },
+      "speaker": "foreman"
     },
     {
       "id": "patrols",
@@ -129,7 +138,8 @@
         "credits": 2400,
         "faction": "frontier_guard",
         "reputation": 5
-      }
+      },
+      "speaker": "oyelaran"
     },
     {
       "id": "flagship",
@@ -148,7 +158,8 @@
         "credits": 6000,
         "faction": "frontier_guard",
         "reputation": 15
-      }
+      },
+      "speaker": "oyelaran"
     },
     {
       "id": "verdict",
@@ -173,7 +184,8 @@
         "credits": 0,
         "faction": "frontier_guard",
         "reputation": 0
-      }
+      },
+      "speaker": "varo"
     },
     {
       "id": "remnants",
@@ -186,7 +198,8 @@
         "credits": 3000,
         "faction": "frontier_guard",
         "reputation": 5
-      }
+      },
+      "speaker": "oyelaran"
     },
     {
       "id": "rebuild",
@@ -201,7 +214,8 @@
         "credits": 4000,
         "faction": "frontier_guard",
         "reputation": 10
-      }
+      },
+      "speaker": "oyelaran"
     },
     {
       "id": "mutiny",
@@ -221,7 +235,8 @@
         "credits": 5000,
         "faction": "frontier_guard",
         "reputation": 10
-      }
+      },
+      "speaker": "oyelaran"
     },
     {
       "id": "cover",
@@ -235,7 +250,8 @@
         "credits": 3000,
         "faction": "outpost_authority",
         "reputation": 5
-      }
+      },
+      "speaker": "varo"
     },
     {
       "id": "shipment",
@@ -250,7 +266,8 @@
         "credits": 5000,
         "faction": "ferrum_combine",
         "reputation": 5
-      }
+      },
+      "speaker": "varo"
     },
     {
       "id": "betrayal",
@@ -270,7 +287,8 @@
         "credits": 6000,
         "faction": "outpost_authority",
         "reputation": 10
-      }
+      },
+      "speaker": "varo"
     }
   ]
 }

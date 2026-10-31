@@ -20,6 +20,25 @@
       "y": -10000,
       "z": 5000,
       "radius": 2600
+    },
+    "look": {
+      "tint": [
+        0.2,
+        0.03,
+        0.04
+      ],
+      "tintStrength": 0.8,
+      "sun": "#ffb8a0",
+      "sunIntensity": 2.4,
+      "giants": [
+        {
+          "kind": "hulk",
+          "x": -900,
+          "y": -300,
+          "scale": 1,
+          "angle": 1.1
+        }
+      ]
     }
   },
   "stations": [

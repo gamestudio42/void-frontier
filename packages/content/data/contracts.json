@@ -76,5 +76,13 @@
     "seconds": 900,
     "repGain": 4,
     "radius": 300
+  },
+  "boarding": {
+    "range": 90,
+    "maxSpeed": 10,
+    "minCredits": 250,
+    "maxCredits": 800,
+    "minSalvage": 12,
+    "maxSalvage": 30
   }
 }

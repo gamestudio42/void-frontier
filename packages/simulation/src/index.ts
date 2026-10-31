@@ -26,4 +26,5 @@ export { planToPoint, planFromPoint, distance, type Place, type RouteRun } from 
 export * from './fleet.ts';
 export * from './crew.ts';
 export * from './campaign.ts';
+export * from './boarding.ts';
 export { fleetEntities, miningYield, orderProblem, roomFor, siteOf, sitePlace, stowFleet, type OrderResult } from './orders.ts';

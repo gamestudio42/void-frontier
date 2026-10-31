@@ -20,6 +20,25 @@
       "y": -12000,
       "z": -8000,
       "radius": 3400
+    },
+    "look": {
+      "tint": [
+        0.13,
+        0.05,
+        0.26
+      ],
+      "tintStrength": 0.85,
+      "sun": "#d9c8ff",
+      "sunIntensity": 2.6,
+      "giants": [
+        {
+          "kind": "ring",
+          "x": 800,
+          "y": -1500,
+          "scale": 0.8,
+          "angle": 0
+        }
+      ]
     }
   },
   "stations": [
