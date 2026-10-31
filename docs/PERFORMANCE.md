@@ -31,3 +31,7 @@ Same chip, on an otherwise idle machine, at 1920x1080. Twenty ships in a fight b
 | Load to main menu, production build from localhost | 354 to 549 ms | Under 10 s |
 
 Load time excludes the network. The earlier table above was taken with other applications open, which is why high is slower there.
+
+## 0.96 measurement (2026-10-30)
+
+Same chip, 1920x1080, high quality, inside the Graveyard with its giant hulks and other work running: 46 fps at about 107 draw calls. Automatic quality steps down below 45 fps. Dedicated GPUs and other browsers remain unmeasured.

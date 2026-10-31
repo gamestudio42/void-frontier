@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.96.0: look and feel
+
+- Lighter flight HUD with arcs around the ship; press I for every readout.
+- Closer camera, giant structures, and a sky, light and mood for each sector.
+- More detailed hulls, missile smoke, staged explosions, a new jump effect.
+- Station panel beside the ship; portraits on mission briefings.
+- Aim at a system with T, then board disabled pirates with F.
+
 ## 0.95.0: release candidate
 
 - Campaign of 15 missions with a choice that changes the ending.

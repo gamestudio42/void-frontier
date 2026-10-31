@@ -55,6 +55,10 @@
 </p>
 
 <p align="center">
+  <img src="docs/screenshots/ember.jpg" alt="A scout in Ember Reach under an orange star, with shield and hull arcs around the ship and small HUD panels" width="920">
+</p>
+
+<p align="center">
   <img src="docs/screenshots/campaign.jpg" alt="The campaign card over the scout leaving Outpost Alpha: the first mission's briefing and objective" width="920">
 </p>
 
