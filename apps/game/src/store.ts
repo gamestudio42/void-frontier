@@ -83,6 +83,7 @@ export interface CampaignView {
   progress: { current: number; target: number } | null;
   /** A decision step: the options to choose between. */
   options: { id: string; credits: number }[] | null;
+  speaker: string;
 }
 
 export interface ContractView {
@@ -149,6 +150,12 @@ export interface HudState {
   visited: string[];
   mapOpen: boolean;
   fleetOpen: boolean;
+  /** Every readout, or only what a pilot needs at a glance. */
+  hudDetails: boolean;
+  /** A disabled pirate within reach of boarding. */
+  boarding: { distance: number; relativeSpeed: number; ready: boolean } | null;
+  /** The system player fire is aimed at, if any. */
+  aimedSystem: string | null;
   fleet: FleetView | null;
   /** Current story step; null once the story is over. */
   campaign: CampaignView | null;
@@ -214,6 +221,9 @@ export const initialHudState = (): HudState => ({
   visited: ['outpost_alpha'],
   mapOpen: false,
   fleetOpen: false,
+  hudDetails: false,
+  boarding: null,
+  aimedSystem: null,
   fleet: null,
   campaign: null,
   campaignEnding: null,

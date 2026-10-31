@@ -1,7 +1,7 @@
 import { CAMPAIGN, CREW_RULES, OUTPOST_ALPHA, STATION_PLACEMENTS, getFaction, getSector } from '@void-frontier/content';
 import { FIXED_DT, FixedStepper, type Vec2 } from '@void-frontier/kernel';
 import { getUpgrade, getWeapon, weaponGroup } from '@void-frontier/content';
-import { Simulation, WEAPON_RESALE, campaignStep, campaignTarget, fleetEntities, hireFee, isParkedAt, orderProblem, payroll, shipValue, shipyardOffers, type FleetOrder, slotUsage, applySectorSnapshot, captureSector, gateStatus, gravityAt, jump, markDiscovered, nextGate, dockedStationKey, type SectorSnapshot, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, installUpgrades, hostilesNear, nearestObstacle, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
+import { Simulation, WEAPON_RESALE, boardDisabled, boardingStatus, campaignStep, campaignTarget, fleetEntities, hireFee, isParkedAt, orderProblem, payroll, shipValue, shipyardOffers, type FleetOrder, slotUsage, applySectorSnapshot, captureSector, gateStatus, gravityAt, jump, markDiscovered, nextGate, dockedStationKey, type SectorSnapshot, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, installUpgrades, hostilesNear, nearestObstacle, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
 import { SpaceRenderer, type Quality } from '@void-frontier/view3d';
 import { AudioEngine } from './audio.ts';
 import { DEFAULT_BINDINGS, InputController } from './input.ts';
@@ -25,6 +25,7 @@ export class Game {
   private radar: HTMLCanvasElement | null = null;
   private overlay: HTMLCanvasElement | null = null;
   private target: number | null = null;
+  private aimedSystem: 'engines' | 'reactor' | 'shieldGenerator' | 'sensors' | null = null;
   private hitFlash = 0;
   private jettisonArmedAt = -10;
   private gains = new Map<string, { units: number; at: number }>();
@@ -106,6 +107,12 @@ export class Game {
         this.publish();
       },
       toggleMap: () => this.store.update({ mapOpen: !this.store.getSnapshot().mapOpen, fleetOpen: false }),
+      cycleAimedSystem: () => {
+        const order = [null, 'engines', 'reactor', 'shieldGenerator', 'sensors'] as const;
+        this.aimedSystem = order[(order.indexOf(this.aimedSystem) + 1) % order.length];
+        this.publish();
+      },
+      toggleDetails: () => this.store.update({ hudDetails: !this.store.getSnapshot().hudDetails }),
       toggleFleet: () => {
         this.store.update({ fleetOpen: !this.store.getSnapshot().fleetOpen, mapOpen: false });
         this.publish();
@@ -114,7 +121,10 @@ export class Game {
         const ship = this.sim.world.ships.get(this.sim.playerId);
         if (!ship || ship.destroyed) return;
         const gate = gateStatus(this.sim.world, this.sim.playerId);
-        if (ship.docked !== null) this.undock();
+        if (ship.docked === null && boardingStatus(this.sim)?.ready) {
+          const loot = boardDisabled(this.sim);
+          if (loot.ok) this.notices.push({ text: 'boarded', kind: 'completed', reward: loot.credits, at: this.clock, id: -9500 - this.sim.world.tick });
+        } else if (ship.docked !== null) this.undock();
         else if (gate?.ready) this.jumpThrough(gate.id);
         else {
           const result = this.sim.requestDock(this.sim.playerId);
@@ -329,7 +339,7 @@ export class Game {
 
   private createRenderer(): SpaceRenderer {
     const sector = getSector(this.sim.world.sectorId);
-    return new SpaceRenderer(this.canvas, this.sim, sector.environment.nebulaSeed, sector.environment.planet);
+    return new SpaceRenderer(this.canvas, this.sim, sector.environment.nebulaSeed, sector.environment.planet, sector.environment.look);
   }
 
   /** Through the gate: the sector left behind is remembered, the destination restored. */
@@ -396,7 +406,7 @@ export class Game {
     } else {
       this.updateTarget();
       // One command per frame, applied to every fixed step the frame runs.
-      this.sim.setCommand(this.sim.playerId, { ...this.input.command(this.aim), target: this.target });
+      this.sim.setCommand(this.sim.playerId, { ...this.input.command(this.aim), target: this.target, targetSystem: this.target !== null ? this.aimedSystem : null });
       const result = this.stepper.advance(elapsed);
       for (let i = 0; i < result.steps; i++) this.sim.step();
       alpha = result.alpha;
@@ -456,6 +466,9 @@ export class Game {
     const stats = this.renderer.render(this.sim, alpha, frameDt, { aim: this.input.steering ? this.aim : null, frame: frameTarget });
     if (this.radar) drawRadar(this.radar, this.sim, this.clock, this.target);
     this.hitFlash = Math.max(0, this.hitFlash - elapsed * 6);
+    // Docked, the scene slides aside so the ship stays visible next to the station panel.
+    const docked = this.sim.world.ships.get(this.sim.playerId)?.docked !== null && snapshot.menu === null;
+    this.renderer.setSceneShift(docked && window.innerWidth >= 1100 ? 0.22 : 0);
     if (this.overlay) drawTargeting(this.overlay, this.sim, this.renderer, this.target, this.hitFlash, this.input.pointer, this.waypoints(), this.markers());
 
     this.fpsFrames++;
@@ -662,7 +675,7 @@ export class Game {
     const route = CAMPAIGN.steps.filter((s) => !s.when || !campaign.branch || s.when === campaign.branch);
     const shared = CAMPAIGN.steps.filter((s) => !s.when).length;
     const total = campaign.branch ? route.length : shared + CAMPAIGN.steps.filter((s) => s.when === CAMPAIGN.steps.find((x) => x.when)?.when).length;
-    return { step: step.id, index: route.indexOf(step), total, progress, options };
+    return { step: step.id, index: route.indexOf(step), total, progress, options, speaker: step.speaker };
   }
 
   private fleetView() {
@@ -788,6 +801,8 @@ export class Game {
       events: (this.sim.economy?.events ?? []).map((e) => ({ id: e.id, secondsLeft: Math.max(0, (e.endsTick - this.sim.world.tick) / 60) })),
       fleet: this.fleetView(),
       campaign: this.campaignView(),
+      boarding: boardingStatus(this.sim),
+      aimedSystem: this.aimedSystem,
       campaignSector: campaignTarget(this.sim)?.sector ?? null,
       visited: [...new Set([...Object.keys(this.memory), this.sim.world.sectorId])],
       dockRefused: this.dockRefused && this.clock - this.dockRefused.at < 3 ? this.dockRefused.refusals : null,

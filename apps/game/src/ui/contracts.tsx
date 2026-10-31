@@ -3,6 +3,7 @@ import type { MessageKey, Translate } from '../i18n.ts';
 import type { ActiveContractView, CampaignView, ContractView, ContractsView } from '../store.ts';
 import { formatNumber } from './format.ts';
 import { fleetNotice } from './Fleet.tsx';
+import { Portrait } from './Portrait.tsx';
 
 export interface ContractActions {
   acceptContract(id: number): void;
@@ -145,7 +146,15 @@ export function CampaignCard({ campaign, onChoose, t, locale }: { campaign: Camp
         {t('campaign.title')} · {campaign.index + 1}/{campaign.total}
       </span>
       <strong>{t(`campaign.${campaign.step}.title` as MessageKey)}</strong>
-      {open && <p>{t(`campaign.${campaign.step}.brief` as MessageKey)}</p>}
+      {open && (
+        <div className="briefing">
+          <figure>
+            <Portrait speaker={campaign.speaker} />
+            <figcaption>{t(`speaker.${campaign.speaker}` as MessageKey)}</figcaption>
+          </figure>
+          <p>{t(`campaign.${campaign.step}.brief` as MessageKey)}</p>
+        </div>
+      )}
       <span className="meta">
         {t(`campaign.${campaign.step}.objective` as MessageKey)}
         {campaign.progress && ` · ${campaign.progress.current}/${campaign.progress.target}`}
@@ -170,6 +179,11 @@ export function Notices({ notices, t, locale }: { notices: { id: number; kind: s
         <div key={`${n.id}-${n.outcome}`} className={`notice ${n.outcome}`} data-testid="notice">
           {n.kind === 'tutorial' ? (
             <strong>{t('tutorial.done')}</strong>
+          ) : n.kind === 'boarded' ? (
+            <>
+              <strong>{t('board.done')}</strong>
+              {n.reward > 0 && <span> +{formatNumber(locale, n.reward)} cr</span>}
+            </>
           ) : n.kind.startsWith('rule:') ? (
             <strong>{t(`sector.rule.${n.kind.slice(5)}` as MessageKey)}</strong>
           ) : n.kind.startsWith('campaign:') ? (

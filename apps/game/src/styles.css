@@ -2104,3 +2104,98 @@ button {
 .key-bindings button {
   min-width: 90px;
 }
+
+/* Look and feel: a lighter flight HUD, the station beside the ship ----------- */
+
+.hud.compact .detail {
+  display: none;
+}
+
+.hud.compact .compass {
+  width: 88px;
+  height: 88px;
+}
+
+.hud.compact .ship {
+  width: 212px;
+  gap: 3px;
+  padding: 8px 10px;
+  font-size: 11px;
+}
+
+.hud.compact .nav {
+  padding: 8px 10px;
+}
+
+.hud.compact .readouts {
+  grid-template-columns: 1fr;
+}
+
+.hud.compact .target {
+  width: 190px;
+  padding: 8px 10px;
+  font-size: 11px;
+}
+
+.aimed {
+  color: var(--amber);
+  font-size: 11px;
+}
+
+.station-backdrop {
+  background: linear-gradient(90deg, rgba(5, 7, 11, 0.82) 0%, rgba(5, 7, 11, 0.55) 55%, rgba(5, 7, 11, 0) 78%);
+}
+
+@media (min-width: 1100px) {
+  .station-backdrop {
+    place-items: center start;
+  }
+
+  .station {
+    width: min(760px, 58vw);
+  }
+
+}
+
+.briefing {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.briefing figure {
+  margin: 0;
+  flex: 0 0 56px;
+  font-size: 9px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.portrait {
+  display: block;
+  width: 56px;
+  height: 56px;
+  border: 1px solid var(--panel-edge);
+  border-radius: 4px;
+}
+
+.jump-flash {
+  background:
+    repeating-conic-gradient(from 0deg at 50% 50%, rgba(200, 235, 255, 0) 0deg 2.5deg, rgba(200, 235, 255, 0.5) 2.8deg, rgba(200, 235, 255, 0) 3.1deg 6deg),
+    radial-gradient(circle at center, rgba(5, 7, 11, 0) 14%, rgba(80, 160, 255, 0.55) 45%, rgba(5, 7, 11, 0.9));
+}
+
+.hud.compact .weapon > span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 136px;
+}
+
+.hud.compact .target .row span {
+  white-space: nowrap;
+}
+
+.hud.compact .target {
+  width: 214px;
+}

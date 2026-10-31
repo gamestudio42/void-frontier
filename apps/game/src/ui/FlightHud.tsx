@@ -57,7 +57,12 @@ function TargetPanel({ hud, t, locale }: FlightHudProps) {
       </div>
       <Bar value={target.shield} max={target.shieldMax} className="shield" />
       <Bar value={target.hull} max={target.hullMax} className="hull" />
-      <ShipSchematic systems={target.subsystems} t={t} compact />
+      {hud.aimedSystem && (
+        <div className="aimed" data-testid="aimed-system">
+          {t('hud.aiming')}: <strong>{t(`system.${hud.aimedSystem}` as MessageKey)}</strong>
+        </div>
+      )}
+      {(hud.aimedSystem || hud.hudDetails) && <ShipSchematic systems={target.subsystems} t={t} compact />}
     </section>
   );
 }
@@ -72,7 +77,7 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
   const modeKey: MessageKey = tel.mode === 'assisted' ? 'hud.mode.assisted' : 'hud.mode.newtonian';
 
   return (
-    <div className="hud">
+    <div className={hud.hudDetails ? 'hud' : 'hud compact'}>
       <header className="hud-top">
         <div className="brand">
           <strong>{t('app.title')}</strong>
@@ -111,19 +116,19 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
             <strong>{formatNumber(locale, tel.speed, 1)}</strong>
             <span className="unit">{t('unit.speed')}</span>
           </div>
-          <div className="readout heading" data-testid="heading" data-value={tel.heading.toFixed(3)}>
+          <div className="readout heading detail" data-testid="heading" data-value={tel.heading.toFixed(3)}>
             <span className="label">{t('hud.heading')}</span>
             <strong>{formatBearing(tel.heading)}</strong>
           </div>
-          <div className="readout course">
+          <div className="readout course detail">
             <span className="label">{t('hud.course')}</span>
             <strong>{tel.course === null ? '—' : formatBearing(tel.course)}</strong>
           </div>
-          <div className="readout">
+          <div className="readout detail">
             <span className="label">{t('hud.drift')}</span>
             <strong>{tel.drift === null ? '—' : `${Math.round(tel.drift) > 0 ? '+' : ''}${formatNumber(locale, tel.drift)}°`}</strong>
           </div>
-          <div className="readout">
+          <div className="readout detail">
             <span className="label">{t('hud.turnRate')}</span>
             <strong>{formatNumber(locale, tel.turnRate)}</strong>
             <span className="unit">{t('unit.turn')}</span>
@@ -136,7 +141,9 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
       </section>
 
       <section className="panel ship">
-        <ShipSchematic systems={tel.subsystems} mounts={tel.mounts} t={t} />
+        <div className="detail">
+          <ShipSchematic systems={tel.subsystems} mounts={tel.mounts} t={t} />
+        </div>
         <div className="row">
           <span className="label">{t('hud.hull')}</span>
           <strong data-testid="hull" data-value={tel.hull.toFixed(2)}>{formatNumber(locale, (tel.hull / tel.hullMax) * 100)}%</strong>
@@ -157,7 +164,7 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
           <strong data-testid="fuel" data-value={tel.fuel.toFixed(3)}>{formatNumber(locale, fuelRatio * 100)}%</strong>
         </div>
         <Bar value={tel.fuel} max={tel.fuelCapacity} className={fuelRatio < 0.2 ? 'low' : ''} />
-        <div className="row">
+        <div className="row detail">
           <span className="label">{t('hud.mass')}</span>
           <strong data-testid="mass" data-value={tel.mass.toFixed(1)}>
             {formatNumber(locale, tel.mass / 1000, 2)} {t('unit.mass')}
@@ -171,7 +178,7 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
         </div>
         <Bar value={tel.holdMass} max={tel.holdMaxMass} className="hold" />
         {tel.hold.map((item) => (
-          <div key={item.resource} className="row dim hold-item">
+          <div key={item.resource} className="row dim hold-item detail">
             <span>
               <i className="swatch" style={{ background: RESOURCE_COLORS[item.resource] }} /> {t(`resource.${item.resource}` as MessageKey)}
             </span>
@@ -180,7 +187,7 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
             </strong>
           </div>
         ))}
-        <div className="row">
+        <div className="row detail">
           <span className="label">{t('hud.accel')}</span>
           <strong>{formatNumber(locale, tel.mainAcceleration, 1)} {t('unit.accel')}</strong>
         </div>
@@ -224,6 +231,15 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
           {t('hud.gravity')}: <strong>{formatNumber(locale, hud.gravity, 1)} {t('unit.accel')}</strong>
         </div>
       )}
+      {hud.boarding && !hud.docking && (
+        <section className={`panel gate-panel ${hud.boarding.ready ? 'ready' : ''}`} data-testid="boarding">
+          <span className="label">{t('board.title')}</span>
+          <span>
+            {formatDistance(locale, hud.boarding.distance)} · {formatNumber(locale, hud.boarding.relativeSpeed)} {t('unit.speed')}
+          </span>
+          <em>{hud.boarding.ready ? t('board.ready') : t('board.hint')}</em>
+        </section>
+      )}
       {hud.docking && <DockingPanel docking={hud.docking} refused={hud.dockRefused} t={t} locale={locale} />}
 
       <section className="mining-status">
@@ -249,6 +265,9 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
       <footer className="hud-bottom">
         <span>{hud.steering ? t('hud.steering.on') : t('hud.steering.off')} <kbd>V</kbd></span>
         <span>{t('hud.helpHint')}</span>
+        <span>
+          <kbd>I</kbd> {t('hud.detailsHint')}
+        </span>
       </footer>
     </div>
   );
