@@ -16,7 +16,8 @@
     "multipliers": {
       "shield": 0.6,
       "hull": 1.2
-    }
+    },
+    "price": 1500
   },
   {
     "id": "pirate_autocannon",
@@ -35,7 +36,8 @@
     "multipliers": {
       "shield": 0.6,
       "hull": 1.2
-    }
+    },
+    "price": 0
   },
   {
     "id": "laser_mk1",
@@ -50,7 +52,8 @@
     "multipliers": {
       "shield": 1.4,
       "hull": 0.7
-    }
+    },
+    "price": 2000
   },
   {
     "id": "mining_laser_mk1",
@@ -67,7 +70,8 @@
     "multipliers": {
       "shield": 0.5,
       "hull": 0.5
-    }
+    },
+    "price": 1000
   },
   {
     "id": "mining_laser_mk2",
@@ -84,6 +88,85 @@
     "multipliers": {
       "shield": 0.5,
       "hull": 0.5
-    }
+    },
+    "price": 5000
+  },
+  {
+    "id": "gatling_mk1",
+    "kind": "projectile",
+    "velocityInheritance": 1,
+    "maxHeat": 100,
+    "damage": 5,
+    "fireRate": 18,
+    "projectileSpeed": 480,
+    "projectileLifetime": 1.4,
+    "spread": 0.03,
+    "gimbal": 8,
+    "heatPerShot": 3.2,
+    "coolingRate": 30,
+    "energyPerShot": 0,
+    "multipliers": {
+      "shield": 0.5,
+      "hull": 1.3
+    },
+    "price": 2400
+  },
+  {
+    "id": "railgun_mk1",
+    "kind": "projectile",
+    "velocityInheritance": 1,
+    "maxHeat": 100,
+    "damage": 70,
+    "fireRate": 0.9,
+    "projectileSpeed": 1100,
+    "projectileLifetime": 2.2,
+    "spread": 0.001,
+    "gimbal": 2,
+    "heatPerShot": 30,
+    "coolingRate": 14,
+    "energyPerShot": 18,
+    "multipliers": {
+      "shield": 1,
+      "hull": 1.3
+    },
+    "price": 5200
+  },
+  {
+    "id": "missile_rack",
+    "kind": "missile",
+    "maxHeat": 100,
+    "gimbal": 30,
+    "damage": 120,
+    "fireRate": 0.6,
+    "speed": 190,
+    "lifetime": 7,
+    "turnRate": 2.2,
+    "heatPerShot": 20,
+    "coolingRate": 10,
+    "energyPerShot": 12,
+    "multipliers": {
+      "shield": 0.8,
+      "hull": 1.5
+    },
+    "price": 4200
+  },
+  {
+    "id": "pirate_missile",
+    "kind": "missile",
+    "maxHeat": 100,
+    "gimbal": 30,
+    "damage": 70,
+    "fireRate": 0.25,
+    "speed": 170,
+    "lifetime": 7,
+    "turnRate": 1.6,
+    "heatPerShot": 20,
+    "coolingRate": 10,
+    "energyPerShot": 5,
+    "multipliers": {
+      "shield": 0.8,
+      "hull": 1.5
+    },
+    "price": 0
   }
 ]

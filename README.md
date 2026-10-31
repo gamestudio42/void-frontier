@@ -114,7 +114,7 @@ New players get a guided first flight that teaches each of these by doing it. Pr
 
 ## Status
 
-**0.7: a story to follow.** The Bastion Signal is a six-mission campaign from a distress call near the Outpost to the warlord's flagship, with a new military station, Bastion Watch, in the Anomaly Zone. This builds on 0.6 (pilots and fleet orders), 0.5 (owning several ships), 0.4 (living economy), 0.3 (subsystems, factions, outfitting), 0.2 (four sectors and gates) and the 0.1 vertical slice. See the [roadmap](docs/ROADMAP.md).
+**0.95: release candidate.** A 15-mission campaign with a choice that changes the ending, six sectors, refittable weapons including homing missiles, and a fleet that works for you. What separates it from 1.0 is testing with real players. See the [roadmap](docs/ROADMAP.md).
 
 ## Develop
 

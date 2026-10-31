@@ -3,7 +3,7 @@ import { holdSpaceFor } from './ship.ts';
 import type { EntityId } from './types.ts';
 import type { World } from './world.ts';
 
-export type ContractKind = 'delivery' | 'mining' | 'bounty' | 'escort';
+export type ContractKind = 'delivery' | 'mining' | 'bounty' | 'escort' | 'salvage' | 'patrol' | 'recon';
 
 export interface DropPoint {
   id: string;
@@ -40,6 +40,10 @@ export interface Contract {
   bounty?: { count: number; killsAtStart: number };
   /** Fly alongside a hauler on route `route` until it docks at `to`. */
   escort?: { route: string; to: string };
+  /** Fly past these relay beacons in order; `next` is the one to reach now. */
+  patrol?: { stops: string[]; next: number };
+  /** Pulse the scanner close to this relay beacon. */
+  recon?: { drop: string };
 }
 
 export type ContractOutcome = 'completed' | 'failed' | 'abandoned';
@@ -109,6 +113,8 @@ function travel(from: ContractStation, sector: string, position: { x: number; y:
   return hops * 3500;
 }
 
+const separation = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
+
 const standing = (board: MissionBoard, faction: string): number => board.reputation[faction] ?? 0;
 
 function rewardScale(board: MissionBoard, faction: string): number {
@@ -137,7 +143,29 @@ export function generateOffer(world: World, board: MissionBoard, issuer: Contrac
   const roll = world.rng.next();
   const base = { id: board.nextId++, issuer: issuer.key, faction: issuer.faction, elite, deadlineTick: 0 };
 
-  if (roll < 0.45) {
+  if (roll >= 0.72) {
+    // The newer kinds take the last part of the roll; salvage reads as a mining order for scrap.
+    if (roll < 0.82) {
+      const r = rules.salvage;
+      const units = Math.round(int(world, r.minUnits, r.maxUnits) * unitsScale);
+      const reward = Math.round(units * getResource('salvage').basePrice * r.priceMultiplier * rewardMultiplier);
+      return { ...base, kind: 'salvage', reward, repGain: r.repGain, duration: r.seconds, mining: { resource: 'salvage', units } };
+    }
+    const nearby = board.drops.filter((d) => sectorHops(issuer.sector, d.sector) <= 2);
+    if (roll < 0.91) {
+      const r = rules.patrol;
+      const count = Math.min(nearby.length, int(world, r.minStops, r.maxStops));
+      const stops: string[] = [];
+      const pool = [...nearby];
+      while (stops.length < count) stops.push(pool.splice(Math.floor(world.rng.next() * pool.length), 1)[0].id);
+      return { ...base, kind: 'patrol', reward: Math.round(count * r.rewardPerStop * rewardMultiplier), repGain: r.repGain, duration: r.seconds, patrol: { stops, next: 0 } };
+    }
+    const r = rules.recon;
+    const drop = nearby[Math.floor(world.rng.next() * nearby.length)];
+    const reward = Math.round((r.baseReward + sectorHops(issuer.sector, drop.sector) * r.rewardPerHop) * rewardMultiplier);
+    return { ...base, kind: 'recon', reward, repGain: r.repGain, duration: r.seconds, recon: { drop: drop.id } };
+  }
+  if (roll < 0.36) {
     const r = rules.delivery;
     const units = Math.round(int(world, r.minUnits, r.maxUnits) * unitsScale);
     const otherStations = board.stations.filter((s) => s.key !== issuer.key);
@@ -157,7 +185,7 @@ export function generateOffer(world: World, board: MissionBoard, issuer: Contrac
     const delivery = { units, sector: target.sector, ...(target.drop ? { drop: target.drop } : { station: target.station }) };
     return { ...base, kind: 'delivery', reward, repGain: r.repGain, duration, delivery };
   }
-  if (roll < 0.75) {
+  if (roll < 0.56) {
     const r = rules.mining;
     const resource = pickWeighted(world, r.resources);
     const units = Math.round(int(world, r.minUnits, r.maxUnits) * unitsScale);
@@ -244,7 +272,8 @@ export function contractProgress(world: World, board: MissionBoard, shipId: Enti
   const ship = world.ships.get(shipId);
   if (contract.mining) return { current: Math.min(contract.mining.units, ship?.cargo.get(contract.mining.resource) ?? 0), target: contract.mining.units };
   if (contract.bounty) return { current: Math.min(contract.bounty.count, (ship?.kills ?? 0) - contract.bounty.killsAtStart), target: contract.bounty.count };
-  if (contract.escort) return { current: 0, target: 1 };
+  if (contract.escort || contract.recon) return { current: 0, target: 1 };
+  if (contract.patrol) return { current: contract.patrol.next, target: contract.patrol.stops.length };
   const cargo = board.rules.delivery.cargo;
   return { current: Math.min(contract.delivery!.units, ship?.cargo.get(cargo) ?? 0), target: contract.delivery!.units };
 }
@@ -257,7 +286,7 @@ export function handInContract(world: World, board: MissionBoard, shipId: Entity
   if (!ship || dockedStationKey(world, shipId) === null) return { ok: false, reason: 'notDocked' };
   const contract = board.active.find((c) => c.id === contractId);
   if (!contract) return { ok: false, reason: 'unknown' };
-  if (contract.delivery || contract.escort) return { ok: false, reason: 'deliverInPerson' };
+  if (contract.delivery || contract.escort || contract.patrol || contract.recon) return { ok: false, reason: 'deliverInPerson' };
   const progress = contractProgress(world, board, shipId, contract);
   if (progress.current < progress.target) return { ok: false, reason: 'incomplete' };
   if (contract.mining) {
@@ -295,6 +324,18 @@ export function missionSystem(world: World, board: MissionBoard, shipId: EntityI
   for (const contract of [...board.active]) {
     if (world.tick >= contract.deadlineTick) {
       close(world, board, contract, 'failed');
+      continue;
+    }
+    if (contract.patrol && ship && body && !ship.destroyed) {
+      const stop = board.drops.find((p) => p.id === contract.patrol!.stops[contract.patrol!.next])!;
+      const near = stop.sector === world.sectorId && separation(stop.position, body.position) <= board.rules.patrol.radius;
+      if (near && ++contract.patrol.next >= contract.patrol.stops.length) close(world, board, contract, 'completed');
+      continue;
+    }
+    if (contract.recon && ship && body && !ship.destroyed) {
+      const site = board.drops.find((p) => p.id === contract.recon!.drop)!;
+      const pulsed = world.events.some((e) => e.type === 'scan' && e.owner === shipId);
+      if (pulsed && site.sector === world.sectorId && separation(site.position, body.position) <= board.rules.recon.radius) close(world, board, contract, 'completed');
       continue;
     }
     const d = contract.delivery;

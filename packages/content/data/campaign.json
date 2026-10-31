@@ -66,10 +66,80 @@
       }
     },
     {
+      "id": "graveyard",
+      "objective": {
+        "kind": "discover",
+        "poi": "graveyard_beacon",
+        "sector": "graveyard"
+      },
+      "reward": {
+        "credits": 1600,
+        "faction": "frontier_guard",
+        "reputation": 5
+      }
+    },
+    {
+      "id": "logs",
+      "objective": {
+        "kind": "deliver",
+        "resource": "salvage",
+        "units": 25,
+        "station": "bastion_watch"
+      },
+      "reward": {
+        "credits": 2200,
+        "faction": "frontier_guard",
+        "reputation": 5
+      }
+    },
+    {
+      "id": "forge",
+      "objective": {
+        "kind": "discover",
+        "poi": "ember_forge",
+        "sector": "ember_reach"
+      },
+      "reward": {
+        "credits": 2400,
+        "faction": "frontier_guard",
+        "reputation": 5
+      }
+    },
+    {
+      "id": "supply",
+      "objective": {
+        "kind": "deliver",
+        "resource": "titanium_ore",
+        "units": 30,
+        "station": "ferrum_refinery"
+      },
+      "reward": {
+        "credits": 2600,
+        "faction": "ferrum_combine",
+        "reputation": 10
+      }
+    },
+    {
+      "id": "patrols",
+      "objective": {
+        "kind": "kill",
+        "count": 4
+      },
+      "reward": {
+        "credits": 2400,
+        "faction": "frontier_guard",
+        "reputation": 5
+      }
+    },
+    {
       "id": "flagship",
       "objective": {
         "kind": "boss",
         "ship": "dreadmaw",
+        "escort": {
+          "ship": "jackal",
+          "count": 1
+        },
         "sector": "pirate_territory",
         "x": 0,
         "y": 1000
@@ -78,6 +148,128 @@
         "credits": 6000,
         "faction": "frontier_guard",
         "reputation": 15
+      }
+    },
+    {
+      "id": "verdict",
+      "objective": {
+        "kind": "choice",
+        "options": [
+          {
+            "id": "justice",
+            "credits": 4000,
+            "faction": "frontier_guard",
+            "reputation": 15
+          },
+          {
+            "id": "deal",
+            "credits": 12000,
+            "faction": "frontier_guard",
+            "reputation": -20
+          }
+        ]
+      },
+      "reward": {
+        "credits": 0,
+        "faction": "frontier_guard",
+        "reputation": 0
+      }
+    },
+    {
+      "id": "remnants",
+      "when": "justice",
+      "objective": {
+        "kind": "kill",
+        "count": 5
+      },
+      "reward": {
+        "credits": 3000,
+        "faction": "frontier_guard",
+        "reputation": 5
+      }
+    },
+    {
+      "id": "rebuild",
+      "when": "justice",
+      "objective": {
+        "kind": "deliver",
+        "resource": "machine_parts",
+        "units": 40,
+        "station": "bastion_watch"
+      },
+      "reward": {
+        "credits": 4000,
+        "faction": "frontier_guard",
+        "reputation": 10
+      }
+    },
+    {
+      "id": "mutiny",
+      "when": "justice",
+      "objective": {
+        "kind": "boss",
+        "ship": "marauder",
+        "escort": {
+          "ship": "jackal",
+          "count": 2
+        },
+        "sector": "ember_reach",
+        "x": -600,
+        "y": 600
+      },
+      "reward": {
+        "credits": 5000,
+        "faction": "frontier_guard",
+        "reputation": 10
+      }
+    },
+    {
+      "id": "cover",
+      "when": "deal",
+      "objective": {
+        "kind": "discover",
+        "poi": "smugglers_cache",
+        "sector": "pirate_territory"
+      },
+      "reward": {
+        "credits": 3000,
+        "faction": "outpost_authority",
+        "reputation": 5
+      }
+    },
+    {
+      "id": "shipment",
+      "when": "deal",
+      "objective": {
+        "kind": "deliver",
+        "resource": "exotic_matter",
+        "units": 10,
+        "station": "ferrum_refinery"
+      },
+      "reward": {
+        "credits": 5000,
+        "faction": "ferrum_combine",
+        "reputation": 5
+      }
+    },
+    {
+      "id": "betrayal",
+      "when": "deal",
+      "objective": {
+        "kind": "boss",
+        "ship": "marauder",
+        "escort": {
+          "ship": "jackal",
+          "count": 2
+        },
+        "sector": "graveyard",
+        "x": 400,
+        "y": 200
+      },
+      "reward": {
+        "credits": 6000,
+        "faction": "outpost_authority",
+        "reputation": 10
       }
     }
   ]

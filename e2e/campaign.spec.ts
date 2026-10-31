@@ -27,7 +27,7 @@ test('closes the story with an ending card when the last mission is done', async
   await page.getByTestId('undock').click();
   await page.evaluate(() => {
     const game = (window as unknown as { voidFrontier: { sim: { campaign: { step: number }; world: { events: unknown[] } }; store: { update(p: object): void } } }).voidFrontier;
-    game.sim.campaign.step = 6;
+    game.sim.campaign.step = 18;
     game.sim.world.events.push({ type: 'campaign', step: 'flagship', credits: 6000, finished: true });
   });
   await expect(page.getByTestId('campaign-ending')).toBeVisible({ timeout: 30_000 });

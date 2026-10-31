@@ -1,4 +1,4 @@
-import { getSector } from '@void-frontier/content';
+import { CAMPAIGN, getSector } from '@void-frontier/content';
 import { createEconomy, detachTraders, reconcileEconomy, type Economy } from './economy.ts';
 import { createCampaign, type Campaign } from './campaign.ts';
 import { createFleet, type Fleet } from './fleet.ts';
@@ -8,7 +8,7 @@ import { applyPlayer, applySectorSnapshot, captureSector, capturePlayer, markDis
 import { Simulation } from './simulation.ts';
 
 /** Bump when the save shape changes, and add a migration below. */
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 
 /** The parts of the contract board that change; drops and stations come from content. */
 export type SavedBoard = Pick<MissionBoard, 'offers' | 'active' | 'history' | 'reputation' | 'nextId' | 'refreshTick'>;
@@ -61,7 +61,7 @@ export function serialize(state: GameState): SaveData {
       return copy;
     })() : null,
     fleet: savedFleet(sim),
-    campaign: sim.campaign ? { ...sim.campaign } : null,
+    campaign: sim.campaign ? structuredClone(sim.campaign) : null,
   };
 }
 
@@ -105,7 +105,7 @@ export function restore(data: SaveData): GameState {
   const sim = Simulation.fromSector(sector, undefined, {
     board,
     economy,
-    campaign: data.campaign ? { ...data.campaign } : createCampaign(),
+    campaign: data.campaign ? structuredClone(data.campaign) : createCampaign(),
     fleet: data.fleet ? structuredClone(data.fleet) : createFleet(),
     playerShip: data.player.ship,
     startDocked: false,
@@ -146,6 +146,19 @@ const MIGRATIONS: Record<number, (data: Record<string, unknown>) => Record<strin
         log: [],
       },
     };
+  },
+  // 7 → 8: the story grew, so its position is found again by step id; two sectors joined
+  // the map through new gates, so the sectors that gained a gate regenerate their rocks.
+  7: (v7) => {
+    const sectors = { ...(v7.sectors as Record<string, unknown>) };
+    delete sectors.anomaly_zone;
+    delete sectors.pirate_territory;
+    const old = v7.campaign as { step: number; progress: number; killsSeen: number; shipSeen: number } | null;
+    if (!old) return { ...v7, sectors };
+    const ids = ['distress', 'raiders', 'parts', 'signal', 'trail', 'flagship'];
+    // Finished stories stay finished; a game past the old flagship has no steps left to play.
+    const step = old.step >= ids.length ? CAMPAIGN.steps.length : CAMPAIGN.steps.findIndex((s) => s.id === ids[old.step]);
+    return { ...v7, sectors, campaign: { ...old, step, branch: null, stats: { deaths: 0, startTick: 0, steps: [] } } };
   },
   // 6 → 7: the story begins; the Anomaly Zone gained a station, so its rocks are regenerated around it.
   6: (v6) => {

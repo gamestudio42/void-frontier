@@ -20,6 +20,7 @@ import {
 const MAX_ROUNDS = 600;
 const PLAYER_TRACER = new Color(2.2, 1.5, 0.55);
 const PIRATE_TRACER = new Color(2.4, 0.45, 0.25);
+const MISSILE_GLOW = new Color(3, 1.6, 0.5);
 
 /** Autocannon rounds as glowing streaks, one instanced draw call for all of them. */
 export class TracerRenderer {
@@ -53,12 +54,13 @@ export class TracerRenderer {
       this.position.set(round.position.x - round.velocity.x * back, 1, -(round.position.y - round.velocity.y * back));
       this.dir.set(round.velocity.x / speed, 0, -round.velocity.y / speed);
       this.rotation.setFromUnitVectors(this.axis, this.dir);
-      const length = Math.min(14, speed * 0.022);
-      this.scale.set(length, 1, 1);
+      // Missiles read as short, fat, hot streaks among the tracers.
+      const length = round.homing ? 9 : Math.min(14, speed * 0.022);
+      this.scale.set(length, round.homing ? 3 : 1, 1);
       this.position.addScaledVector(this.dir, -length / 2);
       this.matrix.compose(this.position, this.rotation, this.scale);
       this.mesh.setMatrixAt(i, this.matrix);
-      this.mesh.setColorAt(i, round.owner === playerId ? PLAYER_TRACER : PIRATE_TRACER);
+      this.mesh.setColorAt(i, round.homing ? MISSILE_GLOW : round.owner === playerId ? PLAYER_TRACER : PIRATE_TRACER);
       i++;
     }
     this.mesh.count = i;

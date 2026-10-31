@@ -5,13 +5,13 @@ import { aiSystem, encounterSystem, spawnEncounter } from './ai.ts';
 import { projectileSystem, weaponSystem } from './combat.ts';
 import { jettison, pickupSystem, scan, scanExpirySystem } from './mining.ts';
 import { createEconomy, detachTraders, economySystem, setContractCloser, type Economy } from './economy.ts';
-import { campaignSystem, createCampaign, type Campaign } from './campaign.ts';
+import { campaignSystem, chooseCampaign, createCampaign, type Campaign } from './campaign.ts';
 import { assignPilot, crewOffers, crewSystem, dismissPilot, hirePilot } from './crew.ts';
 import { boardShip, buyShip, createFleet, sellShip, type Fleet, type FleetOrder } from './fleet.ts';
 import { fleetSystem, launchWingmen, setOrder } from './orders.ts';
 import { gravitySystem, explorationSystem } from './exploration.ts';
 import { abandonContract, acceptContract, closeContractById, createBoard, dockedStationKey, fillOffers, handInContract, missionSystem, type MissionBoard } from './missions.ts';
-import { buyUpgrade, sellUpgrade, dockShip, marketSystem, requestDock, service, trade, undock } from './station.ts';
+import { buyUpgrade, buyWeapon, sellUpgrade, dockShip, marketSystem, requestDock, service, trade, undock } from './station.ts';
 import { collisionSystem } from './systems/collision.ts';
 import { subsystemSystem } from './subsystems.ts';
 import { flightControlSystem } from './systems/flightControl.ts';
@@ -58,6 +58,7 @@ export class Simulation {
   ): Simulation {
     const sim = new Simulation(dt);
     sim.world.sectorId = sector.id;
+    sim.world.rules = { shieldFactor: sector.rules?.shieldFactor ?? 1, coolingFactor: sector.rules?.coolingFactor ?? 1 };
     const rng = new Rng(sector.seed);
     const occupied = sector.clearZones.map((zone) => ({ ...zone }));
     for (const gate of sector.gates) {
@@ -234,6 +235,14 @@ export class Simulation {
 
   dismissPilot(pilotId: number) {
     return dismissPilot(this, pilotId);
+  }
+
+  buyWeapon(index: number, weapon: string) {
+    return buyWeapon(this.world, this.playerId, index, weapon);
+  }
+
+  chooseCampaign(option: string) {
+    return chooseCampaign(this, option);
   }
 
   setOrder(ownedId: number, order: FleetOrder | null) {

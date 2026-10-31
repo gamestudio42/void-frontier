@@ -39,6 +39,8 @@ export interface StationView {
   hangar: { id: number; ship: string; station: string; here: boolean; value: number; upgrades: number; cargo: number }[];
   /** Hull being flown. */
   flying: string;
+  /** Each weapon mount, with what this station can fit there. */
+  mounts: { index: number; weapon: string; group: 'primary' | 'secondary' | 'mining'; offers: { weapon: string; cost: number }[] }[];
 }
 
 export interface FleetShipView {
@@ -79,11 +81,13 @@ export interface CampaignView {
   total: number;
   /** Progress toward a counted objective, or null when it is all or nothing. */
   progress: { current: number; target: number } | null;
+  /** A decision step: the options to choose between. */
+  options: { id: string; credits: number }[] | null;
 }
 
 export interface ContractView {
   id: number;
-  kind: 'delivery' | 'mining' | 'bounty' | 'escort';
+  kind: 'delivery' | 'mining' | 'bounty' | 'escort' | 'salvage' | 'patrol' | 'recon';
   elite: boolean;
   reward: number;
   seconds: number;
@@ -149,7 +153,7 @@ export interface HudState {
   /** Current story step; null once the story is over. */
   campaign: CampaignView | null;
   /** The story just ended: show its closing card. */
-  campaignEnding: boolean;
+  campaignEnding: { branch: string | null; minutes: number; deaths: number } | null;
   /** Sector the current story step leads to, if any. */
   campaignSector: string | null;
   /** Latest economy news, newest first. */
@@ -212,7 +216,7 @@ export const initialHudState = (): HudState => ({
   fleetOpen: false,
   fleet: null,
   campaign: null,
-  campaignEnding: false,
+  campaignEnding: null,
   campaignSector: null,
   news: [],
   events: [],

@@ -1,4 +1,4 @@
-import { getFaction, getResource, getUpgrade, type ShipDefinition } from '@void-frontier/content';
+import { getFaction, getResource, getUpgrade, getWeapon, weaponGroup, type ShipDefinition } from '@void-frontier/content';
 import { PI, atan2, cos, length, sin, toDegrees, wrapAngle, type Vec2 } from '@void-frontier/kernel';
 import { hostilesNear } from './combat.ts';
 import { holdSpaceFor, shipCollider } from './ship.ts';
@@ -265,20 +265,26 @@ export function applyUpgrades(base: ShipDefinition, upgrades: string[]): ShipDef
     if (e.scanRangeBonus) def.sensors.scanRange += e.scanRangeBonus;
     if (e.sensorRangeBonus) def.sensors.range += e.sensorRangeBonus;
     if (e.tractorMultiplier) def.tractor.range *= e.tractorMultiplier;
+    if (e.salvageBonus) def.salvageYield += e.salvageBonus;
+    if (e.fuelEfficiency) def.fuel.consumptionPerMegaNewtonSecond *= e.fuelEfficiency;
   }
   return def;
 }
 
 /** Module effects that are not ship stats: gun gimbal and in-flight repair. */
-export function moduleModifiers(upgrades: string[]): { gimbal: number; repairRate: number } {
+export function moduleModifiers(upgrades: string[]): { gimbal: number; repairRate: number; cooling: number; missileEvasion: number } {
   let gimbal = 0;
   let repairRate = 0;
+  let cooling = 1;
+  let missileEvasion = 0;
   for (const id of upgrades) {
     const e = getUpgrade(id).effects;
     gimbal += e.gimbalBonus ?? 0;
     repairRate += e.repairRate ?? 0;
+    cooling *= e.coolingMultiplier ?? 1;
+    missileEvasion = Math.max(missileEvasion, e.missileEvasion ?? 0);
   }
-  return { gimbal, repairRate };
+  return { gimbal, repairRate, cooling, missileEvasion };
 }
 
 /** Slots in use and available, by kind. */
@@ -291,6 +297,30 @@ export function slotUsage(ship: Ship): Record<'engine' | 'utility' | 'defense', 
     utility: { used: used.utility, total: total.utility },
     defense: { used: used.defense, total: total.defense },
   };
+}
+
+/** Share of a weapon's price paid back when it is taken off a mount. */
+export const WEAPON_RESALE = 0.5;
+
+export type WeaponResult = { ok: true } | { ok: false; reason: 'notDocked' | 'notOffered' | 'noCredits' | 'wrongMount' | 'unknown' };
+
+/** Refits one mount with a weapon sold here; the old one is taken in part exchange. */
+export function buyWeapon(world: World, shipId: EntityId, index: number, weaponId: string): WeaponResult {
+  const ship = world.ships.get(shipId);
+  if (!ship || ship.docked === null) return { ok: false, reason: 'notDocked' };
+  const mount = ship.weapons[index];
+  if (!mount) return { ok: false, reason: 'unknown' };
+  if (!world.stations.get(ship.docked)!.definition.weapons.includes(weaponId)) return { ok: false, reason: 'notOffered' };
+  const weapon = getWeapon(weaponId);
+  if (weaponGroup(weapon) !== mount.hardpoint.group) return { ok: false, reason: 'wrongMount' };
+  const cost = weapon.price - Math.round(mount.definition.price * WEAPON_RESALE);
+  if (world.credits < cost) return { ok: false, reason: 'noCredits' };
+  world.credits -= cost;
+  mount.definition = weapon;
+  mount.heat = 0;
+  mount.cooldown = 0;
+  mount.overheated = false;
+  return { ok: true };
 }
 
 export type UpgradeResult = { ok: true } | { ok: false; reason: 'notDocked' | 'notOffered' | 'installed' | 'noCredits' | 'noSlot' | 'reputation' };

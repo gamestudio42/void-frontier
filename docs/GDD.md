@@ -158,6 +158,14 @@ Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kes
 - **The Bastion Signal.** A distress call leads from a wreck near the Outpost to a starving garrison, an ancient relay and the warlord Kess Varo's flagship, the Dreadmaw. Six missions, 12,000 cr in all, and enough Guard standing to buy the Lancer at Bastion Watch.
 - **Bastion Watch.** The Frontier Guard's station in the Anomaly Zone buys parts, titanium, platinum, salvage and exotic matter. If its parts convoy is lost, it runs short and pays more.
 
+## Towards 1.0 (0.95)
+
+- **Weapons.** Gatling (fast, short range, strong on hulls), railgun (slow, long, heavy, uses energy), missile rack (turns toward your target). Refit each mount in the Outfitting tab; the old weapon goes in part exchange at half its price.
+- **Hulls.** Bulwark frigate (60,000 cr at Bastion Watch, Guard +30) and Magpie salvager (20,000 cr at Ferrum Refinery, double salvage).
+- **Places.** The Graveyard (beyond the Anomaly Zone, hulks full of salvage, shields recharge at half speed) and Ember Reach (beyond Pirate Territory, rich ore, weapons cool slowly).
+- **Contracts.** Salvage orders, patrols past relay beacons, and recon with a scanner pulse at a beacon.
+- **Story.** After the Dreadmaw you decide Kess Varo's fate. Justice pays less and earns the Guard's trust; the deal pays well and costs it. Each leads to its own last missions and ending.
+
 ## Not yet
 
 Crew, a procedural universe and larger story contracts. See `docs/ROADMAP.md`.

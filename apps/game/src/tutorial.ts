@@ -8,6 +8,7 @@ export interface TutorialContext {
   playerId: number;
   /** Seconds since the step started. */
   stepTime: number;
+  fleetOpen: boolean;
   /** Values remembered when the step started. */
   start: { heading: number; credits: number };
 }
@@ -41,4 +42,6 @@ export const TUTORIAL: Step[] = [
   { id: 'mine', title: 'tutorial.mine.title', hint: 'tutorial.mine.hint', done: (c) => ore(c.telemetry) >= 8 },
   { id: 'dock', title: 'tutorial.dock.title', hint: 'tutorial.dock.hint', done: (c) => c.telemetry.docked },
   { id: 'sell', title: 'tutorial.sell.title', hint: 'tutorial.sell.hint', done: (c) => c.telemetry.credits > c.start.credits },
+  { id: 'fight', title: 'tutorial.fight.title', hint: 'tutorial.fight.hint', done: (c) => c.events.some((e) => e.type === 'hit' && e.attacker === c.playerId && e.shieldDamage + e.hullDamage > 0) },
+  { id: 'fleet', title: 'tutorial.fleet.title', hint: 'tutorial.fleet.hint', done: (c) => c.fleetOpen },
 ];

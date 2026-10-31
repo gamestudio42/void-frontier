@@ -162,6 +162,8 @@ function think(world: World, id: EntityId, ship: Ship, body: Body, pilot: AiPilo
           // Hold fire when a rock or the station is in the way.
           const blocker = raycast(world, muzzle, targetBody.position, id);
           command.firePrimary = !blocker || blocker.id === pilot.target;
+          // Whatever is on the secondary trigger (lasers, missile racks) goes with the guns.
+          command.fireSecondary = command.firePrimary;
         }
       } else {
         aim = targetBody.position;

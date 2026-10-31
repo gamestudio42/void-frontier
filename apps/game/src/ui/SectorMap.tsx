@@ -83,8 +83,9 @@ export function SectorMap({ events, fleet, missionSector, current, visited, disc
                 <text y={68} className="map-meta">
                   {here ? t('map.here') : seen ? `${t('map.danger')}: ${t(`map.danger.${level}` as MessageKey)}` : t('map.unvisited')}
                 </text>
-                <text y={98} className="map-meta">
-                  {s.controllingFaction ? t(`faction.${s.controllingFaction}` as MessageKey) : '—'}
+                {/* A sector with its own rule names it here: the full sentence appears on arrival. */}
+                <text y={98} className={s.rules ? 'map-meta map-rule' : 'map-meta'}>
+                  {s.rules ? t(`sector.ruleShort.${s.id}` as MessageKey) : s.controllingFaction ? t(`faction.${s.controllingFaction}` as MessageKey) : '—'}
                 </text>
                 <text y={83} className="map-meta">
                   {t('map.discoveries')}: {found}/{s.pointsOfInterest.length}

@@ -3,7 +3,7 @@ import { ASTEROID_TYPES, FACTIONS, OUTPOST_ALPHA, RESOURCES, SECTORS, SHIPS, STA
 
 describe('content', () => {
   it('ships four player hulls, two pirate types and the campaign flagship', () => {
-    expect(SHIPS.size).toBe(7);
+    expect(SHIPS.size).toBe(9);
     expect(getShip('prospector').class).toBe('miner');
     expect(getShip('lancer').class).toBe('fighter');
     expect(getShip('marauder').class).toBe('frigate');
@@ -25,12 +25,12 @@ describe('content', () => {
   });
 
   it('defines a rock type for each mined resource', () => {
-    expect([...ASTEROID_TYPES.values()].map((t) => t.resource).sort()).toEqual(['copper_ore', 'exotic_matter', 'iron_ore', 'platinum_ore', 'titanium_ore']);
+    expect([...ASTEROID_TYPES.values()].map((t) => t.resource).sort()).toEqual(['copper_ore', 'exotic_matter', 'iron_ore', 'platinum_ore', 'salvage', 'titanium_ore']);
   });
 
-  it('links four sectors with paired gates', () => {
-    expect(SECTORS.size).toBe(4);
-    for (const sector of SECTORS.values()) expect(sector.gates.length).toBeGreaterThanOrEqual(2);
+  it('links six sectors with paired gates', () => {
+    expect(SECTORS.size).toBe(6);
+    for (const sector of SECTORS.values()) expect(sector.gates.length).toBeGreaterThanOrEqual(1);
   });
 
   it('maps every rock type to a resource with mass and volume', () => {
@@ -42,10 +42,10 @@ describe('content', () => {
     expect(RESOURCES.has('salvage')).toBe(true);
   });
 
-  it('offers five modules and a market that trades every slice resource', () => {
+  it('offers six modules and a market that trades every slice resource', () => {
     const station = STATIONS.get('outpost')!;
     expect(station.upgrades.map((u) => getUpgrade(u).cost).every((c) => c > 0)).toBe(true);
-    expect(station.upgrades).toHaveLength(5);
+    expect(station.upgrades).toHaveLength(6);
     expect(station.market.map((m) => m.resource).sort()).toEqual(['copper_ore', 'iron_ore', 'machine_parts', 'salvage', 'titanium_ore']);
   });
 
@@ -59,7 +59,7 @@ describe('content', () => {
     const slots = getShip('kestrel').slots;
     for (const upgrade of UPGRADES.values()) expect(slots[upgrade.slot]).toBeGreaterThan(0);
     for (const ship of SHIPS.values()) for (const h of ship.hardpoints) expect(getWeapon(h.weapon)).toBeDefined();
-    expect(UPGRADES.size).toBe(10);
+    expect(UPGRADES.size).toBe(14);
   });
 
   it('gives every station a docking bay', () => {

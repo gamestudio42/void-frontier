@@ -130,6 +130,14 @@ export function buildShipModel(definition: ShipDefinition, faction: 'player' | '
     }
   }
 
+  // Salvagers: twin grab arms reaching past the nose.
+  if (definition.class === 'salvager') {
+    for (const side of [-1, 1]) {
+      root.add(box(L * 0.42, L * 0.04, W * 0.08, accent, L * 0.42, 0, side * W * 0.42));
+      root.add(box(L * 0.08, L * 0.05, W * 0.2, dark, L * 0.62, 0, side * W * 0.32));
+    }
+  }
+
   // Interceptors and fighters carry forward-swept blades and twin fins: a hunter's silhouette.
   if (definition.class === 'interceptor' || definition.class === 'fighter') {
     for (const side of [-1, 1]) {

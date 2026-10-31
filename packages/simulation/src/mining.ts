@@ -95,7 +95,9 @@ export function pickupSystem(world: World, dt: number): void {
       }
       if (d <= ship.definition.tractor.collectRadius) {
         const taken = Math.min(space, pickup.units);
-        ship.cargo.set(pickup.resource, (ship.cargo.get(pickup.resource) ?? 0) + taken);
+        // Salvage rigs recover extra from every scrap.
+        const gained = pickup.resource === 'salvage' ? Math.min(space, Math.round(taken * ship.definition.salvageYield)) : taken;
+        ship.cargo.set(pickup.resource, (ship.cargo.get(pickup.resource) ?? 0) + gained);
         pickup.units -= taken;
         world.events.push({ type: 'collected', ship: shipId, resource: pickup.resource, units: taken });
         if (pickup.units <= 0) world.pickups.delete(id);

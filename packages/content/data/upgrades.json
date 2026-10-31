@@ -97,5 +97,41 @@
       "faction": "ferrum_combine",
       "reputation": 20
     }
+  },
+  {
+    "id": "heat_sink",
+    "slot": "utility",
+    "cost": 1500,
+    "equipmentMass": 200,
+    "effects": {
+      "coolingMultiplier": 1.4
+    }
+  },
+  {
+    "id": "countermeasures",
+    "slot": "defense",
+    "cost": 2400,
+    "equipmentMass": 150,
+    "effects": {
+      "missileEvasion": 0.6
+    }
+  },
+  {
+    "id": "salvage_rig",
+    "slot": "utility",
+    "cost": 1200,
+    "equipmentMass": 250,
+    "effects": {
+      "salvageBonus": 1
+    }
+  },
+  {
+    "id": "fuel_optimizer",
+    "slot": "engine",
+    "cost": 1400,
+    "equipmentMass": 100,
+    "effects": {
+      "fuelEfficiency": 0.7
+    }
   }
 ]

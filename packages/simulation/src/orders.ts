@@ -47,19 +47,20 @@ function addCargo(state: PlayerState, resource: string, units: number): void {
 }
 
 const cruiseSpeed = (pilot: Pilot): number => CREW_RULES.cruiseSpeed * (1 + CREW_RULES.speedPerPiloting * (pilot.skills.piloting - 3));
-const miningLaser = (def: ShipDefinition) => def.hardpoints.map((h) => getWeapon(h.weapon)).find((w) => w.kind === 'mining');
-const hasGuns = (def: ShipDefinition) => def.hardpoints.some((h) => getWeapon(h.weapon).kind !== 'mining');
+/** The weapons actually fitted to a stored ship. */
+const fitted = (state: PlayerState) => (state.loadout ?? getShip(state.ship).hardpoints.map((h) => h.weapon)).map(getWeapon);
+const miningLaser = (state: PlayerState) => fitted(state).find((w) => w.kind === 'mining');
+const hasGuns = (state: PlayerState) => fitted(state).some((w) => w.kind !== 'mining');
 
 export type OrderResult = { ok: true } | { ok: false; reason: 'notDocked' | 'unknown' | 'elsewhere' | 'noPilot' | 'invalid' | 'unfit' };
 
 /** Checks an order against a ship: the right gear, and markets that trade what it names. */
 export function orderProblem(owned: OwnedShip, order: FleetOrder): 'invalid' | 'unfit' | null {
-  const def = defOf(owned.state);
   if (order.kind === 'mine') {
     if (!siteOf(order.site)) return 'invalid';
-    return miningLaser(def) ? null : 'unfit';
+    return miningLaser(owned.state) ? null : 'unfit';
   }
-  if (order.kind === 'wingman') return hasGuns(def) ? null : 'unfit';
+  if (order.kind === 'wingman') return hasGuns(owned.state) ? null : 'unfit';
   if (order.from === order.to) return 'invalid';
   const from = STATION_PLACEMENTS.get(order.from);
   const to = STATION_PLACEMENTS.get(order.to);
@@ -144,7 +145,7 @@ function buyCargo(world: World, sim: Simulation, owned: OwnedShip, key: string, 
 export function miningYield(owned: OwnedShip, siteId: string, seconds: number): [string, number][] {
   const site = siteOf(siteId)!;
   const field = getSector(site.sector).asteroidFields.find((f) => f.id === site.field)!;
-  const laser = miningLaser(defOf(owned.state));
+  const laser = miningLaser(owned.state);
   if (!laser || laser.kind !== 'mining') return [];
   const rate = laser.extractionRate * (CREW_RULES.miningShare + CREW_RULES.miningPerSkill * ((owned.pilot?.skills.mining ?? 1) - 1));
   const total = Object.values(field.types).reduce((a, b) => a + b, 0);
@@ -185,7 +186,10 @@ function spawnOwned(world: World, owned: OwnedShip, id: EntityId): void {
     kills: owned.state.kills,
     subsystems: { ...owned.state.subsystems },
   });
-  ship.weapons.forEach((mount, i) => (mount.health = owned.state.mounts[i] ?? 1));
+  ship.weapons.forEach((mount, i) => {
+    mount.health = owned.state.mounts[i] ?? 1;
+    if (owned.state.loadout?.[i]) mount.definition = getWeapon(owned.state.loadout[i]);
+  });
   const pilot = world.pilots.get(id);
   if (pilot) pilot.fleet = owned.id;
 }
@@ -204,6 +208,7 @@ export function captureOwned(world: World, owned: OwnedShip): void {
     kills: ship.kills,
     subsystems: { ...ship.subsystems },
     mounts: ship.weapons.map((w) => w.health),
+    loadout: ship.weapons.map((w) => w.definition.id),
   });
 }
 
@@ -341,8 +346,7 @@ function finishLeg(world: World, sim: Simulation, owned: OwnedShip): void {
 /** Off-screen danger of a leg: the sector's pirate risk, less for skilled (and, if armed, combat-ready) pilots. */
 function legRisk(economy: Economy, owned: OwnedShip, sector: string): number {
   const pilot = owned.pilot!;
-  const def = defOf(owned.state);
-  const skill = pilot.skills.piloting - 1 + (hasGuns(def) ? (pilot.skills.combat - 1) * 0.5 : 0);
+  const skill = pilot.skills.piloting - 1 + (hasGuns(owned.state) ? (pilot.skills.combat - 1) * 0.5 : 0);
   const share = Math.max(0.3, 1 - CREW_RULES.riskPerPiloting * skill);
   return (EVENT_RULES.sectorRisk[sector] ?? 0) * raidFactor(economy, sector) * share * CREW_RULES.fleetRisk;
 }

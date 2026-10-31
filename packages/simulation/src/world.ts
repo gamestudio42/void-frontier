@@ -32,6 +32,8 @@ export class World {
   readonly pointsOfInterest = new Map<string, { kind: 'derelict' | 'deposit' | 'cache'; position: { x: number; y: number }; reward: { credits: number; resource: string; units: number }; found: boolean }>();
   /** Player reputation by faction id; shared with the contract board, so it survives jumps. */
   standing: Record<string, number> = {};
+  /** What makes this sector different: multipliers on shield recharge and weapon cooling. */
+  rules = { shieldFactor: 1, coolingFactor: 1 };
   /** The player's money. */
   credits = 0;
   /** Things that happened this step; the owner drains them (sparks, sounds, HUD). */
