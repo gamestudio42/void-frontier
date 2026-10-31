@@ -49,6 +49,8 @@ export interface ShipCommand {
   target: EntityId | null;
   /** Mining laser group. */
   fireMining: boolean;
+  /** Aim precisely at this system of the commanded target. */
+  targetSystem: SubsystemId | null;
 }
 
 /** Throttle actually applied to each thruster group after fuel limits, for physics and visuals. */
@@ -128,6 +130,7 @@ export const idleCommand = (): ShipCommand => ({
   fireSecondary: false,
   target: null,
   fireMining: false,
+  targetSystem: null,
 });
 export const idleOutput = (): ThrusterOutput => ({ main: 0, reverse: 0, lateral: 0, rotation: 0, boosting: false });
 
@@ -186,6 +189,7 @@ export type SimEvent =
   | { type: 'contract'; id: number; kind: 'delivery' | 'mining' | 'bounty' | 'escort' | 'salvage' | 'patrol' | 'recon'; outcome: 'completed' | 'failed' | 'abandoned'; reward: number }
   | { type: 'news'; item: NewsItem }
   | { type: 'fleet'; note: FleetNote }
+  | { type: 'boarded'; ship: EntityId; credits: number; salvage: number }
   | { type: 'campaign'; step: string; credits: number; finished: boolean }
   | { type: 'subsystemDamaged'; ship: EntityId; system: SubsystemId | 'weapon'; health: number }
   | { type: 'discovered'; id: string; kind: 'derelict' | 'deposit' | 'cache'; credits: number }

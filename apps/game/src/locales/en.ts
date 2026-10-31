@@ -540,6 +540,20 @@ export const en = {
   'tutorial.fleet.hint': 'The card at the top left is your next mission. Buy ships at a shipyard, hire pilots in the Crew tab, and press O to see your fleet.',
   'sector.ruleShort.graveyard': 'Static: weak shields',
   'sector.ruleShort.ember_reach': 'Heat: slow cooling',
+  'hud.aiming': 'Aiming at',
+  'hud.detailsHint': 'all readouts',
+  'help.aimSystem': 'Aim at a system of your target: engines, reactor, shields, sensors. Less damage, more precision',
+  'help.details': 'Show or hide all readouts',
+  'key.aimSystem': 'Aim at a system',
+  'key.details': 'All readouts',
+  'board.title': 'Disabled ship',
+  'board.hint': 'Get close and match its speed to board',
+  'board.ready': 'Press F to board and take its cargo',
+  'board.done': 'Ship boarded and scuttled',
+  'speaker.dispatcher': 'Dispatch',
+  'speaker.oyelaran': 'Cmdr. Oyelaran',
+  'speaker.foreman': 'Ferrum foreman',
+  'speaker.varo': 'Kess Varo',
 } as const;
 
 export type MessageKey = keyof typeof en;

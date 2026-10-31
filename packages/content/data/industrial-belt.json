@@ -20,6 +20,25 @@
       "y": -11000,
       "z": -6000,
       "radius": 3000
+    },
+    "look": {
+      "tint": [
+        0.22,
+        0.12,
+        0.04
+      ],
+      "tintStrength": 0.75,
+      "sun": "#ffd9a8",
+      "sunIntensity": 3,
+      "giants": [
+        {
+          "kind": "spindle",
+          "x": 600,
+          "y": -1000,
+          "scale": 1.1,
+          "angle": 0.5
+        }
+      ]
     }
   },
   "stations": [

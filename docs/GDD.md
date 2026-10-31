@@ -166,6 +166,11 @@ Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kes
 - **Contracts.** Salvage orders, patrols past relay beacons, and recon with a scanner pulse at a beacon.
 - **Story.** After the Dreadmaw you decide Kess Varo's fate. Justice pays less and earns the Guard's trust; the deal pays well and costs it. Each leads to its own last missions and ending.
 
+## Look and feel (0.96)
+
+- **Flight.** Shield and hull sit as two arcs around the ship, speed beneath it. Panels stay small until you press I.
+- **Boarding.** Select a target, press T to aim at its engines or reactor, and break it. Close to 90 m at matched speed and press F for its strongbox and salvage.
+
 ## Not yet
 
 Crew, a procedural universe and larger story contracts. See `docs/ROADMAP.md`.

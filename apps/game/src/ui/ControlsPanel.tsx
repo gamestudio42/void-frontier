@@ -25,6 +25,8 @@ const ROWS: [(string | { action: BindingAction })[], MessageKey][] = [
   [[{ action: 'dock' }], 'help.dock'],
   [[{ action: 'map' }], 'help.map'],
   [[{ action: 'fleet' }], 'help.fleet'],
+  [[{ action: 'aimSystem' }], 'help.aimSystem'],
+  [[{ action: 'details' }], 'help.details'],
   [['Shift'], 'help.boost'],
   [[{ action: 'brake' }], 'help.brake'],
   [[{ action: 'mode' }], 'help.mode'],

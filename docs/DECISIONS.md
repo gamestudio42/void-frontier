@@ -241,3 +241,15 @@ The verdict on Kess Varo comes after the Dreadmaw and leads to three different m
 ## 060. The boss's difficulty is measured by scripted duels, not play
 
 Scripted pilots fly each hull against the Dreadmaw and its escort. They are cruder than a person, so the numbers set a floor for tuning, not the final word; see `docs/BALANCE.md`.
+
+## 061. Aimed fire trades damage for precision
+
+With a target selected, T picks a system. Hull damage from player fire drops to 60%, and the system takes the full amount directly, so disabling a ship is a choice with a cost rather than a free upgrade.
+
+## 062. Only pirates can be disabled
+
+A pirate with dead engines or a dead reactor stops flying and firing until boarded or destroyed. The player's ship keeps limping, as decision 038 requires, so a lost engine never strands anyone. Boarding scuttles the ship and counts as a kill, so bounties and campaign kills work unchanged.
+
+## 063. Giant structures are scenery
+
+Giants sit far below the flight plane with no collider. They give scale without changing rock placement or saves, and each is built of instanced boxes to stay cheap.

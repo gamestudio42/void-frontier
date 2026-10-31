@@ -11,6 +11,8 @@ export interface InputActions {
   dockOrUndock(): void;
   toggleMap(): void;
   toggleFleet(): void;
+  cycleAimedSystem(): void;
+  toggleDetails(): void;
   jettison(): void;
   cycleQuality(): void;
   cycleTarget(): void;
@@ -34,6 +36,8 @@ export const DEFAULT_BINDINGS = {
   mode: 'KeyC',
   steering: 'KeyV',
   brake: 'Space',
+  aimSystem: 'KeyT',
+  details: 'KeyI',
 } as const;
 
 export type BindingAction = keyof typeof DEFAULT_BINDINGS;
@@ -69,6 +73,8 @@ export class InputController {
     else if (event.code === bound.dock) this.actions.dockOrUndock();
     else if (event.code === bound.map) this.actions.toggleMap();
     else if (event.code === bound.fleet) this.actions.toggleFleet();
+    else if (event.code === bound.aimSystem) this.actions.cycleAimedSystem();
+    else if (event.code === bound.details) this.actions.toggleDetails();
     switch (event.code) {
       case 'KeyH': this.actions.toggleHelp(); break;
       case 'F3':
@@ -153,6 +159,7 @@ export class InputController {
       target: null,
       // Middle mouse or X: mining laser.
       fireMining: this.buttons.has(1) || this.held.has(this.bindings.mine),
+      targetSystem: null,
       brake: this.held.has(this.bindings.brake),
       boost: this.held.has('ShiftLeft') || this.held.has('ShiftRight'),
     };

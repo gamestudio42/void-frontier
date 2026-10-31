@@ -1,8 +1,11 @@
 import { FACTIONS } from '@void-frontier/content';
 import { dropSalvage } from './mining.ts';
-import { damageSubsystems } from './subsystems.ts';
+import { damageChosenSystem, damageSubsystems } from './subsystems.ts';
 import type { EntityId } from './types.ts';
 import type { World } from './world.ts';
+
+/** Share of its hull damage a round aimed at one system still does. */
+const AIMED_HULL_SHARE = 0.6;
 
 /** Marks a ship destroyed, removes its collider and emits the event. Safe to call twice. */
 export function destroyShip(world: World, id: EntityId, by: EntityId | null): void {
@@ -72,12 +75,17 @@ export function applyWeaponDamage(
       ship.shield = 0;
     }
   }
-  const hullDamage = raw * multipliers.hull * (1 - ship.definition.hull.armor);
+  let hullDamage = raw * multipliers.hull * (1 - ship.definition.hull.armor);
+  // Aiming at one system trades raw damage for precision.
+  const aimed = world.ships.get(attackerId)?.command;
+  const chosen = aimed?.target === targetId ? aimed.targetSystem : null;
+  if (chosen) hullDamage *= AIMED_HULL_SHARE;
   if (ship.faction === 'trader' && ship.allegiance && world.ships.get(attackerId)?.faction === 'player') {
     world.standing[ship.allegiance] = Math.max(-100, (world.standing[ship.allegiance] ?? 0) - (shieldDamage + hullDamage) * 0.02);
   }
   ship.hull = Math.max(0, ship.hull - hullDamage);
-  damageSubsystems(world, targetId, point, hullDamage);
+  if (chosen) damageChosenSystem(world, targetId, chosen, hullDamage / AIMED_HULL_SHARE);
+  else damageSubsystems(world, targetId, point, hullDamage);
   world.events.push({ type: 'hit', target: targetId, attacker: attackerId, point: { ...point }, shieldDamage, hullDamage, beam });
   if (ship.hull === 0) destroyShip(world, targetId, attackerId);
 }

@@ -24,6 +24,32 @@
       "y": -10000,
       "z": -9000,
       "radius": 3800
+    },
+    "look": {
+      "tint": [
+        0.42,
+        0.11,
+        0.02
+      ],
+      "tintStrength": 0.6,
+      "sun": "#ffb066",
+      "sunIntensity": 4,
+      "star": {
+        "x": -5200,
+        "y": -4200,
+        "z": -5200,
+        "radius": 1500,
+        "color": "#ff7a30"
+      },
+      "giants": [
+        {
+          "kind": "spindle",
+          "x": -900,
+          "y": 300,
+          "scale": 0.9,
+          "angle": 1.2
+        }
+      ]
     }
   },
   "rules": {

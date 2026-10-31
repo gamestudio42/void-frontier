@@ -363,6 +363,8 @@ export const campaignSchema = z.object({
       id: z.string(),
       /** Only on this branch of the story; every branch otherwise. */
       when: z.string().optional(),
+      /** Who gives the briefing. */
+      speaker: z.string(),
       objective: z.discriminatedUnion('kind', [
         z.object({ kind: z.literal('discover'), poi: z.string(), sector: z.string() }),
         z.object({ kind: z.literal('kill'), count: z.number().int().positive() }),
@@ -504,6 +506,17 @@ export const sectorDefinitionSchema = z.object({
   environment: z.object({
     nebulaSeed: z.number().int(),
     planet: z.object({ hue: z.number().min(0).max(1), x: z.number(), y: z.number(), z: z.number(), radius: positive }),
+    /** The sector's own colour: a sky tint, sunlight, a nearby star, and giant structures below the flight plane. */
+    look: z
+      .object({
+        tint: z.tuple([z.number(), z.number(), z.number()]),
+        tintStrength: z.number().min(0).max(1),
+        sun: z.string(),
+        sunIntensity: positive,
+        star: z.object({ x: z.number(), y: z.number(), z: z.number(), radius: positive, color: z.string() }).optional(),
+        giants: z.array(z.object({ kind: z.enum(['hulk', 'ring', 'spindle']), x: z.number(), y: z.number(), scale: positive, angle: z.number() })).default([]),
+      })
+      .optional(),
   }),
   gates: z.array(gateSchema),
   anomalies: z.array(anomalySchema),
@@ -576,6 +589,8 @@ export const contractRulesSchema = z.object({
   }),
   elite: z.object({ unitsMultiplier: z.number().min(1), rewardMultiplier: z.number().min(1) }),
   penalty: z.object({ failed: z.number().min(0), abandoned: z.number().min(0) }),
+  /** Boarding a disabled ship: how close, how slowly, and what its holds give up. */
+  boarding: z.object({ range: positive, maxSpeed: positive, minCredits: positive, maxCredits: positive, minSalvage: positive, maxSalvage: positive }),
   salvage: z.object({ minUnits: positive, maxUnits: positive, priceMultiplier: positive, seconds: positive, repGain: positive }),
   patrol: z.object({ minStops: z.number().int().min(1), maxStops: z.number().int().min(1), rewardPerStop: positive, seconds: positive, repGain: positive, radius: positive }),
   recon: z.object({ baseReward: positive, rewardPerHop: positive, seconds: positive, repGain: positive, radius: positive }),

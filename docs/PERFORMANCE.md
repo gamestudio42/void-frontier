@@ -12,9 +12,6 @@ Measured on 2026-10-30 on a laptop's integrated Intel UHD (Raptor Lake-P), in Ch
 - A simulation step costs about 0.4 ms at 60 fps on this machine.
 - Medium was as slow as high on a 1x screen until 0.7.1, when it gained half-resolution bloom and a 0.85 resolution cap.
 
-## Not measured
-
-Dedicated graphics cards, Windows, macOS, Firefox, Safari and phones. The laptop's RTX 4050 could not be reached from a headless browser.
 
 ## 0.95 measurements (2026-10-30)
 
@@ -31,3 +28,25 @@ Same chip, on an otherwise idle machine, at 1920x1080. Twenty ships in a fight b
 | Load to main menu, production build from localhost | 354 to 549 ms | Under 10 s |
 
 Load time excludes the network. The earlier table above was taken with other applications open, which is why high is slower there.
+
+## 0.96 measurement (2026-10-30)
+
+Same chip, 1920x1080, high quality, inside the Graveyard with its giant hulks and other work running: 46 fps at about 107 draw calls, before the giants were lowered and scaled down. Automatic quality steps down below 45 fps.
+
+## Other hardware and browsers (2026-10-30)
+
+At 1920x1080, development build, 6 seconds each.
+
+| Setup | Scene | Quality | Frame rate |
+| --- | --- | --- | --- |
+| Chrome, NVIDIA RTX 4050 Laptop | 20 ships fighting | High | 60 fps |
+| Firefox | Outpost, just undocked | High | 37 fps, then 57 fps on a quieter machine |
+| Firefox | Outpost, just undocked | Medium | 52 fps |
+| Firefox | Outpost, just undocked | Low | 57 fps |
+
+- Firefox hides the real graphics chip, reporting "Intel HD Graphics, or similar", so which GPU it used is unconfirmed. The screens were checked and looked right, with no page errors.
+- Medium scoring under high and low in Firefox is measurement noise from one short run on each.
+
+## Not measured
+
+Safari: WebKit needs system packages not installed here, and Playwright's WebKit would still not be Safari. Windows, macOS and phones.

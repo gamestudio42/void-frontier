@@ -40,6 +40,16 @@ export function damageSubsystems(world: World, shipId: EntityId, point: { x: num
   }
 }
 
+/** Precise fire: a chosen system takes the damage directly, wherever on the hull the round lands. */
+export function damageChosenSystem(world: World, shipId: EntityId, system: SubsystemId, hullDamage: number): void {
+  const ship = world.ships.get(shipId);
+  if (!ship || ship.destroyed || hullDamage <= 0) return;
+  hit(world, shipId, system, hullDamage / (ship.definition.hull.integrity * WRECK_FRACTION));
+}
+
+/** A pirate with dead engines or a dead reactor drifts, helpless, until someone boards or finishes it. */
+export const isDisabled = (ship: { faction: string; destroyed: boolean; subsystems: Record<SubsystemId, number> }): boolean => ship.faction === 'pirate' && !ship.destroyed && (ship.subsystems.engines <= 0.05 || ship.subsystems.reactor <= 0.05);
+
 function hit(world: World, shipId: EntityId, system: SubsystemId, amount: number): void {
   const ship = world.ships.get(shipId)!;
   const before = ship.subsystems[system];

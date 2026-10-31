@@ -1,12 +1,12 @@
-import { BackSide, Mesh, ShaderMaterial, SphereGeometry } from 'three';
+import { BackSide, Mesh, ShaderMaterial, SphereGeometry, Vector3 } from 'three';
 
 /**
  * Procedural nebula on an inside-out sphere that travels with the camera. Colours stay
  * dim so stars and ships remain the brightest things on screen.
  */
-export function createNebula(seed: number): Mesh {
+export function createNebula(seed: number, tint: [number, number, number] = [0, 0, 0], tintStrength = 0): Mesh {
   const material = new ShaderMaterial({
-    uniforms: { uSeed: { value: (seed % 1000) * 0.137 } },
+    uniforms: { uSeed: { value: (seed % 1000) * 0.137 }, uTint: { value: new Vector3(...tint) }, uTintStrength: { value: tintStrength } },
     vertexShader: /* glsl */ `
       varying vec3 vDir;
       void main() {
@@ -15,6 +15,8 @@ export function createNebula(seed: number): Mesh {
       }`,
     fragmentShader: /* glsl */ `
       uniform float uSeed;
+      uniform vec3 uTint;
+      uniform float uTintStrength;
       varying vec3 vDir;
       float hash(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7)) + uSeed) * 43758.5453); }
       float noise(vec3 p) {
@@ -37,6 +39,8 @@ export function createNebula(seed: number): Mesh {
         col = mix(col, teal, smoothstep(0.35, 0.75, cloud) * band);
         col = mix(col, violet, smoothstep(0.5, 0.9, warp) * 0.8);
         col += amber * wisps * band * 0.9;
+        // The sector's own colour pools in the clouds and leaves some empty sky dark.
+        col += uTint * uTintStrength * (0.25 + smoothstep(0.3, 0.8, cloud) * 0.9);
         gl_FragColor = vec4(col, 1.0);
       }`,
     side: BackSide,

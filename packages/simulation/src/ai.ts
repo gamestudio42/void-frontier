@@ -4,6 +4,7 @@ import { hostilesNear, leadPoint, muzzlePosition } from './combat.ts';
 import { nearestObstacle } from './proximity.ts';
 import { forwardOf, sensorRange, spawnShip } from './ship.ts';
 import { raycast } from './spatial.ts';
+import { isDisabled } from './subsystems.ts';
 import { idleCommand, type AiPilot, type Body, type EntityId, type Ship } from './types.ts';
 import type { World } from './world.ts';
 
@@ -43,7 +44,7 @@ export function aiSystem(world: World): void {
     const ship = world.ships.get(id);
     const body = world.bodies.get(id);
     if (!ship || !body) continue;
-    if (ship.destroyed) {
+    if (ship.destroyed || isDisabled(ship)) {
       ship.command = idleCommand();
       continue;
     }

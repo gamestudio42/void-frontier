@@ -18,7 +18,7 @@ export interface CameraSettings {
 export const DEFAULT_CAMERA: CameraSettings = {
   fov: 50,
   tilt: 55,
-  distance: 170,
+  distance: 130,
   minZoom: 0.5,
   maxZoom: 3.5,
   smoothing: 0.15,

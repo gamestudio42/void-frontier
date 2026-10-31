@@ -31,6 +31,34 @@ export function drawTargeting(
   const me = sim.world.ships.get(sim.playerId);
   if (!me || me.destroyed || me.docked !== null) return;
 
+  // At a glance, around the ship itself: shield and hull as two arcs, speed beneath.
+  const mine = sim.world.bodies.get(sim.playerId);
+  if (mine) {
+    const at = renderer.worldToScreen(mine.position, width, height);
+    const radius = Math.max(58, Math.min(width, height) * 0.09);
+    const arc = (from: number, to: number, share: number, colour: string, reversed: boolean) => {
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = 'rgba(214, 221, 228, 0.14)';
+      ctx.beginPath();
+      ctx.arc(at.x, at.y, radius, from, to);
+      ctx.stroke();
+      if (share <= 0) return;
+      ctx.strokeStyle = colour;
+      ctx.beginPath();
+      if (reversed) ctx.arc(at.x, at.y, radius, to - (to - from) * share, to);
+      else ctx.arc(at.x, at.y, radius, from, from + (to - from) * share);
+      ctx.stroke();
+    };
+    const hullShare = me.hull / me.definition.hull.integrity;
+    arc(Math.PI * 0.72, Math.PI * 1.28, me.shield / Math.max(1, me.definition.shield.capacity), '#6fd3ff', true);
+    arc(-Math.PI * 0.28, Math.PI * 0.28, hullShare, hullShare < 0.35 ? '#ff6b5a' : hullShare < 0.7 ? '#ffb347' : '#7dffb2', true);
+    ctx.textAlign = 'center';
+    ctx.font = '600 13px ui-monospace, Menlo, Consolas, monospace';
+    ctx.fillStyle = 'rgba(214, 221, 228, 0.9)';
+    ctx.fillText(`${Math.round(Math.hypot(mine.velocity.x, mine.velocity.y))} m/s`, at.x, at.y + radius + 18);
+  }
+
   // Gates and signals: a label when on screen only, so they never crowd the edges.
   ctx.font = '600 11px ui-monospace, Menlo, Consolas, monospace';
   ctx.textAlign = 'center';
@@ -71,9 +99,9 @@ export function drawTargeting(
         dy = -dy;
       }
       const angle = Math.atan2(dy, dx);
-      const scale = Math.min((cx - 60) / Math.abs(Math.cos(angle) || 1e-6), (cy - 60) / Math.abs(Math.sin(angle) || 1e-6));
-      const ax = cx + Math.cos(angle) * scale;
-      const ay = cy + Math.sin(angle) * scale;
+      // On an ellipse around the ship, inside the corners where the HUD panels sit.
+      const ax = cx + Math.cos(angle) * Math.max(140, cx - 260);
+      const ay = cy + Math.sin(angle) * Math.max(110, cy - 130);
       ctx.save();
       ctx.translate(ax, ay);
       ctx.rotate(angle);

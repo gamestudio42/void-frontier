@@ -210,9 +210,18 @@ Medium quality fixed and frame rate measured on a real chip, campaign ending, mi
 - [x] Load time, memory and stress measured on an integrated GPU (`docs/PERFORMANCE.md`)
 - [x] Save format 8 with a migration from version 7
 
+## 0.96: look and feel (done)
+
+- [x] Flight HUD: shield and hull arcs and speed around the ship; small panels by default, every readout on I
+- [x] Closer camera; giant structures below the flight plane; each sector's sky, sunlight and, in Ember Reach, a star
+- [x] More surface on every hull, one extra draw call per ship; missile smoke, staged explosions on big ships, a streaked jump
+- [x] The station panel sits beside the ship; drawn portraits on the briefings
+- [x] Disable pirates by aiming at a system (T) and board them (F) for credits and salvage
+
 ## 1.0: complete game (next)
 
 - [ ] A person plays the campaign to the end (the spec's acceptance has never been tried)
 - [ ] 3 to 5 outside players complete the main loop without help
-- [ ] Measure a dedicated GPU, Firefox and Safari
+- [x] Measure a dedicated GPU (RTX 4050) and Firefox
+- [ ] Check Safari on a real Mac
 - [ ] Final balance from those results, freeze the save format, tag `v1.0.0`

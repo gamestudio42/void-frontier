@@ -13,8 +13,11 @@ import {
   Vector3,
   type Object3D,
 } from 'three';
+import type { Material } from 'three';
 import type { ThrusterOutput } from '@void-frontier/simulation';
 import { PALETTE } from './palette.ts';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { Rng } from '@void-frontier/kernel';
 
 /**
  * Procedural ships, built from boxes and cylinders so the look stays original and needs
@@ -72,6 +75,35 @@ function place(parent: Object3D, p: Plume, x: number, y: number, z: number): Plu
   p.mesh.position.set(x, y, z);
   parent.add(p.mesh);
   return p;
+}
+
+const nameHash = (id: string): number => {
+  let h = 7;
+  for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return (h % 1000) / 1000;
+};
+
+/** Plates, vents and conduits along the hull, merged into one mesh: much more surface for one draw call. */
+function hullDetail(definition: ShipDefinition, L: number, W: number, material: Material): Mesh {
+  const rng = new Rng(Math.round(nameHash(definition.id) * 1e6) + 1);
+  const parts: BoxGeometry[] = [];
+  for (let i = 0; i < 26; i++) {
+    const side = i % 2 ? 1 : -1;
+    const g = new BoxGeometry(rng.range(0.03, 0.12) * L, rng.range(0.008, 0.03) * L, rng.range(0.03, 0.1) * W);
+    g.translate(rng.range(-0.38, 0.34) * L, rng.range(0.058, 0.075) * L, side * rng.range(0.02, 0.17) * W);
+    parts.push(g);
+  }
+  for (let i = 0; i < 10; i++) {
+    const side = i % 2 ? 1 : -1;
+    const g = new BoxGeometry(rng.range(0.04, 0.1) * L, rng.range(0.01, 0.025) * L, rng.range(0.03, 0.08) * W);
+    g.translate(rng.range(-0.34, 0.1) * L, rng.range(0.03, 0.05) * L, side * rng.range(0.32, 0.52) * W);
+    parts.push(g);
+  }
+  const merged = mergeGeometries(parts)!;
+  for (const g of parts) g.dispose();
+  const mesh = new Mesh(merged, material);
+  mesh.castShadow = true;
+  return mesh;
 }
 
 /** `faction` changes the livery: pirates fly dark hulls with blood-red trim. */
@@ -151,6 +183,12 @@ export function buildShipModel(definition: ShipDefinition, faction: 'player' | '
       root.add(fin);
     }
   }
+
+  root.add(hullDetail(definition, L, W, dark));
+
+  // A painted band across the spine, in a shade the hull's name picks: ships of a class read as one line.
+  const band = box(L * 0.05, L * 0.015, W * 0.42, accent, -L * (0.05 + nameHash(definition.id) * 0.25), L * 0.067);
+  root.add(band);
 
   // Antenna mast.
   const mast = new Mesh(new CylinderGeometry(L * 0.006, L * 0.006, L * 0.16, 6), dark);
