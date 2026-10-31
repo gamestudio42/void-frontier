@@ -99,9 +99,9 @@ export function drawTargeting(
         dy = -dy;
       }
       const angle = Math.atan2(dy, dx);
-      const scale = Math.min((cx - 60) / Math.abs(Math.cos(angle) || 1e-6), (cy - 60) / Math.abs(Math.sin(angle) || 1e-6));
-      const ax = cx + Math.cos(angle) * scale;
-      const ay = cy + Math.sin(angle) * scale;
+      // On an ellipse around the ship, inside the corners where the HUD panels sit.
+      const ax = cx + Math.cos(angle) * Math.max(140, cx - 260);
+      const ay = cy + Math.sin(angle) * Math.max(110, cy - 130);
       ctx.save();
       ctx.translate(ax, ay);
       ctx.rotate(angle);
