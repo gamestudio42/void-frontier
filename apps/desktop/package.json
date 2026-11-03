@@ -1,0 +1,49 @@
+{
+  "name": "@void-frontier/desktop",
+  "version": "0.96.0",
+  "private": true,
+  "description": "Void Frontier desktop shell (Electron) for the Snap",
+  "author": "Game Studio 42",
+  "type": "module",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "pnpm --filter @void-frontier/game build && tsc -p tsconfig.json && node scripts/copy-game.mjs",
+    "start": "pnpm build && electron .",
+    "smoke": "pnpm build && electron . --smoke",
+    "dist:dir": "pnpm build && electron-builder --linux dir --publish never"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "electron": "^45.0.0",
+    "electron-builder": "^26.18.0",
+    "typescript": "~5.9.3"
+  },
+  "build": {
+    "appId": "io.github.voidfrontier.VoidFrontier",
+    "productName": "Void Frontier",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**",
+      "game/**",
+      "preload.cjs",
+      "package.json"
+    ],
+    "asar": true,
+    "linux": {
+      "target": [
+        "dir"
+      ],
+      "category": "Game",
+      "icon": "build/icon.png",
+      "synopsis": "Newtonian space action RPG",
+      "description": "Fly a working ship. Every change of speed comes from a thruster you fired.",
+      "executableName": "void-frontier"
+    },
+    "executableName": "void-frontier"
+  },
+  "license": "AGPL-3.0-or-later",
+  "homepage": "https://github.com/gamestudio42/void-frontier"
+}

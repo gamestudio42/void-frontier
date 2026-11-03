@@ -8,7 +8,8 @@
     "dev": "pnpm --filter @void-frontier/game dev",
     "build": "pnpm --filter @void-frontier/game build",
     "preview": "pnpm --filter @void-frontier/game preview",
-    "typecheck": "tsc -p tsconfig.sim.json && tsc -p tsconfig.web.json",
+    "typecheck": "tsc -p tsconfig.sim.json && tsc -p tsconfig.web.json && tsc -p apps/desktop/tsconfig.json --noEmit",
+    "desktop": "pnpm --filter @void-frontier/desktop start",
     "lint": "eslint .",
     "test": "vitest run",
     "check": "pnpm typecheck && pnpm lint && pnpm test",
@@ -28,6 +29,7 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
+      "electron",
       "esbuild"
     ]
   }
