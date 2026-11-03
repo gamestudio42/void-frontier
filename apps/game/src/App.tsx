@@ -31,6 +31,11 @@ export function App() {
     setGame(game);
     // Development handle for debugging in the console; not shipped in production builds.
     if (import.meta.env.DEV) (window as unknown as { voidFrontier?: Game }).voidFrontier = game;
+    // The desktop snap loads ?smoke=1 and waits for this. It carries no game state.
+    // Named apart from the preload bridge (`voidFrontierDesktop`), which owns `quit`.
+    if (new URLSearchParams(window.location.search).get('smoke') === '1') {
+      (window as unknown as { voidFrontierBoot?: { ready: boolean } }).voidFrontierBoot = { ready: true };
+    }
     return () => {
       game.dispose();
       setGame(null);

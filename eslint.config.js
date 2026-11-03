@@ -4,7 +4,15 @@ import tseslint from 'typescript-eslint';
 const FORBIDDEN_MATH = ['random', 'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2', 'exp', 'log', 'pow', 'hypot'];
 
 export default tseslint.config(
-  { ignores: ['**/dist/**', '**/node_modules/**', 'test-results/**', 'playwright-report/**', '.gs42/**'] },
+  { ignores: ['**/dist/**', '**/node_modules/**', 'apps/desktop/game/**', 'apps/desktop/release/**', 'test-results/**', 'playwright-report/**', '.gs42/**'] },
+  {
+    files: ['apps/desktop/preload.cjs'],
+    languageOptions: { sourceType: 'commonjs', globals: { require: 'readonly' } },
+  },
+  {
+    files: ['apps/desktop/scripts/**/*.mjs'],
+    languageOptions: { globals: { console: 'readonly', process: 'readonly' } },
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

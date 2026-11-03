@@ -1,5 +1,7 @@
 node_modules/
 dist/
+apps/desktop/game/
+apps/desktop/release/
 *.log
 .vite/
 coverage/

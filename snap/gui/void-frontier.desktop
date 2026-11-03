@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Void Frontier
+Comment=Newtonian space action RPG
+Exec=void-frontier
+Icon=${SNAP}/meta/gui/icon.png
+Categories=Game;
+StartupWMClass=Void Frontier
+Terminal=false

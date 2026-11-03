@@ -1,0 +1,61 @@
+# Void Frontier as a snap, built from source: installs the workspace, runs
+# `pnpm --filter @void-frontier/desktop dist:dir` and packs release/linux-unpacked. The Snap Store's
+# Builds tab builds and releases it to edge on every push to main; .github/workflows/snap.yml
+# builds the same file and smoke-tests it.
+name: void-frontier
+title: Void Frontier
+base: core22
+adopt-info: void-frontier
+icon: snap/gui/icon.png
+summary: Newtonian space action RPG
+description: |
+  Fly a small working ship around a frontier station on the edge of an
+  asteroid belt. Every change of speed or direction comes from a thruster
+  you fired, and every rock is solid. Mine, trade, take contracts and
+  fight across the linked sectors.
+license: AGPL-3.0-or-later
+website: https://gamestudio42.github.io/void-frontier/
+source-code: https://github.com/gamestudio42/void-frontier
+issues: https://github.com/gamestudio42/void-frontier/issues
+contact: talkgamestudio42@gmail.com
+grade: stable
+confinement: strict
+compression: lzo
+
+architectures:
+  - build-on: amd64
+
+apps:
+  void-frontier:
+    # Chromium's own sandbox cannot run inside strict confinement; the snap sandbox replaces it.
+    command: app/void-frontier --no-sandbox
+    desktop: meta/gui/void-frontier.desktop
+    extensions: [gnome]
+    plugs:
+      - browser-support
+      - opengl
+      - audio-playback
+    environment:
+      TMPDIR: $XDG_RUNTIME_DIR
+
+parts:
+  void-frontier:
+    plugin: nil
+    source: .
+    build-snaps:
+      - node/22/stable
+    stage-packages:
+      - libnspr4
+      - libnss3
+      - libxss1
+    override-pull: |
+      craftctl default
+      craftctl set version="$(sed -n 's/^  "version": "\(.*\)",$/\1/p' apps/desktop/package.json)"
+    override-build: |
+      # The node snap is read-only: install the pinned pnpm next to the build.
+      npm install --prefix "$CRAFT_PART_BUILD/.tools" "$(sed -n 's/^  "packageManager": "\(.*\)",$/\1/p' package.json)"
+      export PATH="$CRAFT_PART_BUILD/.tools/node_modules/.bin:$PATH"
+      pnpm install --frozen-lockfile
+      pnpm --filter @void-frontier/desktop dist:dir
+      mkdir -p "$CRAFT_PART_INSTALL/app"
+      cp -a apps/desktop/release/linux-unpacked/. "$CRAFT_PART_INSTALL/app/"
