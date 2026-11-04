@@ -132,6 +132,9 @@ pnpm e2e      # Playwright flight tests
 pnpm build    # static build in apps/game/dist
 ```
 
+`snapcraft pack` builds the Linux snap from source. The store banner is `snap/store/banner.jpg`:
+upload that file, still named `banner.jpg`. It is not inside the snap.
+
 The simulation is pure, deterministic TypeScript in `packages/simulation`, separate from the three.js renderer and the React HUD. Read [AGENTS.md](AGENTS.md), the [design](docs/GDD.md) and the [architecture](docs/ARCHITECTURE.md) before contributing.
 
 ## License
