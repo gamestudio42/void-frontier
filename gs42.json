@@ -1,0 +1,14 @@
+{
+  "title": "Void Frontier",
+  "tagline": {
+    "en": "No friction. No brakes you didn't fire yourself.",
+    "pt": "Sem atrito. Só há freio quando você aciona os propulsores.",
+    "es": "Sin fricción. Solo frenas cuando activas los propulsores.",
+    "fr": "Sans friction. Pour freiner, allumez vos propulseurs.",
+    "de": "Keine Reibung. Bremsen musst du mit deinen Triebwerken."
+  },
+  "cover": "apps/game/public/favicon.svg",
+  "genre": "space-action-rpg",
+  "tech": ["TypeScript", "Three.js", "React"],
+  "order": 5
+}
