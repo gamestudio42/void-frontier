@@ -45,6 +45,8 @@ export interface RenderOptions {
   aim: Vec2 | null;
   /** Combat target to keep in frame, if any. */
   frame?: Vec2 | null;
+  /** The framed ship is the Dreadmaw: pull back and drop the tilt so the flagship reads. */
+  boss?: boolean;
 }
 
 /** What a sector's own colour needs from its data. */
@@ -250,7 +252,10 @@ export class SpaceRenderer {
       if (event.type === 'collision') {
         const involvesPlayer = event.a === sim.playerId || event.b === sim.playerId;
         this.sparks(event.point, event.normal, event.speed);
-        if (involvesPlayer) this.rig.shake(Math.min(0.9, 0.12 + event.speed / 40 + event.damage / 400));
+        if (involvesPlayer) {
+          this.rig.shake(Math.min(0.9, 0.12 + event.speed / 40 + event.damage / 400));
+          if (event.damage > 0) this.ring(toScene(event.point, 0.5), 6 + Math.min(28, event.speed * 0.45), 0.35, 0xff6b5a, null);
+        }
       } else if (event.type === 'scan') {
         this.ring(toScene(event.position, 0.6), event.range, 1.3, 0x6fd3ff, null);
       } else if (event.type === 'asteroidDepleted') {
@@ -313,7 +318,7 @@ export class SpaceRenderer {
     if (body && ship) {
       const position = toScene(lerp2(body.previousPosition, body.position, alpha));
       const velocity = toScene(body.velocity);
-      const focus = this.rig.update(position, velocity, frameDt, options.frame ? toScene(options.frame) : null);
+      const focus = this.rig.update(position, velocity, frameDt, options.frame ? toScene(options.frame) : null, options.boss === true);
       this.dust.setFocus(focus, this.rig.camera.position.distanceTo(focus));
       this.grid.setFocus(focus);
       this.starfield.position.copy(this.rig.camera.position);
@@ -344,8 +349,16 @@ export class SpaceRenderer {
     for (const impact of this.beams.update(sim.world, this.time)) {
       const p = toScene(impact, 1);
       if (impact.mining) {
-        // Cutting rock: hot sparks and a haze of dust.
-        this.particles.emit(p.x, p.y, p.z, (Math.random() - 0.5) * 24, Math.random() * 8, (Math.random() - 0.5) * 24, SPARK, SPARK_END, 0.7, 0.3 + Math.random() * 0.3, 1.5);
+        const from = toScene({ x: impact.fromX, y: impact.fromY }, 1);
+        const dx = p.x - from.x;
+        const dz = p.z - from.z;
+        const span = Math.hypot(dx, dz) || 1;
+        // Cutting rock: a hot contact, sparks thrown on past the cut, and a haze of dust.
+        this.particles.emit(p.x, 1.5, p.z, 0, 0, 0, SPARK, SPARK_END, 3.4, 0.1, 0);
+        for (let i = 0; i < 5; i++) {
+          const s = 12 + Math.random() * 18;
+          this.particles.emit(p.x, p.y, p.z, (dx / span) * s, Math.random() * 4, (dz / span) * s, SPARK, SPARK_END, 1.1, 0.4 + Math.random() * 0.2, 0.45);
+        }
         if (Math.random() < 0.5) this.particles.emit(p.x, p.y, p.z, (Math.random() - 0.5) * 6, Math.random() * 2, (Math.random() - 0.5) * 6, DUST, DUST_END, 3 + Math.random() * 3, 0.8 + Math.random(), 0.6);
       } else {
         for (let i = 0; i < 2; i++) this.particles.emit(p.x, p.y, p.z, (Math.random() - 0.5) * 30, Math.random() * 6, (Math.random() - 0.5) * 30, BEAM_GLOW, BEAM_GLOW_END, 2 + Math.random() * 2, 0.15 + Math.random() * 0.2, 3);
@@ -512,6 +525,13 @@ export class SpaceRenderer {
         (n.x + (Math.random() - 0.5)) * 6, (Math.random() - 0.5) * 3, (n.z + (Math.random() - 0.5)) * 6,
         DUST, DUST_END, 5 + Math.random() * 6, 1 + Math.random(), 0.8,
       );
+    }
+    // Chunks that keep travelling after the hit, so the impact has a follow-through.
+    if (speed > 4) {
+      for (let i = 0; i < 6; i++) {
+        const s = 8 + speed * 0.35;
+        this.particles.emit(p.x, p.y, p.z, n.x * s, (Math.random() - 0.3) * 4, n.z * s, SPARK, SPARK_END, 1.6 + Math.random(), 0.85 + Math.random() * 0.45, 0.3);
+      }
     }
   }
 

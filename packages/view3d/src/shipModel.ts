@@ -83,6 +83,39 @@ const nameHash = (id: string): number => {
   return (h % 1000) / 1000;
 };
 
+/**
+ * The starter scout, built so the silhouette is a machine: a pinched nose, a raised
+ * canopy, and twin booms that stick out past the tail. Other hulls keep the shared body.
+ */
+function buildKestrel(
+  root: Group,
+  L: number,
+  W: number,
+  hull: MeshStandardMaterial,
+  dark: MeshStandardMaterial,
+  accent: MeshStandardMaterial,
+  glass: MeshStandardMaterial,
+): void {
+  root.add(box(L * 0.46, L * 0.1, W * 0.42, hull, -L * 0.16));
+  root.add(box(L * 0.26, L * 0.08, W * 0.26, hull, L * 0.14));
+  root.add(box(L * 0.16, L * 0.05, W * 0.12, dark, L * 0.34, L * 0.008));
+  root.add(box(L * 0.14, L * 0.06, W * 0.2, dark, L * 0.16, L * 0.065));
+  root.add(box(L * 0.09, L * 0.03, W * 0.14, glass, L * 0.18, L * 0.095));
+  const fin = box(L * 0.14, L * 0.12, L * 0.012, dark, -L * 0.06, L * 0.11);
+  root.add(fin);
+  const mast = new Mesh(new CylinderGeometry(L * 0.007, L * 0.01, L * 0.18, 6), dark);
+  mast.position.set(-L * 0.02, L * 0.16, -W * 0.06);
+  root.add(mast);
+  for (const side of [-1, 1] as const) {
+    root.add(box(L * 0.58, L * 0.065, W * 0.13, dark, -L * 0.22, -L * 0.012, side * W * 0.46));
+    root.add(box(L * 0.1, L * 0.09, W * 0.16, hull, -L * 0.5, 0, side * W * 0.46));
+    root.add(box(L * 0.12, L * 0.035, W * 0.07, accent, L * 0.3, -L * 0.02, side * W * 0.2));
+    const vane = box(L * 0.2, L * 0.012, W * 0.22, accent, -L * 0.04, L * 0.05, side * W * 0.36);
+    vane.rotation.x = side * 0.4;
+    root.add(vane);
+  }
+}
+
 /** Plates, vents and conduits along the hull, merged into one mesh: much more surface for one draw call. */
 function hullDetail(definition: ShipDefinition, L: number, W: number, material: Material): Mesh {
   const rng = new Rng(Math.round(nameHash(definition.id) * 1e6) + 1);
@@ -127,7 +160,11 @@ export function buildShipModel(definition: ShipDefinition, faction: 'player' | '
     accent.emissive.setHex(0x3a0503);
   }
   const glass = windowMaterial();
+  const kestrel = definition.id === 'kestrel';
 
+  if (kestrel) {
+    buildKestrel(root, L, W, hull, dark, accent, glass);
+  } else {
   // Spine and cockpit.
   root.add(box(L * 0.78, L * 0.12, W * 0.38, hull, -L * 0.04));
   root.add(box(L * 0.2, L * 0.1, W * 0.3, dark, L * 0.4, 0.01 * L));
@@ -190,28 +227,32 @@ export function buildShipModel(definition: ShipDefinition, faction: 'player' | '
   const band = box(L * 0.05, L * 0.015, W * 0.42, accent, -L * (0.05 + nameHash(definition.id) * 0.25), L * 0.067);
   root.add(band);
 
-  // Antenna mast.
   const mast = new Mesh(new CylinderGeometry(L * 0.006, L * 0.006, L * 0.16, 6), dark);
   mast.position.set(L * 0.05, L * 0.12, -W * 0.12);
   root.add(mast);
+  }
 
-  // Main engines at the tail.
-  const tail = -L * 0.45;
-  const nozzleRadius = L * 0.055;
+  // Main engines at the tail. The scout's bells and plumes are longer so thrust reads at range.
+  const tail = kestrel ? -L * 0.52 : -L * 0.45;
+  const nozzleRadius = L * (kestrel ? 0.072 : 0.055);
+  const plumeLength = kestrel ? L * 1.85 : L * 0.9;
   const mains: Plume[] = [];
+  const cores: Plume[] = [];
+  const boom = kestrel ? W * 0.46 : W * 0.2;
   for (const side of [-1, 1]) {
     const nozzle = new Mesh(new CylinderGeometry(nozzleRadius * 0.8, nozzleRadius, L * 0.08, 12, 1, true), dark);
     nozzle.rotation.z = Math.PI / 2;
-    nozzle.position.set(tail, 0, side * W * 0.2);
+    nozzle.position.set(tail, 0, side * boom);
     root.add(nozzle);
     const core = new Mesh(new CylinderGeometry(nozzleRadius * 0.7, nozzleRadius * 0.7, L * 0.01, 12), new MeshBasicMaterial({ color: PALETTE.engineCore }));
     core.rotation.z = Math.PI / 2;
-    core.position.set(tail + L * 0.03, 0, side * W * 0.2);
+    core.position.set(tail + L * 0.03, 0, side * boom);
     root.add(core);
-    mains.push(place(root, plume(nozzleRadius * 0.9, L * 0.9, PALETTE.enginePlume, 'x', -1), tail - L * 0.04, 0, side * W * 0.2));
+    mains.push(place(root, plume(nozzleRadius * 0.9, plumeLength, PALETTE.enginePlume, 'x', -1), tail - L * 0.04, 0, side * boom));
+    if (kestrel) cores.push(place(root, plume(nozzleRadius * 0.32, L * 0.7, 0xf4fbff, 'x', -1), tail - L * 0.02, 0, side * boom));
   }
-  const engineLight = new PointLight(PALETTE.enginePlume, 0, L * 4, 2);
-  engineLight.position.set(tail - L * 0.3, L * 0.1, 0);
+  const engineLight = new PointLight(PALETTE.enginePlume, 0, kestrel ? L * 8 : L * 4, 2);
+  engineLight.position.set(tail - L * 0.35, L * 0.1, 0);
   root.add(engineLight);
 
   // Reaction-control thrusters: small plumes on the nose, tail and flanks.
@@ -263,8 +304,9 @@ export function buildShipModel(definition: ShipDefinition, faction: 'player' | '
       const flicker = 0.9 + 0.1 * Math.sin(time * 61) * Math.sin(time * 23);
       const mainLength = output.main * (output.boosting ? 1.5 : 1);
       drive(mains, mainLength, flicker);
+      drive(cores, mainLength, flicker);
       for (const p of mains) (p.mesh.material as MeshBasicMaterial).color.setHex(output.boosting ? PALETTE.boostPlume : PALETTE.enginePlume);
-      engineLight.intensity = output.main * (output.boosting ? 90 : 50) * flicker;
+      engineLight.intensity = output.main * (output.boosting ? (kestrel ? 170 : 90) : (kestrel ? 120 : 50)) * flicker;
       engineLight.color.setHex(output.boosting ? PALETTE.boostPlume : PALETTE.enginePlume);
       drive(reverse, output.reverse, flicker);
       drive(pushRight, Math.max(0, output.lateral), flicker);

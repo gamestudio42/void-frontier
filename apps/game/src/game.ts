@@ -460,10 +460,13 @@ export class Game {
     const frameDt = paused || help ? 0 : Math.min(elapsed, 0.1);
     // Keep a nearby target in frame so dogfights stay on screen.
     const targetBody = this.target !== null ? this.sim.world.bodies.get(this.target) : undefined;
+    const targetShip = this.target !== null ? this.sim.world.ships.get(this.target) : undefined;
+    const boss = targetShip?.baseDefinition.id === 'dreadmaw' && !targetShip.destroyed;
     const me = this.sim.world.bodies.get(this.sim.playerId);
-    const frameTarget = targetBody && me && Math.hypot(targetBody.position.x - me.position.x, targetBody.position.y - me.position.y) < 650 ? targetBody.position : null;
+    const gap = targetBody && me ? Math.hypot(targetBody.position.x - me.position.x, targetBody.position.y - me.position.y) : Infinity;
+    const frameTarget = targetBody && gap < (boss ? 1600 : 650) ? targetBody.position : null;
     this.audio.update(this.sim, !paused && !help, elapsed);
-    const stats = this.renderer.render(this.sim, alpha, frameDt, { aim: this.input.steering ? this.aim : null, frame: frameTarget });
+    const stats = this.renderer.render(this.sim, alpha, frameDt, { aim: this.input.steering ? this.aim : null, frame: frameTarget, boss: boss && frameTarget !== null });
     if (this.radar) drawRadar(this.radar, this.sim, this.clock, this.target);
     this.hitFlash = Math.max(0, this.hitFlash - elapsed * 6);
     // Docked, the scene slides aside so the ship stays visible next to the station panel.

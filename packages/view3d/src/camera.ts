@@ -39,11 +39,13 @@ export class CameraRig {
   private initialised = false;
   private trauma = 0;
   private combatZoom = 1;
+  private bossTilt: number;
   private time = 0;
   private readonly lookTarget = new Vector3();
 
   constructor(readonly settings: CameraSettings = DEFAULT_CAMERA) {
     this.camera = new PerspectiveCamera(settings.fov, 1, 1, 20000);
+    this.bossTilt = settings.tilt;
   }
 
   get zoomLevel(): number {
@@ -73,7 +75,7 @@ export class CameraRig {
    * `target` and `velocity` are in scene units (XZ plane). `frame` is an optional second
    * point to keep in view (the combat target): the camera eases back and shifts toward it.
    */
-  update(target: Vector3, velocity: Vector3, frameDt: number, frame: Vector3 | null = null): Vector3 {
+  update(target: Vector3, velocity: Vector3, frameDt: number, frame: Vector3 | null = null, boss = false): Vector3 {
     const s = this.settings;
     const speed = Math.hypot(velocity.x, velocity.z);
     const lead = Math.min(s.maxLookAhead, speed * s.lookAhead);
@@ -84,9 +86,12 @@ export class CameraRig {
       const gap = Math.hypot(frame.x - target.x, frame.z - target.z);
       this.desired.x += (frame.x - this.desired.x) * 0.45;
       this.desired.z += (frame.z - this.desired.z) * 0.45;
-      wantedCombatZoom = Math.min(3, Math.max(1, (gap * 1.7) / s.distance));
+      const pull = boss ? 2.15 : 1.7;
+      wantedCombatZoom = Math.min(boss ? 2.6 : 3, Math.max(boss ? 1.65 : 1, (gap * pull) / s.distance));
     }
     this.combatZoom += (wantedCombatZoom - this.combatZoom) * (this.initialised ? 1 - Math.exp(-frameDt / 0.8) : 1);
+    const wantedTilt = boss && frame ? 40 : s.tilt;
+    this.bossTilt += (wantedTilt - this.bossTilt) * (this.initialised ? 1 - Math.exp(-frameDt / 0.6) : 1);
 
     const blend = this.initialised ? 1 - Math.exp(-frameDt / s.smoothing) : 1;
     this.focus.lerp(this.desired, blend);
@@ -95,7 +100,7 @@ export class CameraRig {
     this.initialised = true;
 
     const distance = s.distance * this.zoom * Math.max(this.speedZoom, this.combatZoom);
-    const tilt = (s.tilt * Math.PI) / 180;
+    const tilt = (this.bossTilt * Math.PI) / 180;
     this.camera.position.set(this.focus.x, this.focus.y + Math.sin(tilt) * distance, this.focus.z + Math.cos(tilt) * distance);
     this.lookTarget.copy(this.focus);
 

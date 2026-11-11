@@ -2165,7 +2165,7 @@ button {
 
 .briefing figure {
   margin: 0;
-  flex: 0 0 56px;
+  flex: 0 0 72px;
   font-size: 9px;
   color: var(--muted);
   text-align: center;
@@ -2173,8 +2173,8 @@ button {
 
 .portrait {
   display: block;
-  width: 56px;
-  height: 56px;
+  width: 72px;
+  height: 72px;
   border: 1px solid var(--panel-edge);
   border-radius: 4px;
 }
