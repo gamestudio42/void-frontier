@@ -190,12 +190,14 @@ export function buildAuthoredShip(id: string, length: number): ShipModel | null 
 
   const plumes: Plume[] = [];
   const emitters: Emitter[] = [];
-  const addPlume = (nozzle: Nozzle, groups: ThrusterGroup[], radius: number, plumeLength: number, color: number, core: boolean) => {
+  const addPlume = (nozzle: Nozzle, groups: ThrusterGroup[], radius: number, plumeLength: number, color: number, core: boolean, seat: number) => {
     const direction = new Vector3(...nozzle.direction).normalize();
-    const mesh = plumeMesh(radius * scale, color, direction);
+    const mesh = plumeMesh(radius, color, direction);
     mesh.position.set(nozzle.position[0] * scale, nozzle.position[1] * scale, nozzle.position[2] * scale);
+    // Seat the base in the throat so the jet comes out of the bell instead of starting behind it.
+    if (seat > 0) mesh.position.addScaledVector(direction, -seat);
     root.add(mesh);
-    plumes.push({ mesh, length: plumeLength * scale, groups, core });
+    plumes.push({ mesh, length: plumeLength, groups, core });
     if (!core) {
       for (const group of groups) emitters.push({ group, position: mesh.position.clone(), direction });
     }
@@ -206,18 +208,23 @@ export function buildAuthoredShip(id: string, length: number): ShipModel | null 
   for (const nozzle of file.nozzles) {
     const groups = nozzle.groups.filter(isGroup);
     const main = groups.includes('main') && nozzle.name.startsWith('exhaust');
-    addPlume(nozzle, groups, nozzle.radius, nozzle.length, PALETTE.enginePlume, false);
+    const throat = nozzle.radius * scale;
+    // Main jets fill the mouth and run long enough to read at combat camera distance.
+    const radius = main ? throat * 1.35 : throat;
+    const plumeLength = main ? Math.max(nozzle.length * scale * 1.8, length * 0.72) : nozzle.length * scale;
+    const seat = main ? throat * 1.5 : 0;
+    addPlume(nozzle, groups, radius, plumeLength, PALETTE.enginePlume, false, seat);
     if (main) {
-      addPlume(nozzle, groups, nozzle.radius * 0.45, nozzle.length * 0.45, PALETTE.engineCore, true);
+      addPlume(nozzle, groups, radius * 0.42, plumeLength * 0.55, PALETTE.engineCore, true, seat);
       mainAnchor.add(new Vector3(...nozzle.position));
       mains += 1;
     }
   }
-  // Sit the light in the plume, aft of the bells, so the hull does not swallow it.
-  const engineLight = new PointLight(PALETTE.enginePlume, 0, length * 8, 2);
+  // A short light in the mouth. A light metres behind the bells washes the hull and leaves the throat dark.
+  const engineLight = new PointLight(PALETTE.enginePlume, 0, length * 2, 2);
   if (mains > 0) {
     mainAnchor.multiplyScalar(scale / mains);
-    engineLight.position.copy(mainAnchor).addScaledVector(new Vector3(-1, 0, 0), length * 0.18);
+    engineLight.position.copy(mainAnchor).addScaledVector(new Vector3(-1, 0, 0), Math.min(1.2, length * 0.06));
   }
   root.add(engineLight);
 
@@ -252,7 +259,8 @@ export function buildAuthoredShip(id: string, length: number): ShipModel | null 
           (plume.mesh.material as MeshBasicMaterial).color.setHex(boosting ? PALETTE.boostPlume : PALETTE.enginePlume);
         }
       }
-      engineLight.intensity = output.main * (boosting ? 170 : 110) * flicker;
+      glowMaterial.emissiveIntensity = 1.6 + output.main * (boosting ? 2.4 : 1.5);
+      engineLight.intensity = output.main * (boosting ? 46 : 24) * flicker;
       engineLight.color.setHex(boosting ? PALETTE.boostPlume : PALETTE.enginePlume);
     },
     dispose() {

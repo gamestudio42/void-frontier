@@ -477,27 +477,29 @@ export class SpaceRenderer {
         return;
       }
       const main = emitter.group === 'main';
-      const rate = (main ? 180 : 50) * level * (output.boosting && main ? 1.6 : 1);
+      const rate = (main ? 280 : 50) * level * (output.boosting && main ? 1.4 : 1);
       let carry = (this.emitCarry.get(key) ?? 0) + rate * dt;
       this.emitPosition.copy(emitter.position).applyMatrix4(model.root.matrixWorld);
       this.emitDirection.copy(emitter.direction).transformDirection(model.root.matrixWorld);
+      // Start the column at the lip, so the first puffs are the jet leaving the bell.
+      if (main) this.emitPosition.addScaledVector(this.emitDirection, 1.1);
       while (carry >= 1) {
         carry -= 1;
-        const speed = main ? 70 + Math.random() * 40 : 18 + Math.random() * 10;
-        const spread = main ? 7 : 5;
+        const speed = main ? 55 + Math.random() * 25 : 18 + Math.random() * 10;
+        const spread = main ? 2.2 : 5;
         const t = Math.random() * dt;
         this.particles.emit(
           this.emitPosition.x + velocity.x * t,
           this.emitPosition.y,
           this.emitPosition.z + velocity.z * t,
           velocity.x + this.emitDirection.x * speed + (Math.random() - 0.5) * spread,
-          (Math.random() - 0.5) * spread * 0.5,
+          (Math.random() - 0.5) * spread * 0.4,
           velocity.z + this.emitDirection.z * speed + (Math.random() - 0.5) * spread,
           main ? (output.boosting ? BOOST : EXHAUST) : RCS,
           main ? (output.boosting ? BOOST_END : EXHAUST_END) : RCS_END,
-          main ? 1.4 + level * 0.9 : 0.9,
-          main ? 0.35 + Math.random() * 0.25 : 0.25 + Math.random() * 0.15,
-          main ? 0.6 : 2.5,
+          main ? 0.45 + level * 0.35 : 0.9,
+          main ? 0.22 + Math.random() * 0.16 : 0.25 + Math.random() * 0.15,
+          main ? 0.35 : 2.5,
         );
       }
       this.emitCarry.set(key, carry);
