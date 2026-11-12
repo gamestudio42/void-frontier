@@ -90,8 +90,8 @@ export class BeamRenderer {
     this.geometry.translate(0.5, 0, 0);
   }
 
-  update(world: World, time: number): { x: number; y: number; mining: boolean }[] {
-    const impacts: { x: number; y: number; mining: boolean }[] = [];
+  update(world: World, time: number): { x: number; y: number; fromX: number; fromY: number; mining: boolean }[] {
+    const impacts: { x: number; y: number; fromX: number; fromY: number; mining: boolean }[] = [];
     const active = new Set<string>();
     for (const [id, ship] of world.ships) {
       ship.weapons.forEach((mount, index) => {
@@ -121,9 +121,10 @@ export class BeamRenderer {
         beam.group.position.set(from.x, 0, -from.y);
         beam.group.rotation.y = Math.atan2(dy, dx);
         const flicker = 0.85 + Math.sin(time * 90 + index) * 0.15;
-        beam.core.scale.set(length, 1, 0.3 * flicker);
-        beam.glow.scale.set(length, 1, 1.5 * flicker);
-        if (mount.beam.hit !== null) impacts.push({ ...to, mining: mount.definition.kind === 'mining' });
+        const mining = mount.definition.kind === 'mining';
+        beam.core.scale.set(length, 1, (mining ? 0.7 : 0.3) * flicker);
+        beam.glow.scale.set(length, 1, (mining ? 4.2 : 1.5) * flicker);
+        if (mount.beam.hit !== null) impacts.push({ x: to.x, y: to.y, fromX: from.x, fromY: from.y, mining });
       });
     }
     for (const [key, beam] of this.beams) if (!active.has(key)) beam.group.visible = false;

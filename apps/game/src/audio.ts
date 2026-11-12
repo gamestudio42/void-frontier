@@ -12,10 +12,12 @@ export class AudioEngine {
   private effects!: GainNode;
   private music!: GainNode;
   private noise!: AudioBuffer;
-  private engine!: { gain: GainNode; filter: BiquadFilterNode; osc: OscillatorNode };
+  private engine!: { gain: GainNode; filter: BiquadFilterNode; osc: OscillatorNode; body: OscillatorNode; bodyGain: GainNode };
   private rcs!: { gain: GainNode };
   private beam!: { gain: GainNode; osc: OscillatorNode };
   private drill!: { gain: GainNode; osc: OscillatorNode };
+  private drillNoise!: GainNode;
+  private bossHeard = new Set<number>();
   private musicTimer = 0;
   private chord = 0;
   private mood: 'flight' | 'combat' | 'station' = 'flight';
@@ -61,7 +63,14 @@ export class AudioEngine {
     humFilter.frequency.value = 120;
     hum.connect(humFilter).connect(engineGain);
     hum.start();
-    this.engine = { gain: engineGain, filter: engineFilter, osc: hum };
+    const body = ctx.createOscillator();
+    body.type = 'sine';
+    body.frequency.value = 28;
+    const bodyGain = ctx.createGain();
+    bodyGain.gain.value = 0;
+    body.connect(bodyGain).connect(engineGain);
+    body.start();
+    this.engine = { gain: engineGain, filter: engineFilter, osc: hum, body, bodyGain };
 
     // Reaction thrusters: a high hiss.
     const rcsGain = ctx.createGain();
@@ -74,6 +83,14 @@ export class AudioEngine {
 
     this.beam = this.tone('sawtooth', 660, 1800);
     this.drill = this.tone('square', 140, 900);
+    const drillNoise = ctx.createGain();
+    drillNoise.gain.value = 0;
+    const drillFilter = ctx.createBiquadFilter();
+    drillFilter.type = 'bandpass';
+    drillFilter.frequency.value = 880;
+    drillFilter.Q.value = 0.8;
+    this.loopNoise().connect(drillFilter).connect(drillNoise).connect(this.effects);
+    this.drillNoise = drillNoise;
   }
 
   setVolumes(master: number, effects: number, music: number): void {
@@ -120,16 +137,20 @@ export class AudioEngine {
     const out = ship?.output;
     const main = on && out ? out.main * (out.boosting ? 1.4 : 1) : 0;
     const side = on && out ? Math.min(1, Math.abs(out.lateral) + Math.abs(out.rotation) * 0.6 + out.reverse) : 0;
-    this.engine.gain.gain.setTargetAtTime(main * 0.5, t, 0.08);
-    this.engine.filter.frequency.setTargetAtTime(160 + main * 500, t, 0.1);
-    this.engine.osc.frequency.setTargetAtTime(38 + main * 22, t, 0.2);
+    this.engine.gain.gain.setTargetAtTime(main * 0.42, t, 0.08);
+    this.engine.filter.frequency.setTargetAtTime(140 + main * 620, t, 0.1);
+    this.engine.osc.frequency.setTargetAtTime(36 + main * 28, t, 0.15);
+    this.engine.body.frequency.setTargetAtTime(26 + main * 22, t, 0.12);
+    this.engine.bodyGain.gain.setTargetAtTime(main * 0.32, t, 0.08);
     this.rcs.gain.gain.setTargetAtTime(side * 0.07, t, 0.04);
     const beam = on && ship!.weapons.some((w) => w.beam && w.definition.kind === 'beam');
     const drill = on && ship!.weapons.some((w) => w.beam && w.definition.kind === 'mining');
     this.beam.gain.gain.setTargetAtTime(beam ? 0.05 : 0, t, 0.03);
     this.beam.osc.frequency.setTargetAtTime(660 + Math.sin(t * 40) * 30, t, 0.01);
-    this.drill.gain.gain.setTargetAtTime(drill ? 0.045 : 0, t, 0.05);
-    this.drill.osc.frequency.setTargetAtTime(140 + Math.sin(t * 23) * 18, t, 0.02);
+    this.drill.gain.gain.setTargetAtTime(drill ? 0.04 : 0, t, 0.05);
+    this.drill.osc.frequency.setTargetAtTime(120 + Math.sin(t * 23) * 16, t, 0.02);
+    this.drillNoise.gain.setTargetAtTime(drill ? 0.07 : 0, t, 0.04);
+    this.watchBoss(sim);
 
     // The score follows the moment: calm in dock, restless when someone is shooting nearby.
     const previous = this.mood;
@@ -160,8 +181,10 @@ export class AudioEngine {
           const body = sim.world.bodies.get(e.owner);
           const where = body ? at(body.position) : { gain: 0.3, pan: 0 };
           const mine = e.owner === sim.playerId;
-          this.burst({ duration: 0.09, freq: mine ? 1400 : 1000, type: 'bandpass', gain: (mine ? 0.22 : 0.16) * where.gain, pan: where.pan });
-          this.thump(mine ? 90 : 70, 0.08, (mine ? 0.18 : 0.1) * where.gain, where.pan);
+          const level = mine ? 1 : 0.7;
+          this.burst({ duration: 0.035, freq: 2800, type: 'highpass', gain: 0.14 * level * where.gain, pan: where.pan });
+          this.thump(mine ? 125 : 90, 0.18, 0.2 * level * where.gain, where.pan);
+          this.burst({ duration: 0.16, freq: 240, type: 'lowpass', gain: 0.1 * level * where.gain, pan: where.pan, sweepTo: 70 });
           break;
         }
         case 'hit': {
@@ -170,13 +193,15 @@ export class AudioEngine {
           if (e.shieldDamage > 0) this.sweep(1800, 900, 0.12, 0.08 * where.gain, where.pan, 'sine');
           else if (e.hullDamage > 0) this.burst({ duration: 0.12, freq: 3000, type: 'bandpass', gain: 0.18 * where.gain, pan: where.pan });
           else this.burst({ duration: 0.08, freq: 600, type: 'lowpass', gain: 0.08 * where.gain, pan: where.pan });
+          if (sim.world.ships.get(e.target)?.baseDefinition.id === 'dreadmaw') this.thump(38, 0.5, 0.3 * where.gain, where.pan);
           break;
         }
         case 'collision': {
           const where = at(e.point);
           const level = Math.min(1, e.speed / 20);
-          this.thump(55, 0.35, (0.2 + level * 0.5) * where.gain, where.pan);
-          this.burst({ duration: 0.25, freq: 400, type: 'lowpass', gain: level * 0.3 * where.gain, pan: where.pan });
+          this.thump(46, 0.42, (0.22 + level * 0.4) * where.gain, where.pan);
+          this.burst({ duration: 0.3, freq: 360, type: 'lowpass', gain: level * 0.26 * where.gain, pan: where.pan, sweepTo: 70 });
+          this.sweep(480, 80, 0.34, 0.11 * level * where.gain, where.pan, 'triangle');
           break;
         }
         case 'shipDestroyed': {
@@ -231,6 +256,22 @@ export class AudioEngine {
           break;
       }
     }
+  }
+
+  /** A low horn the first time the flagship is in the sector, including when it returns repaired. */
+  private watchBoss(sim: Simulation): void {
+    const alive = new Set<number>();
+    for (const [id, ship] of sim.world.ships) {
+      if (ship.destroyed || ship.baseDefinition.id !== 'dreadmaw') continue;
+      alive.add(id);
+      if (!this.bossHeard.has(id)) {
+        this.bossHeard.add(id);
+        this.sweep(76, 32, 1.7, 0.2, 0, 'sawtooth');
+        this.thump(30, 1.6, 0.4, 0);
+        this.burst({ duration: 1.3, freq: 100, type: 'lowpass', gain: 0.18, pan: 0, sweepTo: 40 });
+      }
+    }
+    for (const id of this.bossHeard) if (!alive.has(id)) this.bossHeard.delete(id);
   }
 
   /** Jump-gate transit: a rising whoosh into a low boom. */

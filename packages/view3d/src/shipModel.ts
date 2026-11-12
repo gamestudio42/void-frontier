@@ -18,10 +18,11 @@ import type { ThrusterOutput } from '@void-frontier/simulation';
 import { PALETTE } from './palette.ts';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { Rng } from '@void-frontier/kernel';
+import { buildAuthoredShip } from './authoredShip.ts';
 
 /**
- * Procedural ships, built from boxes and cylinders so the look stays original and needs
- * no asset pipeline. The model's nose points along +X and its right side along +Z.
+ * Ships are built in model space: the nose points along +X and the right side along +Z.
+ * Kestrel, Marauder, Bulwark and Dreadmaw use authored meshes. The rest are boxes.
  */
 export type ThrusterGroup = 'main' | 'reverse' | 'pushRight' | 'pushLeft' | 'ccw' | 'cw';
 
@@ -109,6 +110,8 @@ function hullDetail(definition: ShipDefinition, L: number, W: number, material: 
 /** `faction` changes the livery: pirates fly dark hulls with blood-red trim. */
 export function buildShipModel(definition: ShipDefinition, faction: 'player' | 'pirate' | 'trader' = 'player'): ShipModel {
   const L = definition.hull.length;
+  const authored = buildAuthoredShip(definition.id, L);
+  if (authored) return authored;
   const hauler = definition.class === 'hauler';
   const W = hauler ? L * 0.42 : L * 0.34;
   const root = new Group();
@@ -190,7 +193,6 @@ export function buildShipModel(definition: ShipDefinition, faction: 'player' | '
   const band = box(L * 0.05, L * 0.015, W * 0.42, accent, -L * (0.05 + nameHash(definition.id) * 0.25), L * 0.067);
   root.add(band);
 
-  // Antenna mast.
   const mast = new Mesh(new CylinderGeometry(L * 0.006, L * 0.006, L * 0.16, 6), dark);
   mast.position.set(L * 0.05, L * 0.12, -W * 0.12);
   root.add(mast);
@@ -198,20 +200,22 @@ export function buildShipModel(definition: ShipDefinition, faction: 'player' | '
   // Main engines at the tail.
   const tail = -L * 0.45;
   const nozzleRadius = L * 0.055;
+  const plumeLength = L * 0.9;
   const mains: Plume[] = [];
+  const boom = W * 0.2;
   for (const side of [-1, 1]) {
     const nozzle = new Mesh(new CylinderGeometry(nozzleRadius * 0.8, nozzleRadius, L * 0.08, 12, 1, true), dark);
     nozzle.rotation.z = Math.PI / 2;
-    nozzle.position.set(tail, 0, side * W * 0.2);
+    nozzle.position.set(tail, 0, side * boom);
     root.add(nozzle);
     const core = new Mesh(new CylinderGeometry(nozzleRadius * 0.7, nozzleRadius * 0.7, L * 0.01, 12), new MeshBasicMaterial({ color: PALETTE.engineCore }));
     core.rotation.z = Math.PI / 2;
-    core.position.set(tail + L * 0.03, 0, side * W * 0.2);
+    core.position.set(tail + L * 0.03, 0, side * boom);
     root.add(core);
-    mains.push(place(root, plume(nozzleRadius * 0.9, L * 0.9, PALETTE.enginePlume, 'x', -1), tail - L * 0.04, 0, side * W * 0.2));
+    mains.push(place(root, plume(nozzleRadius * 0.9, plumeLength, PALETTE.enginePlume, 'x', -1), tail - L * 0.04, 0, side * boom));
   }
   const engineLight = new PointLight(PALETTE.enginePlume, 0, L * 4, 2);
-  engineLight.position.set(tail - L * 0.3, L * 0.1, 0);
+  engineLight.position.set(tail - L * 0.35, L * 0.1, 0);
   root.add(engineLight);
 
   // Reaction-control thrusters: small plumes on the nose, tail and flanks.
