@@ -19,18 +19,30 @@ import {
   type Texture,
 } from 'three';
 import type { ThrusterOutput } from '@void-frontier/simulation';
-import atlasUrl from '../assets/kestrel/atlas.png';
-import glowUrl from '../assets/kestrel/glow.png';
-import ormUrl from '../assets/kestrel/orm.png';
-import hull from '../assets/kestrel/hull.json';
+import kestrelAtlas from '../assets/kestrel/atlas.png';
+import kestrelGlow from '../assets/kestrel/glow.png';
+import kestrelOrm from '../assets/kestrel/orm.png';
+import kestrelHull from '../assets/kestrel/hull.json';
+import marauderAtlas from '../assets/marauder/atlas.png';
+import marauderGlow from '../assets/marauder/glow.png';
+import marauderOrm from '../assets/marauder/orm.png';
+import marauderHull from '../assets/marauder/hull.json';
+import bulwarkAtlas from '../assets/bulwark/atlas.png';
+import bulwarkGlow from '../assets/bulwark/glow.png';
+import bulwarkOrm from '../assets/bulwark/orm.png';
+import bulwarkHull from '../assets/bulwark/hull.json';
+import dreadmawAtlas from '../assets/dreadmaw/atlas.png';
+import dreadmawGlow from '../assets/dreadmaw/glow.png';
+import dreadmawOrm from '../assets/dreadmaw/orm.png';
+import dreadmawHull from '../assets/dreadmaw/hull.json';
 import { PALETTE } from './palette.ts';
 import type { Emitter, ShipModel, ThrusterGroup } from './shipModel.ts';
 
 /**
- * The Kestrel's picture. Geometry is baked from the studio interceptor:
- * Blockbench's nose (−Z) is already turned to +X, and the mesh is centred.
- * `hull.length` is that mesh's length in its own units; the builder scales it
- * to the ship's hull length. Collision stays the circle in the ship data.
+ * Authored hulls baked from the studio ship kit. Blockbench's nose (−Z) is
+ * already turned to +X and the mesh is centred. `file.length` is that mesh's
+ * length in its own units; the builder scales it to the ship's hull length.
+ * Collision stays the circle in the ship data. Turrets stay facing forward.
  */
 
 interface Surface {
@@ -41,19 +53,38 @@ interface Surface {
 
 interface Nozzle {
   name: string;
-  groups: ThrusterGroup[];
+  groups: string[];
   position: [number, number, number];
   direction: [number, number, number];
   radius: number;
   length: number;
 }
 
+interface HullFile {
+  length: number;
+  atlas: Surface;
+  glow: Surface;
+  nozzles: Nozzle[];
+}
+
+interface HullSource {
+  file: HullFile;
+  atlas: string;
+  orm: string;
+  glow: string;
+}
+
 const GROUPS: readonly ThrusterGroup[] = ['main', 'reverse', 'pushRight', 'pushLeft', 'ccw', 'cw'];
 
-const surfaces = hull as { length: number; atlas: Surface; glow: Surface; nozzles: Nozzle[] };
+const HULLS: Record<string, HullSource> = {
+  kestrel: { file: kestrelHull as HullFile, atlas: kestrelAtlas, orm: kestrelOrm, glow: kestrelGlow },
+  marauder: { file: marauderHull as HullFile, atlas: marauderAtlas, orm: marauderOrm, glow: marauderGlow },
+  bulwark: { file: bulwarkHull as HullFile, atlas: bulwarkAtlas, orm: bulwarkOrm, glow: bulwarkGlow },
+  dreadmaw: { file: dreadmawHull as HullFile, atlas: dreadmawAtlas, orm: dreadmawOrm, glow: dreadmawGlow },
+};
 
-let geometryCache: { atlas: BufferGeometry; glow: BufferGeometry } | null = null;
-let textureCache: { atlas: Texture; orm: Texture; glow: Texture } | null = null;
+const geometryCache = new Map<string, { atlas: BufferGeometry; glow: BufferGeometry }>();
+const textureCache = new Map<string, { atlas: Texture; orm: Texture; glow: Texture }>();
 
 function surfaceGeometry(surface: Surface): BufferGeometry {
   const geometry = new BufferGeometry();
@@ -74,14 +105,22 @@ function loadMap(url: string, color: boolean): Texture {
   return texture;
 }
 
-function sharedGeometry(): { atlas: BufferGeometry; glow: BufferGeometry } {
-  geometryCache ??= { atlas: surfaceGeometry(surfaces.atlas), glow: surfaceGeometry(surfaces.glow) };
-  return geometryCache;
+function geometryFor(id: string, file: HullFile): { atlas: BufferGeometry; glow: BufferGeometry } {
+  let cached = geometryCache.get(id);
+  if (!cached) {
+    cached = { atlas: surfaceGeometry(file.atlas), glow: surfaceGeometry(file.glow) };
+    geometryCache.set(id, cached);
+  }
+  return cached;
 }
 
-function sharedTextures(): { atlas: Texture; orm: Texture; glow: Texture } {
-  textureCache ??= { atlas: loadMap(atlasUrl, true), orm: loadMap(ormUrl, false), glow: loadMap(glowUrl, true) };
-  return textureCache;
+function texturesFor(id: string, source: HullSource): { atlas: Texture; orm: Texture; glow: Texture } {
+  let cached = textureCache.get(id);
+  if (!cached) {
+    cached = { atlas: loadMap(source.atlas, true), orm: loadMap(source.orm, false), glow: loadMap(source.glow, true) };
+    textureCache.set(id, cached);
+  }
+  return cached;
 }
 
 interface Plume {
@@ -109,12 +148,22 @@ function plumeMesh(radius: number, color: number, direction: Vector3): Mesh {
   return mesh;
 }
 
-/** Textured scout. `length` is the hull length in metres; the mesh scales to it. */
-export function buildAuthoredKestrel(length: number): ShipModel {
-  const scale = length / surfaces.length;
+function isGroup(value: string): value is ThrusterGroup {
+  return (GROUPS as readonly string[]).includes(value);
+}
+
+/**
+ * The authored picture for this hull, or null when the ship is still procedural.
+ * `length` is the hull length in metres.
+ */
+export function buildAuthoredShip(id: string, length: number): ShipModel | null {
+  const source = HULLS[id];
+  if (!source) return null;
+  const file = source.file;
+  const scale = length / file.length;
   const root = new Group();
-  const geometry = sharedGeometry();
-  const maps = sharedTextures();
+  const geometry = geometryFor(id, file);
+  const maps = texturesFor(id, source);
   const hullMaterial = new MeshStandardMaterial({
     map: maps.atlas,
     roughnessMap: maps.orm,
@@ -141,32 +190,33 @@ export function buildAuthoredKestrel(length: number): ShipModel {
 
   const plumes: Plume[] = [];
   const emitters: Emitter[] = [];
-  const addPlume = (nozzle: Nozzle, radius: number, plumeLength: number, color: number, core: boolean) => {
+  const addPlume = (nozzle: Nozzle, groups: ThrusterGroup[], radius: number, plumeLength: number, color: number, core: boolean) => {
     const direction = new Vector3(...nozzle.direction).normalize();
     const mesh = plumeMesh(radius * scale, color, direction);
     mesh.position.set(nozzle.position[0] * scale, nozzle.position[1] * scale, nozzle.position[2] * scale);
     root.add(mesh);
-    plumes.push({ mesh, length: plumeLength * scale, groups: nozzle.groups, core });
+    plumes.push({ mesh, length: plumeLength * scale, groups, core });
     if (!core) {
-      for (const group of nozzle.groups) emitters.push({ group, position: mesh.position.clone(), direction });
+      for (const group of groups) emitters.push({ group, position: mesh.position.clone(), direction });
     }
   };
 
-  let mainAnchor: Vector3 | null = null;
-  for (const nozzle of surfaces.nozzles) {
-    nozzle.groups = nozzle.groups.filter((group): group is ThrusterGroup => GROUPS.includes(group));
-    const main = nozzle.groups.includes('main') && nozzle.name.startsWith('exhaust');
-    addPlume(nozzle, nozzle.radius, nozzle.length, PALETTE.enginePlume, false);
+  const mainAnchor = new Vector3();
+  let mains = 0;
+  for (const nozzle of file.nozzles) {
+    const groups = nozzle.groups.filter(isGroup);
+    const main = groups.includes('main') && nozzle.name.startsWith('exhaust');
+    addPlume(nozzle, groups, nozzle.radius, nozzle.length, PALETTE.enginePlume, false);
     if (main) {
-      addPlume(nozzle, nozzle.radius * 0.45, nozzle.length * 0.45, PALETTE.engineCore, true);
-      const at = new Vector3(nozzle.position[0], nozzle.position[1], nozzle.position[2]);
-      mainAnchor = mainAnchor ? mainAnchor.add(at) : at;
+      addPlume(nozzle, groups, nozzle.radius * 0.45, nozzle.length * 0.45, PALETTE.engineCore, true);
+      mainAnchor.add(new Vector3(...nozzle.position));
+      mains += 1;
     }
   }
   // Sit the light in the plume, aft of the bells, so the hull does not swallow it.
   const engineLight = new PointLight(PALETTE.enginePlume, 0, length * 8, 2);
-  if (mainAnchor) {
-    mainAnchor.multiplyScalar(0.5 * scale);
+  if (mains > 0) {
+    mainAnchor.multiplyScalar(scale / mains);
     engineLight.position.copy(mainAnchor).addScaledVector(new Vector3(-1, 0, 0), length * 0.18);
   }
   root.add(engineLight);

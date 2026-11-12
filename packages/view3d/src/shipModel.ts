@@ -18,11 +18,11 @@ import type { ThrusterOutput } from '@void-frontier/simulation';
 import { PALETTE } from './palette.ts';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { Rng } from '@void-frontier/kernel';
-import { buildAuthoredKestrel } from './authoredShip.ts';
+import { buildAuthoredShip } from './authoredShip.ts';
 
 /**
  * Ships are built in model space: the nose points along +X and the right side along +Z.
- * Most hulls are boxes and cylinders. The Kestrel uses the authored interceptor mesh.
+ * Kestrel, Marauder, Bulwark and Dreadmaw use authored meshes. The rest are boxes.
  */
 export type ThrusterGroup = 'main' | 'reverse' | 'pushRight' | 'pushLeft' | 'ccw' | 'cw';
 
@@ -110,7 +110,8 @@ function hullDetail(definition: ShipDefinition, L: number, W: number, material: 
 /** `faction` changes the livery: pirates fly dark hulls with blood-red trim. */
 export function buildShipModel(definition: ShipDefinition, faction: 'player' | 'pirate' | 'trader' = 'player'): ShipModel {
   const L = definition.hull.length;
-  if (definition.id === 'kestrel') return buildAuthoredKestrel(L);
+  const authored = buildAuthoredShip(definition.id, L);
+  if (authored) return authored;
   const hauler = definition.class === 'hauler';
   const W = hauler ? L * 0.42 : L * 0.34;
   const root = new Group();

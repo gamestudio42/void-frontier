@@ -254,6 +254,6 @@ A pirate with dead engines or a dead reactor stops flying and firing until board
 
 Giants sit far below the flight plane with no collider. They give scale without changing rock placement or saves, and each is built of instanced boxes to stay cheap.
 
-## 064. The Kestrel picture is an authored mesh scaled to its hull length
+## 064. Four combat hulls are authored meshes scaled to their hull length
 
-The starter scout is drawn from the studio interceptor (atlas, roughness/metal, glow) instead of boxes. The bake is rotated so the nose points +X and scaled so its length is `hull.length`. The collision circle stays the one in the ship data, which is about as wide as the wings. The drawn turret does not swivel: guns stay fixed, with the small gimbal from decision 016. Other hulls stay procedural until each has a mesh of its own.
+Kestrel, Marauder, Bulwark and Dreadmaw are drawn from the studio ship family (atlas, roughness/metal, glow) instead of boxes. Each bake is rotated so the nose points +X and scaled so its length is `hull.length`. The collision circle stays the one in the ship data. The drawn turrets do not swivel: guns stay fixed, with the small gimbal from decision 016. Haulers, miners, the Jackal and the Lancer stay procedural; the family has no cargo hull, and reusing the interceptor would make the pirate the same shape as the scout. The Dreadmaw keeps the frigate's 22 m, so the picture stays inside the fight the circle already describes.
