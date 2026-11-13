@@ -1,5 +1,5 @@
 import { getResource } from '@void-frontier/content';
-import { dockingStatus, hostilesNear, readTarget, type Simulation } from '@void-frontier/simulation';
+import { dockingStatus, hostilesNear, readTarget, readTelemetry, type Simulation } from '@void-frontier/simulation';
 import type { SpaceRenderer } from '@void-frontier/view3d';
 
 /**
@@ -16,6 +16,7 @@ export function drawTargeting(
   pointer: { x: number; y: number } | null,
   waypoints: { label: string; position: { x: number; y: number } }[] = [],
   markers: { label: string; position: { x: number; y: number }; colour: string }[] = [],
+  stopLabel = 'Stop',
 ): void {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
@@ -59,6 +60,21 @@ export function drawTargeting(
     ctx.fillText(`${Math.round(Math.hypot(mine.velocity.x, mine.velocity.y))} m/s`, at.x, at.y + radius + 18);
   }
 
+  // Where the brake would stop the ship: the world ring shows it on screen; off screen,
+  // a red chevron on the edge keeps it in mind at speed.
+  if (mine) {
+    const speed = Math.hypot(mine.velocity.x, mine.velocity.y);
+    const stopping = speed > 5 ? (readTelemetry(sim.world, sim.playerId)?.stoppingDistance ?? 0) : 0;
+    if (stopping > 0) {
+      const stop = { x: mine.position.x + (mine.velocity.x / speed) * stopping, y: mine.position.y + (mine.velocity.y / speed) * stopping };
+      const s = renderer.worldToScreen(stop, width, height);
+      if (!s.onScreen) {
+        const label = `${stopLabel} ${stopping >= 1000 ? `${(stopping / 1000).toFixed(2)} km` : `${Math.round(stopping)} m`}`;
+        drawEdgeChevron(ctx, s, width, height, '#ff6b5a', label);
+      }
+    }
+  }
+
   // Gates and signals: a label when on screen only, so they never crowd the edges.
   ctx.font = '600 11px ui-monospace, Menlo, Consolas, monospace';
   ctx.textAlign = 'center';
@@ -90,30 +106,7 @@ export function drawTargeting(
       ctx.textAlign = 'center';
       ctx.fillText(label, s.x, s.y - 18);
     } else {
-      const cx = width / 2;
-      const cy = height / 2;
-      let dx = s.x - cx;
-      let dy = s.y - cy;
-      if (s.behind) {
-        dx = -dx;
-        dy = -dy;
-      }
-      const angle = Math.atan2(dy, dx);
-      // On an ellipse around the ship, inside the corners where the HUD panels sit.
-      const ax = cx + Math.cos(angle) * Math.max(140, cx - 260);
-      const ay = cy + Math.sin(angle) * Math.max(110, cy - 130);
-      ctx.save();
-      ctx.translate(ax, ay);
-      ctx.rotate(angle);
-      ctx.beginPath();
-      ctx.moveTo(12, 0);
-      ctx.lineTo(0, -8);
-      ctx.lineTo(0, 8);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
-      ctx.textAlign = 'center';
-      ctx.fillText(label, ax - Math.cos(angle) * 34, ay - Math.sin(angle) * 34 + 4);
+      drawEdgeChevron(ctx, s, width, height, '#ffd27a', label);
     }
   }
 
@@ -281,4 +274,41 @@ function bar(ctx: CanvasRenderingContext2D, x: number, y: number, width: number,
   ctx.fillRect(x, y, width, 3);
   ctx.fillStyle = color;
   ctx.fillRect(x, y, width * Math.max(0, Math.min(1, ratio)), 3);
+}
+
+/** An off-screen point as a chevron on an ellipse around the screen centre, with its label inside it. */
+function drawEdgeChevron(
+  ctx: CanvasRenderingContext2D,
+  s: { x: number; y: number; behind: boolean },
+  width: number,
+  height: number,
+  colour: string,
+  label: string,
+): void {
+  const cx = width / 2;
+  const cy = height / 2;
+  let dx = s.x - cx;
+  let dy = s.y - cy;
+  if (s.behind) {
+    dx = -dx;
+    dy = -dy;
+  }
+  const angle = Math.atan2(dy, dx);
+  // On an ellipse around the ship, inside the corners where the HUD panels sit.
+  const ax = cx + Math.cos(angle) * Math.max(140, cx - 260);
+  const ay = cy + Math.sin(angle) * Math.max(110, cy - 130);
+  ctx.font = '600 11px ui-monospace, Menlo, Consolas, monospace';
+  ctx.fillStyle = colour;
+  ctx.save();
+  ctx.translate(ax, ay);
+  ctx.rotate(angle);
+  ctx.beginPath();
+  ctx.moveTo(12, 0);
+  ctx.lineTo(0, -8);
+  ctx.lineTo(0, 8);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+  ctx.textAlign = 'center';
+  ctx.fillText(label, ax - Math.cos(angle) * 52, ay - Math.sin(angle) * 34 + 4);
 }

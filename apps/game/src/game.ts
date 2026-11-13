@@ -17,6 +17,12 @@ const APPROACH = { near: 60, corridorLength: 400, corridorWidth: 60, facingAngle
 
 /** Metres inside which a hostile is selected without pressing Tab. */
 const AUTO_LOCK_RANGE = 700;
+/**
+ * When the player destroys a ship, the picture holds for a beat and then runs slow for a
+ * moment (seconds of wall time; `scale` is game time per wall second). Presentation only:
+ * the simulation takes the same steps, just later.
+ */
+const KILL_BEAT = { freeze: 0.06, slow: 0.28, scale: 0.35 };
 const HUD_INTERVAL = 0.1;
 const QUALITIES: Quality[] = ['high', 'medium', 'low'];
 
@@ -62,6 +68,9 @@ export class Game {
   private discovered = new Set<string>();
   private jumpedAt = -100;
   private deathCause: DeathCause | null = null;
+  /** Wall-clock times until which the kill beat freezes, then slows, the game. */
+  private freezeUntil = 0;
+  private slowUntil = 0;
   /** Index into TUTORIAL, or null when no tutorial is running. */
   private tutorialStep: number | null = null;
   private tutorialStarted = 0;
@@ -421,7 +430,7 @@ export class Game {
       this.updateTarget();
       // One command per frame, applied to every fixed step the frame runs.
       this.sim.setCommand(this.sim.playerId, { ...this.input.command(this.aim), target: this.target, targetSystem: this.target !== null ? this.aimedSystem : null });
-      const result = this.stepper.advance(elapsed);
+      const result = this.stepper.advance(elapsed * this.timeScale());
       for (let i = 0; i < result.steps; i++) this.sim.step();
       alpha = result.alpha;
       this.stepsThisWindow += result.steps;
@@ -434,7 +443,11 @@ export class Game {
         this.renderer.handleEvents(this.sim, events);
         for (const event of events) {
           const mine = event.type === 'collision' && (event.a === this.sim.playerId || event.b === this.sim.playerId);
-          if (mine && event.type === 'collision' && event.damage > 0) this.hits++;
+          if (mine && event.type === 'collision' && event.losses.some((l) => l.ship === this.sim.playerId && l.hull > 0)) this.hits++;
+          if (event.type === 'shipDestroyed' && event.by === this.sim.playerId && event.id !== this.sim.playerId) {
+            this.freezeUntil = this.clock + KILL_BEAT.freeze;
+            this.slowUntil = this.freezeUntil + KILL_BEAT.slow;
+          }
           if (event.type === 'shipDestroyed' && event.id === this.sim.playerId) {
             this.hits++;
             this.deathCause = this.causeOfDeath(event.by, events);
@@ -474,7 +487,7 @@ export class Game {
       }
     }
 
-    const frameDt = paused || help ? 0 : Math.min(elapsed, 0.1);
+    const frameDt = paused || help ? 0 : Math.min(elapsed * this.timeScale(), 0.1);
     // Keep a nearby target in frame so dogfights stay on screen.
     const targetBody = this.target !== null ? this.sim.world.bodies.get(this.target) : undefined;
     const targetShip = this.target !== null ? this.sim.world.ships.get(this.target) : undefined;
@@ -489,7 +502,7 @@ export class Game {
     // Docked, the scene slides aside so the ship stays visible next to the station panel.
     const docked = this.sim.world.ships.get(this.sim.playerId)?.docked !== null && snapshot.menu === null;
     this.renderer.setSceneShift(docked && window.innerWidth >= 1100 ? 0.22 : 0);
-    if (this.overlay) drawTargeting(this.overlay, this.sim, this.renderer, this.target, this.hitFlash, this.input.pointer, this.waypoints(), this.markers());
+    if (this.overlay) drawTargeting(this.overlay, this.sim, this.renderer, this.target, this.hitFlash, this.input.pointer, this.waypoints(), this.markers(), this.labels.stop());
 
     this.fpsFrames++;
     this.fpsTime += elapsed;
@@ -539,6 +552,13 @@ export class Game {
       this.autosaveTimer = 0;
       void this.saveTo('auto').catch(() => undefined);
     }
+  }
+
+  /** Game time per wall second: 0 in the kill freeze, slow just after it, otherwise 1. */
+  private timeScale(): number {
+    if (this.clock < this.freezeUntil) return 0;
+    if (this.clock < this.slowUntil) return KILL_BEAT.scale;
+    return 1;
   }
 
   /** Names what broke the player's ship: a shooter, or the body it hit in the fatal step. */
@@ -681,7 +701,7 @@ export class Game {
   }
 
   /** Set by the UI so canvas labels follow the chosen language. */
-  labels = { drop: (id: string) => id, station: (id: string) => id, sector: (id: string) => id, route: (id: string) => id, campaign: () => '' };
+  labels = { drop: (id: string) => id, station: (id: string) => id, sector: (id: string) => id, route: (id: string) => id, campaign: () => '', stop: () => 'Stop' };
 
   private contractsView() {
     const board = this.sim.missions;

@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased: impact
+
+- Bumps teach before they kill: the shield takes most of a collision and a scrape costs little; a crash at speed still hurts.
+- A shield taking a collision flares blue and crackles; only hull damage flashes the screen red.
+- Longer, thicker tracers and a white-hot flash where rounds hit the hull.
+- Your kills land: a short hold, a moment of slow motion, a gold ring and a kick.
+- When the stop point is off screen, a red chevron on the edge shows where and how far.
+
 ## Unreleased: first minutes
 
 - The hull bar shows again on the ship and target panels (a shipyard style was hiding it).

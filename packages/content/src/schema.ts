@@ -443,6 +443,13 @@ export const collisionRulesSchema = z.object({
   safeImpactSpeed: z.number().min(0),
   /** hull points per kJ of impact energy above the safe speed */
   hullDamagePerKilojoule: z.number().min(0),
+  /**
+   * m/s of closing speed at which impact damage reaches its full energy rate; between the
+   * safe speed and this, damage is scaled down linearly so a bump teaches before it kills
+   */
+  impactRampSpeed: z.number().min(0),
+  /** share of impact damage the shield takes first, as far as its charge goes */
+  impactShieldShare: z.number().min(0).max(1),
 });
 
 export type CollisionRules = z.infer<typeof collisionRulesSchema>;

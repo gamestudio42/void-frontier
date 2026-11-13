@@ -202,6 +202,8 @@ export class AudioEngine {
           this.thump(46, 0.42, (0.22 + level * 0.4) * where.gain, where.pan);
           this.burst({ duration: 0.3, freq: 360, type: 'lowpass', gain: level * 0.26 * where.gain, pan: where.pan, sweepTo: 70 });
           this.sweep(480, 80, 0.34, 0.11 * level * where.gain, where.pan, 'triangle');
+          // The shield taking the blow crackles over the thud.
+          if (e.losses.some((l) => l.shield > 0)) this.burst({ duration: 0.22, freq: 2400, type: 'bandpass', gain: (0.08 + level * 0.12) * where.gain, pan: where.pan, sweepTo: 900 });
           break;
         }
         case 'shipDestroyed': {

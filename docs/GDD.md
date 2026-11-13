@@ -71,9 +71,9 @@ Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kes
 
 - **Station.** A modular frontier station at the sector origin: core with a lit habitat band, a habitat ring, solar arrays, tanks and a docking bay on the east side with a green approach-light runway. The player starts 360 m east, nose toward the bay. Docking itself arrives with the economy (milestone 5).
 - **Asteroids.** Three fields: Copper Reach to the north-east (dense, mixed), Titan Shoal to the north-west (titanium-rich, larger rocks) and a sparse scatter across the sector. Rock types: ferrous (iron), cupric (copper) and titanic (titanium), each with its own look, density and future mining yield. Rocks drift and tumble slowly.
-- **Collisions.** Everything solid bounces with some energy loss (restitution 0.3) and friction, and off-centre hits spin the ship. Damage grows with impact energy above 3 m/s closing speed: careful flying near rocks is the skill, and a heavy ship hits harder.
+- **Collisions.** Everything solid bounces with some energy loss (restitution 0.3) and friction, and off-centre hits spin the ship. Damage grows with impact energy above 3 m/s closing speed, scaled down until 15 m/s so a scrape costs little and a crash a lot. The shield takes 70% of each blow while it has charge and flares blue; the hull takes the rest. Careful flying near rocks is the skill, and a heavy ship hits harder.
 - **Destruction.** At zero hull the ship breaks apart in an explosion; `R` relaunches from the start.
-- **Reading danger.** Radar (1.4 km, north-up), nearest-object distance, a collision warning when contact is under five seconds away at a damaging speed, camera shake and a red flash on damage.
+- **Reading danger.** Radar (1.4 km, north-up), nearest-object distance, a collision warning when contact is under five seconds away at a damaging speed, camera shake and a red flash on hull damage. When the brake's stop point is off screen, a red chevron on the edge shows where it is and how far.
 
 ## Combat (milestone 3)
 
@@ -81,7 +81,7 @@ Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kes
 - **Defences.** Shield, then armour, then hull. Shields recharge 3–4 s after the last hit. The laser is 1.4× against shields and 0.7× against hulls; the autocannon is the reverse (0.6× and 1.2×). Burn shields with the laser, finish with the guns.
 - **Limits.** Guns heat up and lock out at 100% until they cool to 30%. The laser drains the reactor.
 - **Pirates.** Jackal raiders patrol south of the station and in Copper Reach. They notice you within 950 m, close to about 230 m, circle, lead their shots and hold fire when a rock is in the way. Badly hurt, they run, and come back once their shields recover. Destroyed groups return after 60–90 s.
-- **Reading the fight.** Red brackets on hostiles, the target panel with shield and hull, a yellow lead diamond, an edge arrow when the target is off screen, a hit marker, shield flares and sparks. The camera pulls back to keep both ships in frame.
+- **Reading the fight.** Red brackets on hostiles, the target panel with shield and hull, a yellow lead diamond, an edge arrow when the target is off screen, a hit marker, long tracers, shield flares, a white-hot flash where rounds bite the hull, and sparks. Your kills hold the picture for a beat, run slow for a moment and ring out in gold. The camera pulls back to keep both ships in frame, as far as the ship-size floor allows.
 
 ## Mining (milestone 4)
 
