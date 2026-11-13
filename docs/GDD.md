@@ -71,6 +71,8 @@ Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kes
 | Esc / P | Pause menu (save, load, settings) |
 | H | Controls panel |
 
+With a controller (standard mapping): left stick thrust and strafe, right stick aims the nose, RT guns, LT laser, LB mining laser, B brake, L3 boost, R3 flight assist, A dock / undock / jump / board, X scanner, Y cruise, RB next target, d-pad ← aim at a system, → fleet, ↑ ↓ zoom, View map, Menu pause. Over menus and panels the d-pad or left stick moves focus, A presses and B goes back. Prompts follow the device last used.
+
 ## Outpost Alpha (milestone 2)
 
 - **Station.** A modular frontier station at the sector origin: core with a lit habitat band, a habitat ring, solar arrays, tanks and a docking bay on the east side with a green approach-light runway. The player starts 360 m east, nose toward the bay. Docking itself arrives with the economy (milestone 5).

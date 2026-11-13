@@ -222,7 +222,7 @@ export function StationPanel({ view, contracts, fleet, news, events, hull, fuel,
 
         <footer>
           <button className="primary" onClick={() => actions.undock()} data-testid="undock">
-            {t('station.undock')} <kbd>F</kbd>
+            {t('station.undock')} <kbd>{t('hud.key.undock')}</kbd>
           </button>
         </footer>
       </section>

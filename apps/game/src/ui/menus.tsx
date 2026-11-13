@@ -171,6 +171,10 @@ export function SettingsPanel({ settings, onSettings, t }: { settings: Settings;
         <input type="checkbox" checked={settings.cameraShake} onChange={(e) => set({ cameraShake: e.target.checked })} />
       </label>
       <label className="setting check">
+        <span>{t('settings.rumble')}</span>
+        <input type="checkbox" checked={settings.rumble} onChange={(e) => set({ rumble: e.target.checked })} data-testid="rumble" />
+      </label>
+      <label className="setting check">
         <span>{t('settings.steering')}</span>
         <input type="checkbox" checked={settings.mouseSteering} onChange={(e) => set({ mouseSteering: e.target.checked })} />
       </label>

@@ -179,6 +179,8 @@ export function Notices({ notices, t, locale }: { notices: { id: number; kind: s
         <div key={`${n.id}-${n.outcome}`} className={`notice ${n.outcome}`} data-testid="notice">
           {n.kind === 'tutorial' ? (
             <strong>{t('tutorial.done')}</strong>
+          ) : n.kind === 'padConnected' ? (
+            <strong>{t('notice.padConnected')}</strong>
           ) : n.kind === 'boarded' ? (
             <>
               <strong>{t('board.done')}</strong>

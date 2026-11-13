@@ -37,6 +37,28 @@ const ROWS: [(string | { action: BindingAction })[], MessageKey][] = [
   [['Esc'], 'help.pause'],
 ];
 
+/** Gamepad buttons for the same rows (standard mapping, Xbox names). */
+const PAD_ROWS: Partial<Record<MessageKey, string[]>> = {
+  'help.thrust': ['LS ↕'],
+  'help.strafe': ['LS ↔'],
+  'help.mouse': ['RS'],
+  'help.fire': ['RT'],
+  'help.laser': ['LT'],
+  'help.target': ['RB'],
+  'help.mine': ['LB'],
+  'help.scan': ['Ⓧ'],
+  'help.dock': ['Ⓐ'],
+  'help.cruise': ['Ⓨ'],
+  'help.map': ['⧉'],
+  'help.fleet': ['→'],
+  'help.aimSystem': ['←'],
+  'help.boost': ['L3'],
+  'help.brake': ['Ⓑ'],
+  'help.mode': ['R3'],
+  'help.zoom': ['↑', '↓'],
+  'help.pause': ['☰'],
+};
+
 export function ControlsPanel({ t, bindings, locale, locales, onLocale, onClose }: ControlsPanelProps) {
   return (
     <div className="modal-backdrop">
@@ -64,6 +86,15 @@ export function ControlsPanel({ t, bindings, locale, locales, onLocale, onClose 
                   const name = typeof key === 'string' ? key : (bindings?.[key.action] ?? DEFAULT_BINDINGS[key.action]).replace(/^Key/, '');
                   return <kbd key={name}>{name}</kbd>;
                 })}
+                {PAD_ROWS[label] && (
+                  <span className="pad-keys" title={t('help.gamepad')}>
+                    {PAD_ROWS[label]!.map((glyph) => (
+                      <kbd key={glyph} className="pad">
+                        {glyph}
+                      </kbd>
+                    ))}
+                  </span>
+                )}
               </dt>
               <dd>{t(label)}</dd>
             </div>

@@ -17,7 +17,7 @@ export function drawTargeting(
   waypoints: { label: string; position: { x: number; y: number } }[] = [],
   markers: { label: string; position: { x: number; y: number }; colour: string }[] = [],
   stopLabel = 'Stop',
-  cruise: { position: { x: number; y: number }; label: string; active: boolean } | null = null,
+  cruise: { position: { x: number; y: number }; label: string; active: boolean; key: string } | null = null,
 ): void {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
@@ -100,7 +100,7 @@ export function drawTargeting(
     const here = renderer.worldToScreen(mine.position, width, height);
     const colour = '#6fd3ff';
     const distance = Math.hypot(cruise.position.x - mine.position.x, cruise.position.y - mine.position.y);
-    const label = `${cruise.active ? '⟫' : 'J ⟫'} ${cruise.label} · ${distance >= 1000 ? `${(distance / 1000).toFixed(2)} km` : `${Math.round(distance)} m`}`;
+    const label = `${cruise.active ? '⟫' : `${cruise.key} ⟫`} ${cruise.label} · ${distance >= 1000 ? `${(distance / 1000).toFixed(2)} km` : `${Math.round(distance)} m`}`;
     ctx.font = '600 11px ui-monospace, Menlo, Consolas, monospace';
     ctx.strokeStyle = colour;
     ctx.fillStyle = colour;

@@ -88,7 +88,7 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
         <div className={`mode mode-${tel.mode}`} data-testid="flight-mode" data-mode={tel.mode}>
           <span className="label">{t('hud.mode')}</span>
           <strong>{t(modeKey)}</strong>
-          <kbd>C</kbd>
+          <kbd>{t('hud.key.mode')}</kbd>
         </div>
         <div className="credits-badge" data-testid="hud-credits" data-value={tel.credits}>
           <span className="label">{t('hud.credits')}</span>
@@ -201,7 +201,7 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
           {groupWeapons(tel.weapons).map((w) => (
             <div key={w.id} className={`weapon ${w.overheated ? 'hot' : ''}`}>
               <span>
-                <kbd>{w.group === 'primary' ? 'LMB' : w.group === 'secondary' ? 'RMB' : 'MMB'}</kbd> {t(`hud.weapon.${w.id}` as MessageKey)}
+                <kbd>{t(w.group === 'primary' ? 'hud.key.primary' : w.group === 'secondary' ? 'hud.key.secondary' : 'hud.key.mining')}</kbd> {t(`hud.weapon.${w.id}` as MessageKey)}
                 {w.count > 1 ? ` ×${w.count}` : ''}
               </span>
               <div className="heat">
@@ -254,7 +254,7 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
 
       <section className="mining-status">
         <span>
-          <kbd>R</kbd> {t('hud.scanner')}: <strong>{tel.scanCooldown > 0 ? `${formatNumber(locale, tel.scanCooldown, 1)} s` : t('hud.scanReady')}</strong>
+          <kbd>{t('hud.key.scan')}</kbd> {t('hud.scanner')}: <strong>{tel.scanCooldown > 0 ? `${formatNumber(locale, tel.scanCooldown, 1)} s` : t('hud.scanReady')}</strong>
         </span>
         {tel.miningTarget && (
           <span className="mining-target" data-testid="mining-target">
@@ -278,11 +278,17 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
       </ul>
 
       <footer className="hud-bottom">
-        <span>{hud.steering ? t('hud.steering.on') : t('hud.steering.off')} <kbd>V</kbd></span>
-        <span>{t('hud.helpHint')}</span>
-        <span>
-          <kbd>I</kbd> {t('hud.detailsHint')}
-        </span>
+        {hud.device === 'gamepad' ? (
+          <span data-testid="pad-hints">{t('hud.padHints')}</span>
+        ) : (
+          <>
+            <span>{hud.steering ? t('hud.steering.on') : t('hud.steering.off')} <kbd>V</kbd></span>
+            <span>{t('hud.helpHint')}</span>
+            <span>
+              <kbd>I</kbd> {t('hud.detailsHint')}
+            </span>
+          </>
+        )}
       </footer>
     </div>
   );

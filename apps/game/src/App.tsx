@@ -23,7 +23,7 @@ export function App() {
   const [locale, setLocale] = useState<Locale>(() => settings.locale ?? detectLocale());
   const [game, setGame] = useState<Game | null>(null);
   const [bootError, setBootError] = useState<string | null>(null);
-  const t = useMemo(() => translator(locale), [locale]);
+  const t = useMemo(() => translator(locale, hud.device), [locale, hud.device]);
 
   useEffect(() => {
     let game: Game;
