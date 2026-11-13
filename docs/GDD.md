@@ -30,6 +30,7 @@ Milestones 1–6 deliver the specification's full loop: start docked, select a c
 - **Brake** (Space): every thruster works to stop translation and rotation, in either mode.
 - **Mouse steering** (on by default, V toggles): a controller fires the rotation thrusters to point the nose at the cursor without overshoot. Q and E override it.
 - No speed cap. The turn rate is capped only in the sense that rotation thrusters stop pushing past the rated rate.
+- **Cruise** (J): an autopilot to the station, gate or waypoint under the cursor. It only drives thrusters: burn, coast, flip, brake on the main engine, with a detour round rocks on its course. It stops at a station's approach lane (docking stays manual) or inside a gate ring. Any flight key, a pirate hunting the player within 1.5 km, or 20 s without progress ends it. Numbers in `packages/content/data/cruise.json`.
 
 Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kestrel`) has 18.8 m/s² of main acceleration when empty and full of fuel; 5 t of cargo drops that by about 37%.
 
@@ -38,6 +39,8 @@ Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kes
 - Blue line and blue compass triangle: where the nose points (heading).
 - Amber line and amber compass arrow: where the ship is going (course). Drift is the angle between them.
 - Red ring: where the brake would stop the ship at the current orientation (d = v² / 2a per local axis).
+- Fading dots: where the ship will be in one to five seconds if nothing changes.
+- Cyan ring and dashed line: the cruise destination; before J is pressed, the destination it would pick is tagged.
 - Space dust and the plane grid give a sense of speed; beacons are fixed landmarks.
 - The camera does not rotate with the ship, leads in the direction of travel and pulls back as speed rises, but never so far that your ship drops below a tenth of the screen height (7% in a fight, 4.5% against a boss).
 - The docking checklist shows only on an approach: within 60 m of the bay, in the corridor with the nose on the bay, or closing on it.
@@ -61,6 +64,7 @@ Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kes
 | R | Scanner pulse; relaunch after the ship is destroyed |
 | K (twice) | Jettison the hold |
 | F | Dock (when the approach checks are green) / undock / jump through a gate |
+| J | Cruise to the station, gate or waypoint under the cursor; again to stop |
 | M | Sector map |
 | G | Graphics quality (high, medium, low) |
 | F3 | Debug overlay |

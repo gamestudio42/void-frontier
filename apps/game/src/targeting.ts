@@ -17,6 +17,7 @@ export function drawTargeting(
   waypoints: { label: string; position: { x: number; y: number } }[] = [],
   markers: { label: string; position: { x: number; y: number }; colour: string }[] = [],
   stopLabel = 'Stop',
+  cruise: { position: { x: number; y: number }; label: string; active: boolean } | null = null,
 ): void {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
@@ -72,6 +73,57 @@ export function drawTargeting(
         const label = `${stopLabel} ${stopping >= 1000 ? `${(stopping / 1000).toFixed(2)} km` : `${Math.round(stopping)} m`}`;
         drawEdgeChevron(ctx, s, width, height, '#ff6b5a', label);
       }
+    }
+  }
+
+  // Where the ship will be over the next five seconds if nothing changes: a dot a second.
+  if (mine) {
+    const speed = Math.hypot(mine.velocity.x, mine.velocity.y);
+    if (speed > 5) {
+      ctx.fillStyle = '#d6dde4';
+      for (let second = 1; second <= 5; second++) {
+        const s = renderer.worldToScreen({ x: mine.position.x + mine.velocity.x * second, y: mine.position.y + mine.velocity.y * second }, width, height);
+        if (!s.onScreen) break;
+        ctx.globalAlpha = 0.55 - second * 0.08;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  // Cruise: a dashed course to the destination while it flies; before that, a tag on
+  // what the cruise key would pick under the cursor.
+  if (mine && cruise) {
+    const s = renderer.worldToScreen(cruise.position, width, height);
+    const here = renderer.worldToScreen(mine.position, width, height);
+    const colour = '#6fd3ff';
+    const distance = Math.hypot(cruise.position.x - mine.position.x, cruise.position.y - mine.position.y);
+    const label = `${cruise.active ? '⟫' : 'J ⟫'} ${cruise.label} · ${distance >= 1000 ? `${(distance / 1000).toFixed(2)} km` : `${Math.round(distance)} m`}`;
+    ctx.font = '600 11px ui-monospace, Menlo, Consolas, monospace';
+    ctx.strokeStyle = colour;
+    ctx.fillStyle = colour;
+    if (cruise.active) {
+      ctx.globalAlpha = 0.5;
+      ctx.setLineDash([4, 10]);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(here.x, here.y);
+      ctx.lineTo(s.x, s.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+    }
+    if (s.onScreen) {
+      ctx.lineWidth = cruise.active ? 2 : 1.5;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, 14, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.textAlign = 'center';
+      ctx.fillText(label, s.x, s.y + 30);
+    } else {
+      drawEdgeChevron(ctx, s, width, height, colour, label);
     }
   }
 

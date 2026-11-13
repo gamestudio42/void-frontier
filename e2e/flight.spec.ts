@@ -60,3 +60,22 @@ test('pause freezes the simulation', async ({ page }) => {
   expect(await value(page, 'speed')).toBe(speed);
   expect(await page.getByTestId('heading').getAttribute('data-value')).toBe(before);
 });
+
+test('cruise flies toward the gate under the cursor and hands back control on a flight key', async ({ page }) => {
+  // The belt gate lies to the left of the bay; point the cursor that way.
+  await page.mouse.move(250, 420);
+  await page.keyboard.press('j');
+  await expect(page.getByTestId('cruise')).toBeVisible();
+  await expect.poll(() => value(page, 'speed'), { timeout: 20_000 }).toBeGreaterThan(10);
+  await page.mouse.move(0, 0);
+  await page.keyboard.press('s');
+  await expect(page.getByTestId('cruise')).toBeHidden();
+});
+
+test('cruise with nothing under the cursor says what to do', async ({ page }) => {
+  // Straight down from the bay there is no station, gate or waypoint.
+  await page.mouse.move(640, 640);
+  await page.keyboard.press('j');
+  await expect(page.getByTestId('notice').filter({ hasText: /cursor/i })).toBeVisible();
+  await expect(page.getByTestId('cruise')).toBeHidden();
+});

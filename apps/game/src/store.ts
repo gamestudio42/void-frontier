@@ -155,6 +155,8 @@ export interface HudState {
   gravity: number;
   /** Game clock of the last jump, for the transition effect. */
   jumpedAt: number;
+  /** The cruise autopilot's destination and what it is doing, while it flies. */
+  cruise: { label: string; distance: number; phase: string } | null;
   deathCause: DeathCause | null;
   discovered: string[];
   visited: string[];
@@ -227,6 +229,7 @@ export const initialHudState = (): HudState => ({
   gate: null,
   gravity: 0,
   jumpedAt: -100,
+  cruise: null,
   deathCause: null,
   discovered: [],
   visited: ['outpost_alpha'],

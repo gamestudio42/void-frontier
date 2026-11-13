@@ -565,6 +565,22 @@ export const en = {
   'speaker.oyelaran': 'Cmdr. Oyelaran',
   'speaker.foreman': 'Ferrum foreman',
   'speaker.varo': 'Kess Varo',
+  'help.cruise': 'Cruise autopilot: point the cursor at a station, gate or waypoint and press; any flight key takes back control',
+  'key.cruise': 'Cruise',
+  'cruise.title': 'Cruise',
+  'cruise.hint': 'Any flight key takes back control',
+  'cruise.phase.burn': 'burning',
+  'cruise.phase.coast': 'coasting',
+  'cruise.phase.flip': 'flipping to brake',
+  'cruise.phase.brake': 'braking',
+  'cruise.phase.blocked': 'no way through',
+  'cruise.phase.arrived': 'arrived',
+  'cruise.on': 'Cruise engaged',
+  'cruise.off': 'Cruise off',
+  'cruise.arrived': 'Arrived',
+  'cruise.blocked': 'Cruise stopped: no clear course',
+  'cruise.contact': 'Cruise dropped: hostile closing in',
+  'cruise.none': 'Point the cursor at a station, gate or waypoint to cruise there',
 } as const;
 
 export type MessageKey = keyof typeof en;

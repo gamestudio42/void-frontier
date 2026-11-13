@@ -1,7 +1,7 @@
 import { CAMPAIGN, CREW_RULES, OUTPOST_ALPHA, STATION_PLACEMENTS, getFaction, getSector } from '@void-frontier/content';
 import { FIXED_DT, FixedStepper, type Vec2 } from '@void-frontier/kernel';
 import { getUpgrade, getWeapon, weaponGroup } from '@void-frontier/content';
-import { Simulation, WEAPON_RESALE, boardDisabled, boardingStatus, campaignStep, campaignTarget, fleetEntities, hireFee, isParkedAt, orderProblem, payroll, shipValue, shipyardOffers, type FleetOrder, slotUsage, applySectorSnapshot, captureSector, gateStatus, gravityAt, jump, markDiscovered, nextGate, dockedStationKey, type SectorSnapshot, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, installUpgrades, hostilesNear, nearestObstacle, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
+import { Simulation, WEAPON_RESALE, boardDisabled, boardingStatus, campaignStep, campaignTarget, fleetEntities, hireFee, isParkedAt, orderProblem, payroll, shipValue, shipyardOffers, type FleetOrder, slotUsage, applySectorSnapshot, captureSector, gateStatus, gravityAt, jump, markDiscovered, nextGate, dockedStationKey, type SectorSnapshot, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, bayEntryPoint, type CruiseOrder, installUpgrades, hostilesNear, nearestObstacle, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
 import { SpaceRenderer, type Quality } from '@void-frontier/view3d';
 import { AudioEngine } from './audio.ts';
 import { DEFAULT_BINDINGS, InputController } from './input.ts';
@@ -14,6 +14,15 @@ import type { DeathCause, HudStore } from './store.ts';
 
 /** When the docking checklist counts as an approach (metres, m/s, degrees). Presentation only. */
 const APPROACH = { near: 60, corridorLength: 400, corridorWidth: 60, facingAngle: 45, closingSpeed: 2, closingRange: 250 };
+
+/** How close the cruise autopilot stops to each kind of destination, in metres. */
+const CRUISE_STOP = { bayEntry: 180, station: 20, gate: 25, waypoint: 60 };
+/** Degrees either side of the cursor's bearing a destination may lie and still be picked. */
+const CRUISE_PICK_DEGREES = 25;
+/** The cruise gives up when it has not closed this many metres in this many seconds. */
+const CRUISE_PROGRESS = { metres: 50, seconds: 20 };
+/** Metres within which a pirate hunting the player drops the cruise. */
+const CRUISE_CONTACT_RANGE = 1500;
 
 /** Metres inside which a hostile is selected without pressing Tab. */
 const AUTO_LOCK_RANGE = 700;
@@ -68,6 +77,8 @@ export class Game {
   private discovered = new Set<string>();
   private jumpedAt = -100;
   private deathCause: DeathCause | null = null;
+  /** The cruise autopilot's destination while it flies; progress guards against circling. */
+  private cruise: { order: CruiseOrder; label: string; best: number; bestAt: number } | null = null;
   /** Wall-clock times until which the kill beat freezes, then slows, the game. */
   private freezeUntil = 0;
   private slowUntil = 0;
@@ -156,6 +167,11 @@ export class Game {
         else this.sim.scan(this.sim.playerId);
       },
       zoom: (factor) => this.renderer.rig.zoomBy(factor),
+      toggleCruise: () => {
+        if (this.cruise) this.endCruise('off');
+        else this.startCruise();
+        this.publish();
+      },
     });
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(canvas);
@@ -392,6 +408,7 @@ export class Game {
     this.stepper.reset();
     this.autosaveTimer = 0;
     this.target = null;
+    this.cruise = null;
     this.gains.clear();
     this.dockRefused = null;
     this.notices = [];
@@ -429,13 +446,17 @@ export class Game {
     } else {
       this.updateTarget();
       // One command per frame, applied to every fixed step the frame runs.
-      this.sim.setCommand(this.sim.playerId, { ...this.input.command(this.aim), target: this.target, targetSystem: this.target !== null ? this.aimedSystem : null });
+      const command = this.input.command(this.aim);
+      // Any hand on the flight controls takes the ship back from the autopilot.
+      if (this.cruise && (command.thrust !== 0 || command.strafe !== 0 || command.turn !== 0 || command.brake)) this.endCruise('off');
+      this.sim.setCommand(this.sim.playerId, { ...command, cruise: this.cruise?.order ?? null, target: this.target, targetSystem: this.target !== null ? this.aimedSystem : null });
       const result = this.stepper.advance(elapsed * this.timeScale());
       for (let i = 0; i < result.steps; i++) this.sim.step();
       alpha = result.alpha;
       this.stepsThisWindow += result.steps;
       this.droppedTotal += result.droppedTime;
       const events = this.sim.drainEvents();
+      this.updateCruise();
       this.audio.handle(this.sim, events);
       this.updateTutorial(events);
       this.autosave(elapsed, events);
@@ -502,7 +523,7 @@ export class Game {
     // Docked, the scene slides aside so the ship stays visible next to the station panel.
     const docked = this.sim.world.ships.get(this.sim.playerId)?.docked !== null && snapshot.menu === null;
     this.renderer.setSceneShift(docked && window.innerWidth >= 1100 ? 0.22 : 0);
-    if (this.overlay) drawTargeting(this.overlay, this.sim, this.renderer, this.target, this.hitFlash, this.input.pointer, this.waypoints(), this.markers(), this.labels.stop());
+    if (this.overlay) drawTargeting(this.overlay, this.sim, this.renderer, this.target, this.hitFlash, this.input.pointer, this.waypoints(), this.markers(), this.labels.stop(), this.cruiseMarker());
 
     this.fpsFrames++;
     this.fpsTime += elapsed;
@@ -596,6 +617,110 @@ export class Game {
       const hunting = hostiles.filter((id) => world.pilots.get(id)?.target === this.sim.playerId);
       this.target = close[0] ?? hunting[0] ?? null;
     }
+  }
+
+  /**
+   * Places the autopilot can fly to: a station's approach lane, the gates, and where
+   * active contracts and the story lead.
+   */
+  private cruiseTargets(): { label: string; position: Vec2; stopRadius: number }[] {
+    const world = this.sim.world;
+    const list: { label: string; position: Vec2; stopRadius: number }[] = [];
+    for (const [id, station] of world.stations) {
+      const approach = bayEntryPoint(world, id, CRUISE_STOP.bayEntry);
+      if (approach) list.push({ label: this.labels.station(station.name), position: approach, stopRadius: CRUISE_STOP.station });
+    }
+    for (const gate of world.gates.values()) list.push({ label: `⟶ ${this.labels.sector(gate.to)}`, position: gate.position, stopRadius: CRUISE_STOP.gate });
+    for (const w of this.waypoints()) {
+      // A waypoint on a gate is the route out: the gate entry already covers it.
+      if ([...world.gates.values()].some((g) => Math.hypot(g.position.x - w.position.x, g.position.y - w.position.y) < 1)) continue;
+      list.push({ label: w.label, position: w.position, stopRadius: CRUISE_STOP.waypoint });
+    }
+    return list;
+  }
+
+  /** The destination nearest the cursor's bearing from the ship (or the nose's), if any is close. */
+  private pickCruiseTarget(): { label: string; position: Vec2; stopRadius: number } | null {
+    const ship = this.sim.world.ships.get(this.sim.playerId);
+    const body = this.sim.world.bodies.get(this.sim.playerId);
+    if (!ship || !body || ship.destroyed || ship.docked !== null) return null;
+    const pointing = this.aim ? Math.atan2(this.aim.y - body.position.y, this.aim.x - body.position.x) : body.angle;
+    let best: { label: string; position: Vec2; stopRadius: number } | null = null;
+    let bestOff = (CRUISE_PICK_DEGREES * Math.PI) / 180;
+    for (const target of this.cruiseTargets()) {
+      const dx = target.position.x - body.position.x;
+      const dy = target.position.y - body.position.y;
+      if (Math.hypot(dx, dy) < target.stopRadius + 40) continue;
+      const turn = Math.atan2(dy, dx) - pointing;
+      const off = Math.abs(Math.atan2(Math.sin(turn), Math.cos(turn)));
+      if (off < bestOff) {
+        bestOff = off;
+        best = target;
+      }
+    }
+    return best;
+  }
+
+  private startCruise(): void {
+    const body = this.sim.world.bodies.get(this.sim.playerId);
+    const best = this.pickCruiseTarget();
+    if (!best || !body) {
+      this.pushCruiseNotice('none', '');
+      return;
+    }
+    const distance = Math.hypot(best.position.x - body.position.x, best.position.y - body.position.y);
+    this.cruise = { order: { to: { ...best.position }, stopRadius: best.stopRadius }, label: best.label, best: distance, bestAt: this.clock };
+    this.pushCruiseNotice('on', best.label);
+  }
+
+  /** The overlay's cruise mark: the destination while flying, else what the key would pick. */
+  private cruiseMarker(): { position: Vec2; label: string; active: boolean } | null {
+    if (this.cruise) return { position: this.cruise.order.to, label: this.cruise.label, active: true };
+    // Not in a fight or with the cursor off the canvas, so the tag does not clutter combat.
+    if (this.target !== null || this.input.pointer === null) return null;
+    const pick = this.pickCruiseTarget();
+    return pick ? { position: pick.position, label: pick.label, active: false } : null;
+  }
+
+  private endCruise(reason: 'off' | 'arrived' | 'blocked' | 'contact' | null): void {
+    if (!this.cruise) return;
+    if (reason) this.pushCruiseNotice(reason, this.cruise.label);
+    this.cruise = null;
+  }
+
+  private pushCruiseNotice(reason: string, label: string): void {
+    const bad = reason === 'blocked' || reason === 'contact' || reason === 'none';
+    this.notices.push({ text: `cruise:${reason}:${label}`, kind: bad ? 'failed' : 'abandoned', reward: 0, at: this.clock, id: -9800 - Math.round(this.clock * 10) });
+  }
+
+  /** Ends the cruise on arrival, at a dead end, when it stops gaining ground or a pirate closes in. */
+  private updateCruise(): void {
+    if (!this.cruise) return;
+    const world = this.sim.world;
+    const ship = world.ships.get(this.sim.playerId);
+    const body = world.bodies.get(this.sim.playerId);
+    if (!ship || !body || ship.destroyed || ship.docked !== null) return this.endCruise(null);
+    if (ship.cruise === 'arrived') return this.endCruise('arrived');
+    if (ship.cruise === 'blocked') return this.endCruise('blocked');
+    const distance = Math.hypot(this.cruise.order.to.x - body.position.x, this.cruise.order.to.y - body.position.y);
+    if (distance < this.cruise.best - CRUISE_PROGRESS.metres) {
+      this.cruise.best = distance;
+      this.cruise.bestAt = this.clock;
+    } else if (this.clock - this.cruise.bestAt > CRUISE_PROGRESS.seconds) return this.endCruise('blocked');
+    for (const [id, pilot] of world.pilots) {
+      if (pilot.target !== this.sim.playerId) continue;
+      const other = world.bodies.get(id);
+      if (other && Math.hypot(other.position.x - body.position.x, other.position.y - body.position.y) < CRUISE_CONTACT_RANGE) return this.endCruise('contact');
+    }
+  }
+
+  private cruiseView() {
+    const body = this.sim.world.bodies.get(this.sim.playerId);
+    const ship = this.sim.world.ships.get(this.sim.playerId);
+    if (!this.cruise || !body) return null;
+    const { to } = this.cruise.order;
+    const distance = Math.max(0, Math.hypot(to.x - body.position.x, to.y - body.position.y) - this.cruise.order.stopRadius);
+    return { label: this.cruise.label, distance, phase: ship?.cruise ?? 'burn' };
   }
 
   /**
@@ -882,6 +1007,7 @@ export class Game {
         return me ? gravityAt(this.sim.world, me.position) : 0;
       })(),
       jumpedAt: this.jumpedAt,
+      cruise: this.cruiseView(),
       deathCause: this.deathCause,
       discovered: [...this.discovered],
       news: (this.sim.economy?.news ?? []).slice(0, 8),

@@ -184,6 +184,11 @@ export function Notices({ notices, t, locale }: { notices: { id: number; kind: s
               <strong>{t('board.done')}</strong>
               {n.reward > 0 && <span> +{formatNumber(locale, n.reward)} cr</span>}
             </>
+          ) : n.kind.startsWith('cruise:') ? (
+            <strong>
+              {t(`cruise.${n.kind.split(':')[1]}` as MessageKey)}
+              {n.kind.split(':').slice(2).join(':') && ` · ${n.kind.split(':').slice(2).join(':')}`}
+            </strong>
           ) : n.kind.startsWith('rule:') ? (
             <strong>{t(`sector.rule.${n.kind.slice(5)}` as MessageKey)}</strong>
           ) : n.kind.startsWith('campaign:') ? (
