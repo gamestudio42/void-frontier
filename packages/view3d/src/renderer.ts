@@ -318,7 +318,7 @@ export class SpaceRenderer {
     if (body && ship) {
       const position = toScene(lerp2(body.previousPosition, body.position, alpha));
       const velocity = toScene(body.velocity);
-      const focus = this.rig.update(position, velocity, frameDt, options.frame ? toScene(options.frame) : null, options.boss === true);
+      const focus = this.rig.update(position, velocity, frameDt, options.frame ? toScene(options.frame) : null, options.boss === true, ship.definition.hull.length);
       this.dust.setFocus(focus, this.rig.camera.position.distanceTo(focus));
       this.grid.setFocus(focus);
       this.starfield.position.copy(this.rig.camera.position);
@@ -336,7 +336,7 @@ export class SpaceRenderer {
         stoppingDistance: telemetry?.stoppingDistance ?? 0,
         shipLength: ship.definition.hull.length,
         aim: options.aim ? toScene(options.aim) : null,
-        scale: this.rig.zoomLevel * (1 + Math.min(0.9, Math.hypot(velocity.x, velocity.z) / 250)),
+        scale: this.rig.viewScale,
       });
     }
 

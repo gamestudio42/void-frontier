@@ -38,6 +38,8 @@ export interface FlightTelemetry {
   scanCooldown: number;
   /** The rock under the mining laser, if any. */
   miningTarget: { asteroidType: string; resource: string; ore: number; oreMax: number } | null;
+  /** The mining laser is firing but touches no rock. */
+  miningIdle: boolean;
   destroyed: boolean;
   /** Hull type being flown. */
   shipId: string;
@@ -119,6 +121,10 @@ export function readTelemetry(world: World, id: EntityId): FlightTelemetry | nul
       const beam = ship.weapons.find((w) => w.definition.kind === 'mining')?.beam;
       const rock = beam?.hit !== null && beam?.hit !== undefined ? world.asteroids.get(beam.hit) : undefined;
       return rock ? { asteroidType: rock.type.id, resource: rock.type.resource, ore: rock.ore, oreMax: rock.oreMax } : null;
+    })(),
+    miningIdle: (() => {
+      const beam = ship.weapons.find((w) => w.definition.kind === 'mining')?.beam;
+      return !!beam && (beam.hit === null || !world.asteroids.has(beam.hit));
     })(),
     destroyed: ship.destroyed,
     shipId: ship.baseDefinition.id,

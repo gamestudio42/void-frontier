@@ -252,6 +252,11 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
             {t('unit.units')} {t('hud.oreLeft')}
           </span>
         )}
+        {!tel.miningTarget && tel.miningIdle && (
+          <span className="mining-target idle" data-testid="mining-idle">
+            {t('hud.miningNoRock')}
+          </span>
+        )}
       </section>
 
       <ul className="gains" aria-live="polite">

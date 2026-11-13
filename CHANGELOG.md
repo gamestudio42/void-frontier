@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased: first minutes
+
+- The hull bar shows again on the ship and target panels (a shipyard style was hiding it).
+- A browser without WebGL gets a message instead of a black screen.
+- The docking checklist appears only when you approach the bay.
+- New games start with flight assist on (a setting); the first flight teaches Newtonian flight by switching it off.
+- The first flight no longer asks again for what you already did (scan, mine, dock, fight, fleet).
+- Pirates far off are not targeted on their own; the gate patrol at the Outpost sits further out.
+- The mining laser shows a faint line and a notice when it touches no rock, and no longer hides the rock it cuts.
+- The destroyed card says what broke the ship: who shot it, what it hit and how fast.
+- The camera keeps your ship readable at speed and in fights.
+
 ## 0.96.0: look and feel
 
 - Lighter flight HUD with arcs around the ship; press I for every readout.

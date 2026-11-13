@@ -118,6 +118,15 @@ export interface ContractsView {
   history: { id: number; kind: string; outcome: string; reward: number }[];
 }
 
+/** What destroyed the player's ship, for the death card. */
+export interface DeathCause {
+  kind: 'weapon' | 'ram' | 'rock' | 'station' | 'other';
+  /** Ship definition id of the shooter or the ship rammed. */
+  ship: string | null;
+  /** Closing speed of the fatal impact, m/s. */
+  speed: number;
+}
+
 export interface HudState {
   telemetry: FlightTelemetry | null;
   braking: boolean;
@@ -146,6 +155,7 @@ export interface HudState {
   gravity: number;
   /** Game clock of the last jump, for the transition effect. */
   jumpedAt: number;
+  deathCause: DeathCause | null;
   discovered: string[];
   visited: string[];
   mapOpen: boolean;
@@ -217,6 +227,7 @@ export const initialHudState = (): HudState => ({
   gate: null,
   gravity: 0,
   jumpedAt: -100,
+  deathCause: null,
   discovered: [],
   visited: ['outpost_alpha'],
   mapOpen: false,

@@ -122,8 +122,14 @@ export class BeamRenderer {
         beam.group.rotation.y = Math.atan2(dy, dx);
         const flicker = 0.85 + Math.sin(time * 90 + index) * 0.15;
         const mining = mount.definition.kind === 'mining';
-        beam.core.scale.set(length, 1, (mining ? 0.7 : 0.3) * flicker);
-        beam.glow.scale.set(length, 1, (mining ? 4.2 : 1.5) * flicker);
+        // A mining laser cutting nothing is a thin, faint line, so it reads as "no contact";
+        // on a rock it stays narrow enough that the cut itself is still visible.
+        const idle = mining && mount.beam.hit === null;
+        const width = idle ? 0.35 : 1;
+        beam.core.scale.set(length, 1, (mining ? 0.45 : 0.3) * flicker * width);
+        beam.glow.scale.set(length, 1, (mining ? 2.6 : 1.5) * flicker * width);
+        (beam.glow.material as MeshBasicMaterial).opacity = idle ? 0.15 : 0.5;
+        (beam.core.material as MeshBasicMaterial).opacity = idle ? 0.25 : 1;
         if (mount.beam.hit !== null) impacts.push({ x: to.x, y: to.y, fromX: from.x, fromY: from.y, mining });
       });
     }

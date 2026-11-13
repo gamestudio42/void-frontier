@@ -174,6 +174,10 @@ export function SettingsPanel({ settings, onSettings, t }: { settings: Settings;
         <span>{t('settings.steering')}</span>
         <input type="checkbox" checked={settings.mouseSteering} onChange={(e) => set({ mouseSteering: e.target.checked })} />
       </label>
+      <label className="setting check">
+        <span>{t('settings.startAssisted')}</span>
+        <input type="checkbox" checked={settings.startAssisted} onChange={(e) => set({ startAssisted: e.target.checked })} data-testid="start-assisted" />
+      </label>
       <label className="setting">
         <span>{t('settings.flashes')}</span>
         <input type="checkbox" checked={settings.reduceFlashes} onChange={(e) => set({ reduceFlashes: e.target.checked })} data-testid="reduce-flashes" />

@@ -13,6 +13,11 @@ export interface CameraSettings {
   /** seconds of travel the camera looks ahead of the ship */
   lookAhead: number;
   maxLookAhead: number;
+  /**
+   * Smallest share of the screen height the player's ship may shrink to when the camera
+   * pulls back on its own (speed, a fight, a boss). The wheel zoom is not limited.
+   */
+  minShipScreen: { cruise: number; combat: number; boss: number };
 }
 
 export const DEFAULT_CAMERA: CameraSettings = {
@@ -24,6 +29,7 @@ export const DEFAULT_CAMERA: CameraSettings = {
   smoothing: 0.15,
   lookAhead: 0.6,
   maxLookAhead: 120,
+  minShipScreen: { cruise: 0.1, combat: 0.07, boss: 0.045 },
 };
 
 /**
@@ -36,6 +42,9 @@ export class CameraRig {
   private readonly desired = new Vector3();
   private zoom = 1;
   private speedZoom = 1;
+  /** Pull-back applied this frame by speed or framing, after the ship-size cap. */
+  private autoZoom = 1;
+  private lastDistance: number;
   private initialised = false;
   private trauma = 0;
   private combatZoom = 1;
@@ -46,6 +55,12 @@ export class CameraRig {
   constructor(readonly settings: CameraSettings = DEFAULT_CAMERA) {
     this.camera = new PerspectiveCamera(settings.fov, 1, 1, 20000);
     this.bossTilt = settings.tilt;
+    this.lastDistance = settings.distance;
+  }
+
+  /** How far the camera has pulled back from its zoom-1 distance, wheel zoom included. */
+  get viewScale(): number {
+    return this.zoom * this.autoZoom;
   }
 
   get zoomLevel(): number {
@@ -75,17 +90,28 @@ export class CameraRig {
    * `target` and `velocity` are in scene units (XZ plane). `frame` is an optional second
    * point to keep in view (the combat target): the camera eases back and shifts toward it.
    */
-  update(target: Vector3, velocity: Vector3, frameDt: number, frame: Vector3 | null = null, boss = false): Vector3 {
+  update(target: Vector3, velocity: Vector3, frameDt: number, frame: Vector3 | null = null, boss = false, shipLength = 0): Vector3 {
     const s = this.settings;
     const speed = Math.hypot(velocity.x, velocity.z);
-    const lead = Math.min(s.maxLookAhead, speed * s.lookAhead);
+    // Half the visible height around the focus, from last frame: the look-ahead and the
+    // combat shift may not push the player's own ship off the screen.
+    const halfView = this.lastDistance * Math.tan((s.fov * Math.PI) / 360);
+    const lead = Math.min(s.maxLookAhead, speed * s.lookAhead, halfView * 0.45);
     const scale = speed > 0.01 ? lead / speed : 0;
     this.desired.set(target.x + velocity.x * scale, 0, target.z + velocity.z * scale);
     let wantedCombatZoom = 1;
     if (frame) {
       const gap = Math.hypot(frame.x - target.x, frame.z - target.z);
-      this.desired.x += (frame.x - this.desired.x) * 0.45;
-      this.desired.z += (frame.z - this.desired.z) * 0.45;
+      let sx = (frame.x - this.desired.x) * 0.45;
+      let sz = (frame.z - this.desired.z) * 0.45;
+      const shift = Math.hypot(sx, sz);
+      const maxShift = halfView * 0.55;
+      if (shift > maxShift) {
+        sx *= maxShift / shift;
+        sz *= maxShift / shift;
+      }
+      this.desired.x += sx;
+      this.desired.z += sz;
       const pull = boss ? 2.15 : 1.7;
       wantedCombatZoom = Math.min(boss ? 2.6 : 3, Math.max(boss ? 1.65 : 1, (gap * pull) / s.distance));
     }
@@ -99,7 +125,16 @@ export class CameraRig {
     this.speedZoom += (targetSpeedZoom - this.speedZoom) * (this.initialised ? 1 - Math.exp(-frameDt / 0.6) : 1);
     this.initialised = true;
 
-    const distance = s.distance * this.zoom * Math.max(this.speedZoom, this.combatZoom);
+    this.autoZoom = Math.max(this.speedZoom, this.combatZoom);
+    if (shipLength > 0) {
+      // Keep the ship at least this share of the screen high; framing that needs more
+      // room leaves the other ship to the edge arrow.
+      const share = boss && frame ? s.minShipScreen.boss : frame ? s.minShipScreen.combat : s.minShipScreen.cruise;
+      const cap = shipLength / (share * 2 * s.distance * Math.tan((s.fov * Math.PI) / 360));
+      this.autoZoom = Math.min(this.autoZoom, Math.max(1, cap));
+    }
+    const distance = s.distance * this.zoom * this.autoZoom;
+    this.lastDistance = distance;
     const tilt = (this.bossTilt * Math.PI) / 180;
     this.camera.position.set(this.focus.x, this.focus.y + Math.sin(tilt) * distance, this.focus.z + Math.cos(tilt) * distance);
     this.lookTarget.copy(this.focus);

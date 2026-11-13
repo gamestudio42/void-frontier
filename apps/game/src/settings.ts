@@ -8,6 +8,8 @@ export interface Settings {
   musicVolume: number;
   cameraShake: boolean;
   mouseSteering: boolean;
+  /** New games launch with flight assist on. */
+  startAssisted: boolean;
   locale: Locale | null;
   /** No full-screen flashes on damage and jumps. */
   reduceFlashes: boolean;
@@ -26,6 +28,7 @@ export const DEFAULT_SETTINGS: Settings = {
   musicVolume: 0.5,
   cameraShake: true,
   mouseSteering: true,
+  startAssisted: true,
   locale: null,
   reduceFlashes: false,
   textScale: 1,

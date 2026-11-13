@@ -34,7 +34,7 @@ export function ShipyardTab({ view, fleet, actions, t, locale }: { view: Station
     <div className="shipyard">
       <h3>{t('shipyard.hangar')}</h3>
       <div className="hulls">
-        <article className="hull flying">
+        <article className="hull-card flying">
           <span className="slot-tag">{t('shipyard.flying')}</span>
           <strong>{t(`ship.${view.flying}` as MessageKey)}</strong>
           <dl>
@@ -47,7 +47,7 @@ export function ShipyardTab({ view, fleet, actions, t, locale }: { view: Station
           </dl>
         </article>
         {here.map((h) => (
-          <article key={h.id} className="hull" data-testid={`hangar-${h.ship}`}>
+          <article key={h.id} className="hull-card" data-testid={`hangar-${h.ship}`}>
             <strong>{t(`ship.${h.ship}` as MessageKey)}</strong>
             <p className="meta">
               {h.upgrades} {t('shipyard.modules')} · {h.cargo} {t('unit.units')} {t('station.held').toLowerCase()}
@@ -95,7 +95,7 @@ export function ShipyardTab({ view, fleet, actions, t, locale }: { view: Station
       <h3>{t('shipyard.forSale')}</h3>
       <div className="hulls">
         {view.shipyard.map((offer) => (
-          <article key={offer.ship} className={`hull ${offer.locked ? 'locked' : ''}`} data-testid={`buy-${offer.ship}`}>
+          <article key={offer.ship} className={`hull-card ${offer.locked ? 'locked' : ''}`} data-testid={`buy-${offer.ship}`}>
             <span className="slot-tag">{t(`class.${getShip(offer.ship).class}` as MessageKey)}</span>
             <strong>{t(`ship.${offer.ship}` as MessageKey)}</strong>
             <p>{t(`ship.${offer.ship}.desc` as MessageKey)}</p>
