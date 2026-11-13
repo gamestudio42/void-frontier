@@ -434,6 +434,28 @@ export type UpgradeDefinition = z.infer<typeof upgradeSchema>;
 
 export type StationDefinition = z.infer<typeof stationDefinitionSchema>;
 
+/** The cruise autopilot: honest thrusters only, it plans when to burn, flip and brake. */
+export const cruiseRulesSchema = z.object({
+  /** m/s the autopilot will not plan beyond; the ship can go faster under manual control */
+  maxSpeed: positive,
+  /** share of the main engine's deceleration the braking plan relies on */
+  brakeMargin: z.number().gt(0).max(1),
+  /** multiplier on the half-turn time the plan reserves for the flip before braking */
+  flipAllowance: z.number().min(1),
+  /** seconds of travel the obstacle check looks ahead */
+  lookAheadSeconds: positive,
+  /** metres the obstacle check looks ahead at the least */
+  minLookAhead: positive,
+  /** metres kept between the hull and an obstacle */
+  clearance: z.number().min(0),
+  /** degrees off the direct course tried, each side, to get around an obstacle */
+  avoidAngles: z.array(z.number().gt(0).lt(90)),
+  /** m/s under which the ship counts as stopped at the destination */
+  arrivalSpeed: positive,
+});
+
+export type CruiseRules = z.infer<typeof cruiseRulesSchema>;
+
 export const collisionRulesSchema = z.object({
   /** 0 = no bounce, 1 = perfectly elastic */
   restitution: z.number().min(0).max(1),

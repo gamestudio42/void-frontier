@@ -39,6 +39,12 @@ export function bayOf(world: World, stationId: EntityId): Bay | null {
   };
 }
 
+/** A point straight out from the bay mouth: where a docking approach starts. */
+export function bayEntryPoint(world: World, stationId: EntityId, distance = 180): Vec2 | null {
+  const bay = bayOf(world, stationId);
+  return bay ? { x: bay.mouth.x + bay.axis.x * distance, y: bay.mouth.y + bay.axis.y * distance } : null;
+}
+
 export type DockRefusal = 'tooFar' | 'tooFast' | 'misaligned' | 'hostiles' | 'destroyed' | 'hostileStation' | 'reputation';
 
 export interface DockingStatus {

@@ -3,6 +3,7 @@ import asteroidData from '../data/asteroids.json';
 import campaignData from '../data/campaign.json';
 import contractData from '../data/contracts.json';
 import crewData from '../data/crew.json';
+import cruiseData from '../data/cruise.json';
 import eventData from '../data/events.json';
 import factionData from '../data/factions.json';
 import traderData from '../data/traders.json';
@@ -24,6 +25,7 @@ import {
   contractRulesSchema,
   campaignSchema,
   crewRulesSchema,
+  cruiseRulesSchema,
   eventRulesSchema,
   factionSchema,
   traderRouteSchema,
@@ -38,6 +40,7 @@ import {
   type ContractRules,
   type CampaignDefinition,
   type CrewRules,
+  type CruiseRules,
   type EventRules,
   type FactionDefinition,
   type TraderRoute,
@@ -67,6 +70,7 @@ export const CREW_RULES: CrewRules = crewRulesSchema.parse(crewData);
 export const CAMPAIGN: CampaignDefinition = campaignSchema.parse(campaignData);
 export const CONTRACT_RULES: ContractRules = contractRulesSchema.parse(contractData);
 export const COLLISION_RULES: CollisionRules = collisionRulesSchema.parse(physicsData);
+export const CRUISE_RULES: CruiseRules = cruiseRulesSchema.parse(cruiseData);
 export const OUTPOST_ALPHA: SectorDefinition = sectorDefinitionSchema.parse(outpostAlphaData);
 
 /** Every sector, keyed by id. Outpost Alpha is where a new game starts. */

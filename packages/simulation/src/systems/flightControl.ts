@@ -1,12 +1,8 @@
-import { atan2, clamp, sub, worldToLocal, wrapAngle } from '@void-frontier/kernel';
+import { atan2, clamp, sub, worldToLocal } from '@void-frontier/kernel';
 import { forwardOf } from '../ship.ts';
 import type { Body, Ship } from '../types.ts';
 import type { World } from '../world.ts';
-
-/** Proportional gain of the steering controller near the target, in 1/s. */
-const AIM_GAIN = 6;
-/** Fraction of the theoretical maximum deceleration the steering plan relies on. */
-const AIM_BRAKE_MARGIN = 0.8;
+import { cruiseControl, steerTo } from './cruise.ts';
 
 /**
  * Turns the pilot's command into thruster throttles. Every assist (flight assist, brake,
@@ -18,8 +14,16 @@ export function flightControlSystem(world: World, dt: number): void {
     if (!body) continue;
     if (ship.destroyed || ship.docked !== null) {
       Object.assign(ship.output, { main: 0, reverse: 0, lateral: 0, rotation: 0, boosting: false });
+      ship.cruise = null;
       continue;
     }
+    const { command } = ship;
+    const manual = command.brake || command.thrust !== 0 || command.strafe !== 0 || command.turn !== 0;
+    if (command.cruise && !manual) {
+      ship.cruise = cruiseControl(world, id, ship, body, command.cruise, dt);
+      continue;
+    }
+    ship.cruise = null;
     controlShip(ship, body, dt);
   }
 }
@@ -66,27 +70,18 @@ function controlShip(ship: Ship, body: Body, dt: number): void {
   const maxOmega = movement.maxAngularVelocity;
   const omega = body.angularVelocity;
   const turn = brake ? 0 : clamp(command.turn, -1, 1);
-  let targetOmega: number | null = null;
-
   if (turn !== 0) {
     // Manual turning: thrusters push until the rated turn rate, then coast.
     const saturated = turn > 0 ? omega >= maxOmega * turn : omega <= maxOmega * turn;
     output.rotation = saturated ? 0 : turn;
-  } else if (command.aim && !brake) {
-    const toAim = sub(command.aim, body.position);
-    if (toAim.x * toAim.x + toAim.y * toAim.y > 1) {
-      const error = wrapAngle(atan2(toAim.y, toAim.x) - body.angle);
-      const maxAlpha = maxTorque / body.inertia;
-      const magnitude = Math.min(maxOmega, Math.sqrt(2 * maxAlpha * AIM_BRAKE_MARGIN * Math.abs(error)), AIM_GAIN * Math.abs(error));
-      targetOmega = error >= 0 ? magnitude : -magnitude;
-    } else {
-      targetOmega = assisted ? 0 : null;
-    }
-  } else if (assisted || brake) {
-    targetOmega = 0;
+    return;
   }
-
-  if (turn === 0) {
-    output.rotation = targetOmega === null ? 0 : clamp(((targetOmega - omega) * body.inertia) / dt / maxTorque, -1, 1);
+  const toAim = command.aim && !brake ? sub(command.aim, body.position) : null;
+  if (toAim && toAim.x * toAim.x + toAim.y * toAim.y > 1) {
+    output.rotation = steerTo(ship, body, atan2(toAim.y, toAim.x), dt);
+    return;
   }
+  // No aim (or the cursor on the ship): the assists hold the heading, Newtonian drifts.
+  const hold = assisted || brake;
+  output.rotation = hold ? clamp(((0 - omega) * body.inertia) / dt / maxTorque, -1, 1) : 0;
 }
