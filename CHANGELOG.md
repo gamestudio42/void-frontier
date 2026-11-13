@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased: audio
+
+- Adaptive music: drone, pad, bass pulse, drums and brass come in as danger grows and fall back after the fight.
+- Explosions in layers (crack, body, debris, long rumble) with a space reverb; hits on a hull ring like struck plate; shields shimmer.
+- Big moments (explosions, hits on you, jumps, story beats) briefly duck the music.
+- Distant sounds are quieter and duller; firefights no longer pile up into a buzz, and the mix no longer clips.
+- Boost whines, thrusters change colour with how hard they push, docking clamps clank.
+
 ## Unreleased: gamepad
 
 - Play with a controller: left stick to fly, right stick to aim, RT/LT to fire, LB to mine, B to brake, A to dock or jump, Y to cruise, RB for the next target.
