@@ -45,6 +45,12 @@ Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kes
 - The camera does not rotate with the ship, leads in the direction of travel and pulls back as speed rises, but never so far that your ship drops below a tenth of the screen height (7% in a fight, 4.5% against a boss).
 - The docking checklist shows only on an approach: within 60 m of the bay, in the corridor with the nose on the bay, or closing on it.
 
+## Sound
+
+- All procedural (no audio files). Buses for effects, ambience, interface and music, into a limiter; heavy events duck the music and ambience.
+- One-shots in layers (attack, body, tail) with pitch and variant changes, quieter and duller with distance, and a space reverb send. A voice budget keeps firefights readable.
+- Adaptive score: drone, pad, pulse, drums and brass stems follow how intense the moment is (hostiles near, pilots hunting you, recent fire, low hull, the boss). Calm in dock.
+
 ## Controls
 
 | Input | Action |
