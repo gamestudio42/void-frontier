@@ -73,6 +73,7 @@ export function App() {
         sector: (id) => t(`sector.${id}` as MessageKey),
         route: (id) => t(`route.${id}` as MessageKey),
         campaign: () => t('campaign.marker'),
+        stop: () => t('hud.stop'),
       };
   }, [game, t]);
 

@@ -269,3 +269,11 @@ Speed and combat framing pulled the camera back until the scout was a few pixels
 ## 067. Only near or hunting hostiles are selected without Tab
 
 Auto-targeting picked a patrol at the edge of sensor range the moment the player undocked. A hostile is now selected on its own inside 700 m, or when its pilot is already hunting the player; anything else waits for Tab. The Outpost gate patrol moved about 300 m further from the station so the first minute is not spent watching it.
+
+## 068. Collisions teach before they kill
+
+At 0.22 hull per kJ above 3 m/s, a scout lost a third of its hull at 20 m/s and most of it at 30, while normal speeds run from 50 to 300 m/s: the first lesson about rocks was often the last. Two numbers in `physics.json` soften the low end without touching the energy model. Impact damage is scaled linearly from zero at the safe speed to the full rate at 15 m/s (`impactRampSpeed`), so it still never falls as speed rises. The shield takes 70% of each blow while it has charge (`impactShieldShare`), and the hull the rest; a crash with shields down hits as hard as before. The collision event lists what each ship lost, so effects and sound tell a shield bump from a hull hit.
+
+## 069. The kill beat is presentation time
+
+When the player destroys a ship the game holds for 60 ms and runs at 35% speed for 280 ms. Only the wall time fed to the fixed stepper changes: the simulation takes the same steps with the same inputs, so determinism and replays are untouched.

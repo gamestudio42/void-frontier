@@ -54,9 +54,11 @@ export class TracerRenderer {
       this.position.set(round.position.x - round.velocity.x * back, 1, -(round.position.y - round.velocity.y * back));
       this.dir.set(round.velocity.x / speed, 0, -round.velocity.y / speed);
       this.rotation.setFromUnitVectors(this.axis, this.dir);
-      // Missiles read as short, fat, hot streaks among the tracers.
-      const length = round.homing ? 9 : Math.min(14, speed * 0.022);
-      this.scale.set(length, round.homing ? 3 : 1, 1);
+      // Missiles read as short, fat, hot streaks among the tracers. Rounds are long, thick
+      // streaks so a burst reads as a line of fire from the camera's height.
+      const length = round.homing ? 9 : Math.min(26, speed * 0.045);
+      const girth = round.homing ? 3 : 2;
+      this.scale.set(length, girth, girth);
       this.position.addScaledVector(this.dir, -length / 2);
       this.matrix.compose(this.position, this.rotation, this.scale);
       this.mesh.setMatrixAt(i, this.matrix);

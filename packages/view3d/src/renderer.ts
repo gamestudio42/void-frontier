@@ -88,6 +88,8 @@ const MUZZLE = { r: 2.0, g: 1.5, b: 0.7 };
 const MUZZLE_END = { r: 0.3, g: 0.1, b: 0.02 };
 const SHIELD_SPARK = { r: 0.4, g: 1.1, b: 2.0 };
 const SHIELD_SPARK_END = { r: 0.0, g: 0.05, b: 0.2 };
+const HIT_FLASH = { r: 3.2, g: 3.0, b: 2.6 };
+const HIT_FLASH_END = { r: 1.2, g: 0.6, b: 0.2 };
 const BEAM_GLOW = { r: 0.8, g: 1.6, b: 2.2 };
 const BEAM_GLOW_END = { r: 0.0, g: 0.1, b: 0.3 };
 
@@ -252,9 +254,18 @@ export class SpaceRenderer {
       if (event.type === 'collision') {
         const involvesPlayer = event.a === sim.playerId || event.b === sim.playerId;
         this.sparks(event.point, event.normal, event.speed);
+        // A shield that takes the blow flares at the contact, so a scrape reads as "shield", not "hull".
+        for (const loss of event.losses) {
+          if (loss.shield <= 0) continue;
+          const model = this.ships.get(loss.ship);
+          const bubble = this.shields.get(loss.ship);
+          if (model && bubble) bubble.hit(model.root.worldToLocal(toScene(event.point, 1)));
+        }
         if (involvesPlayer) {
-          this.rig.shake(Math.min(0.9, 0.12 + event.speed / 40 + event.damage / 400));
-          if (event.damage > 0) this.ring(toScene(event.point, 0.5), 6 + Math.min(28, event.speed * 0.45), 0.35, 0xff6b5a, null);
+          const mine = event.losses.find((l) => l.ship === sim.playerId);
+          this.rig.shake(Math.min(0.9, 0.12 + event.speed / 40 + (mine?.hull ?? 0) / 400));
+          if (mine && mine.hull > 0) this.ring(toScene(event.point, 0.5), 6 + Math.min(28, event.speed * 0.45), 0.35, 0xff6b5a, null);
+          else if (mine && mine.shield > 0) this.ring(toScene(event.point, 0.5), 6 + Math.min(20, event.speed * 0.35), 0.3, 0x6fd3ff, null);
         }
       } else if (event.type === 'scan') {
         this.ring(toScene(event.position, 0.6), event.range, 1.3, 0x6fd3ff, null);
@@ -285,6 +296,8 @@ export class SpaceRenderer {
           if (model && bubble) bubble.hit(model.root.worldToLocal(p.clone()));
           for (let i = 0; i < count; i++) this.particles.emit(p.x, p.y, p.z, (Math.random() - 0.5) * 40, (Math.random() - 0.5) * 10, (Math.random() - 0.5) * 40, SHIELD_SPARK, SHIELD_SPARK_END, 1 + Math.random(), 0.2 + Math.random() * 0.3, 2);
         } else if (event.hullDamage > 0) {
+          // A white-hot flash where the round bites, bigger for a heavier hit.
+          if (!event.beam) this.particles.emit(p.x, p.y + 0.5, p.z, 0, 0, 0, HIT_FLASH, HIT_FLASH_END, 4 + Math.min(8, event.hullDamage * 0.3), 0.07, 0);
           for (let i = 0; i < count * 1.5; i++) this.particles.emit(p.x, p.y, p.z, (Math.random() - 0.5) * 50, Math.random() * 15, (Math.random() - 0.5) * 50, SPARK, SPARK_END, 0.7 + Math.random() * 0.8, 0.25 + Math.random() * 0.5, 1.5);
           if (event.target === sim.playerId) this.rig.shake(event.beam ? 0.01 : 0.06);
         } else {
@@ -292,6 +305,11 @@ export class SpaceRenderer {
         }
       } else if (event.type === 'shipDestroyed') {
         this.explode(event.position);
+        if (event.by === sim.playerId && event.id !== sim.playerId) {
+          // Your kill: a bright ring and a kick so it lands.
+          this.ring(toScene(event.position, 0.5), 60, 0.5, 0xffd27a, null);
+          this.rig.shake(0.35);
+        }
         // Big ships go up in stages.
         const size = sim.world.ships.get(event.id)?.definition.hull.length ?? 0;
         if (size > 18) {
