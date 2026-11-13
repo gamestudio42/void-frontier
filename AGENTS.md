@@ -27,6 +27,7 @@ Instructions for AI coding agents working on Void Frontier. Read `docs/GDD.md`, 
 - More mass (cargo, fuel) means less linear and angular acceleration for the same thrust.
 - An empty tank produces no thrust.
 - Flight assist and the brake stop the ship by burning fuel through thrusters.
+- The cruise autopilot only sets thruster throttles: it burns fuel, stops at its destination and steers clear of what lies on its course.
 - The same commands from the same state give the same result, bit for bit.
 - A ship cannot tunnel through a rock at any speed it can reach.
 - Collisions conserve momentum between movable bodies; static bodies never move.

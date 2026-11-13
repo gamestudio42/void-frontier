@@ -7,6 +7,7 @@ export * from './universe.ts';
 export * from './proximity.ts';
 export { collisionSystem, impactDamage } from './systems/collision.ts';
 export { flightControlSystem } from './systems/flightControl.ts';
+export { cruiseControl, flipTime, plannedSpeed } from './systems/cruise.ts';
 export { thrusterSystem } from './systems/thrusters.ts';
 export { integrationSystem } from './systems/integration.ts';
 export { massSystem } from './systems/mass.ts';

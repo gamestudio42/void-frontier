@@ -1,0 +1,10 @@
+{
+  "maxSpeed": 320,
+  "brakeMargin": 0.7,
+  "flipAllowance": 1.4,
+  "lookAheadSeconds": 5,
+  "minLookAhead": 250,
+  "clearance": 25,
+  "avoidAngles": [20, 40, 60, 80],
+  "arrivalSpeed": 3
+}

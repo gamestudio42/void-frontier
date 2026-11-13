@@ -17,6 +17,7 @@ export interface InputActions {
   cycleQuality(): void;
   cycleTarget(): void;
   zoom(factor: number): void;
+  toggleCruise(): void;
 }
 
 /** Actions a player can move to another key, with their default physical key codes. */
@@ -38,6 +39,7 @@ export const DEFAULT_BINDINGS = {
   brake: 'Space',
   aimSystem: 'KeyT',
   details: 'KeyI',
+  cruise: 'KeyJ',
 } as const;
 
 export type BindingAction = keyof typeof DEFAULT_BINDINGS;
@@ -75,6 +77,7 @@ export class InputController {
     else if (event.code === bound.fleet) this.actions.toggleFleet();
     else if (event.code === bound.aimSystem) this.actions.cycleAimedSystem();
     else if (event.code === bound.details) this.actions.toggleDetails();
+    else if (event.code === bound.cruise) this.actions.toggleCruise();
     switch (event.code) {
       case 'KeyH': this.actions.toggleHelp(); break;
       case 'F3':

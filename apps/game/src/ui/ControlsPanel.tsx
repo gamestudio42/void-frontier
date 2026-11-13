@@ -23,6 +23,7 @@ const ROWS: [(string | { action: BindingAction })[], MessageKey][] = [
   [[{ action: 'scan' }], 'help.scan'],
   [[{ action: 'jettison' }], 'help.jettison'],
   [[{ action: 'dock' }], 'help.dock'],
+  [[{ action: 'cruise' }], 'help.cruise'],
   [[{ action: 'map' }], 'help.map'],
   [[{ action: 'fleet' }], 'help.fleet'],
   [[{ action: 'aimSystem' }], 'help.aimSystem'],

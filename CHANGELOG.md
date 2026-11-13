@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased: cruise
+
+- Cruise autopilot: point the cursor at a station, gate or waypoint and press J. The ship burns, coasts, flips and brakes on its own thrusters, steers round rocks and stops at the bay's approach lane or in the gate ring. Any flight key takes control back; a pirate closing in drops it.
+- Before you press J, the destination it would pick is tagged on screen; while it flies, a dashed course and a panel show where and what it is doing.
+- Dots ahead of the ship mark where it will be over the next five seconds.
+
 ## Unreleased: impact
 
 - Bumps teach before they kill: the shield takes most of a collision and a scrape costs little; a crash at speed still hurts.

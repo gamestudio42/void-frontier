@@ -51,7 +51,25 @@ export interface ShipCommand {
   fireMining: boolean;
   /** Aim precisely at this system of the commanded target. */
   targetSystem: SubsystemId | null;
+  /**
+   * Cruise autopilot: fly to `to` and stop `stopRadius` short of it, with the thrusters
+   * only. Any manual translation, turn or brake input overrides it for that step.
+   */
+  cruise?: CruiseOrder | null;
 }
+
+export interface CruiseOrder {
+  to: Vec2;
+  /** metres short of `to` the ship should come to rest */
+  stopRadius: number;
+}
+
+/**
+ * What the cruise autopilot did on the last step: `burn` (accelerating or correcting),
+ * `coast`, `flip` (turning to brake), `brake`, `blocked` (stopping short of an obstacle
+ * with no way around), `arrived`.
+ */
+export type CruisePhase = 'burn' | 'coast' | 'flip' | 'brake' | 'blocked' | 'arrived';
 
 /** Throttle actually applied to each thruster group after fuel limits, for physics and visuals. */
 export interface ThrusterOutput {
@@ -117,6 +135,8 @@ export interface Ship {
   equipmentMass: number;
   command: ShipCommand;
   output: ThrusterOutput;
+  /** Set by the flight control while a cruise order runs, cleared otherwise. */
+  cruise?: CruisePhase | null;
 }
 
 export const idleCommand = (): ShipCommand => ({

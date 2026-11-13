@@ -277,3 +277,7 @@ At 0.22 hull per kJ above 3 m/s, a scout lost a third of its hull at 20 m/s and 
 ## 069. The kill beat is presentation time
 
 When the player destroys a ship the game holds for 60 ms and runs at 35% speed for 280 ms. Only the wall time fed to the fixed stepper changes: the simulation takes the same steps with the same inputs, so determinism and replays are untouched.
+
+## 070. Long trips fly on a cruise autopilot
+
+Crossing 2 to 8 km by hand meant minutes of holding W, then a guess at when to turn and brake, at speeds where any rock kills. J now hands the ship to an autopilot aimed at whatever station, gate or waypoint lies under the cursor. It stays honest: it only sets thruster throttles, like flight assist, so it burns real fuel and respects mass. It plans a burn, a coast, a flip and a braking burn on the main engine, falling back on the weaker reverse thrusters when there is no time to flip. It looks ahead at least as far as it needs to stop, slides round rocks with a small detour, and stops short (reporting it) when every detour is blocked. Its numbers live in `cruise.json`; the 320 m/s ceiling only bounds the plan, the ship has no speed cap. Any flight key takes control back, a pirate hunting the player within 1.5 km drops it, and so does 20 s without closing 50 m, so the autopilot never loiters. Stations are reached at the start of their approach lane, where the docking checklist takes over: docking stays a skill.

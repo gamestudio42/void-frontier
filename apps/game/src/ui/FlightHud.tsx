@@ -226,6 +226,16 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
           <em>{hud.gate.ready ? t('gate.ready') : t('gate.hint')}</em>
         </section>
       )}
+      {hud.cruise && !hud.gate && !hud.docking && !hud.boarding && (
+        <section className="panel gate-panel cruise-panel" data-testid="cruise">
+          <span className="label">{t('cruise.title')}</span>
+          <strong>{hud.cruise.label}</strong>
+          <span>
+            {formatDistance(locale, hud.cruise.distance)} · {t(`cruise.phase.${hud.cruise.phase}` as MessageKey)}
+          </span>
+          <em>{t('cruise.hint')}</em>
+        </section>
+      )}
       {hud.gravity > 0.2 && (
         <div className="gravity" data-testid="gravity">
           {t('hud.gravity')}: <strong>{formatNumber(locale, hud.gravity, 1)} {t('unit.accel')}</strong>
