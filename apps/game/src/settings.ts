@@ -7,6 +7,8 @@ export interface Settings {
   effectsVolume: number;
   musicVolume: number;
   cameraShake: boolean;
+  /** Gamepad vibration on hits, kills and death. */
+  rumble: boolean;
   mouseSteering: boolean;
   /** New games launch with flight assist on. */
   startAssisted: boolean;
@@ -27,6 +29,7 @@ export const DEFAULT_SETTINGS: Settings = {
   effectsVolume: 0.9,
   musicVolume: 0.5,
   cameraShake: true,
+  rumble: true,
   mouseSteering: true,
   startAssisted: true,
   locale: null,

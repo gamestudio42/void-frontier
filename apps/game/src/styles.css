@@ -2229,3 +2229,18 @@ button {
   opacity: 0.6;
   overflow-wrap: anywhere;
 }
+
+/* Gamepad: the controls panel's button column and a clear focus ring for menu navigation. */
+.bindings .pad-keys {
+  margin-left: 8px;
+  opacity: 0.75;
+}
+.bindings kbd.pad {
+  border-color: rgba(111, 211, 255, 0.45);
+  color: #6fd3ff;
+}
+body.gamepad :focus-visible,
+body.gamepad :focus {
+  outline: 2px solid #6fd3ff;
+  outline-offset: 2px;
+}

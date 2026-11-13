@@ -13,7 +13,7 @@ Instructions for AI coding agents working on Void Frontier. Read `docs/GDD.md`, 
 3. Flight assists, AI pilots and autopilots fire thrusters. Only `integrationSystem` and `collisionSystem` write a body's position, velocity, angle or angular velocity.
 4. React has no game rules. It reads `HudStore` snapshots and calls game actions. The renderer reads the simulation and never writes to it.
 5. Game numbers live in `packages/content/data/` and are validated by the Zod schemas in `packages/content/src/schema.ts`. No magic gameplay numbers in systems.
-6. Every new system gets unit tests in `packages/<package>/test/`; player-visible flows get a Playwright test in `e2e/`.
+6. Every new system gets unit tests in `packages/<package>/test/` (pure game-side modules in `apps/game/test/`); player-visible flows get a Playwright test in `e2e/`.
 7. Run `pnpm check` (typecheck, lint, unit tests) and `pnpm build` before each commit. Run `pnpm e2e` when the HUD, input or loop changes.
 8. Original work only: no names, art, text, ship designs or UI from the games that inspired this one. Third-party assets need a license entry in `docs/assets.md`.
 9. Code, comments, docs and commits in English. Player text goes through `apps/game/src/locales/` (English source, `pt-BR` translation).

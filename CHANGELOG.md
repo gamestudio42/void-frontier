@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased: gamepad
+
+- Play with a controller: left stick to fly, right stick to aim, RT/LT to fire, LB to mine, B to brake, A to dock or jump, Y to cruise, RB for the next target.
+- Menus and station panels work with the d-pad and A; B goes back.
+- Prompts, the HUD and the tutorial name controller buttons while you use one, and keys again when you touch the keyboard.
+- Controller vibration on hits, kills and death (a setting).
+
 ## Unreleased: cruise
 
 - Cruise autopilot: point the cursor at a station, gate or waypoint and press J. The ship burns, coasts, flips and brakes on its own thrusters, steers round rocks and stops at the bay's approach lane or in the gate ring. Any flight key takes control back; a pirate closing in drops it.

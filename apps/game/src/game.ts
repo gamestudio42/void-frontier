@@ -24,6 +24,9 @@ const CRUISE_PROGRESS = { metres: 50, seconds: 20 };
 /** Metres within which a pirate hunting the player drops the cruise. */
 const CRUISE_CONTACT_RANGE = 1500;
 
+/** Share of the shorter screen side the right stick reaches from the ship when aiming. */
+const PAD_AIM_REACH = 0.3;
+
 /** Metres inside which a hostile is selected without pressing Tab. */
 const AUTO_LOCK_RANGE = 700;
 /**
@@ -67,6 +70,7 @@ export class Game {
   private slowTime = 0;
   readonly audio = new AudioEngine();
   private shakeEnabled = true;
+  private rumbleEnabled = true;
   private autosaveTimer = 0;
   /** The docking checklist stays hidden right after leaving the bay. */
   private undockedAt = -100;
@@ -167,12 +171,23 @@ export class Game {
         else this.sim.scan(this.sim.playerId);
       },
       zoom: (factor) => this.renderer.rig.zoomBy(factor),
+      uiBack: () => {
+        const { menu, mapOpen, fleetOpen, help } = this.store.getSnapshot();
+        if (mapOpen || fleetOpen) this.store.update({ mapOpen: false, fleetOpen: false });
+        else if (help) this.store.update({ help: false });
+        else if (menu === 'pause') this.store.update({ menu: null, paused: false });
+      },
+      deviceChanged: (device) => {
+        document.body.classList.toggle('gamepad', device === 'gamepad');
+        this.store.update({ device });
+      },
       toggleCruise: () => {
         if (this.cruise) this.endCruise('off');
         else this.startCruise();
         this.publish();
       },
     });
+    window.addEventListener('gamepadconnected', this.onPadConnected);
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(canvas);
     this.resize();
@@ -350,10 +365,15 @@ export class Game {
     return encodeSave(serialize({ sim: this.sim, memory: this.memory, discovered: this.discovered }));
   }
 
+  private rumble(strength: number, ms: number): void {
+    if (this.rumbleEnabled) this.input.rumble(strength, ms);
+  }
+
   applySettings(settings: Settings): void {
     this.audio.setVolumes(settings.masterVolume, settings.effectsVolume, settings.musicVolume);
     this.input.bindings = { ...DEFAULT_BINDINGS, ...settings.bindings };
     this.shakeEnabled = settings.cameraShake;
+    this.rumbleEnabled = settings.rumble;
     this.renderer.rig.shakeEnabled = settings.cameraShake;
     this.input.steering = settings.mouseSteering;
     this.startAssisted = settings.startAssisted;
@@ -416,7 +436,12 @@ export class Game {
     this.publish();
   }
 
+  private readonly onPadConnected = () => {
+    this.notices.push({ text: 'padConnected', kind: 'abandoned', reward: 0, at: this.clock, id: -9900 - Math.round(this.clock * 10) });
+  };
+
   dispose(): void {
+    window.removeEventListener('gamepadconnected', this.onPadConnected);
     cancelAnimationFrame(this.frameHandle);
     this.resizeObserver.disconnect();
     this.input.dispose();
@@ -437,8 +462,22 @@ export class Game {
     const help = snapshot.help;
     const paused = snapshot.paused || snapshot.menu !== null || snapshot.mapOpen || snapshot.fleetOpen;
 
+    const docked = this.sim.world.ships.get(this.sim.playerId)?.docked != null;
+    this.input.pollGamepad(this.clock, snapshot.menu !== null || snapshot.mapOpen || snapshot.fleetOpen || help || docked);
+
     // The camera from the last frame is close enough to turn the cursor into a world point.
-    this.aim = this.input.pointer ? this.renderer.screenToWorld(this.input.pointer.x, this.input.pointer.y) : null;
+    // The right stick points the nose the way it is pushed, as seen on screen.
+    const stick = this.input.padAim;
+    const ship = stick ? this.sim.world.bodies.get(this.sim.playerId) : undefined;
+    if (stick && ship) {
+      const width = this.canvas.clientWidth || 1;
+      const height = this.canvas.clientHeight || 1;
+      const at = this.renderer.worldToScreen(ship.position, width, height);
+      const reach = Math.min(width, height) * PAD_AIM_REACH;
+      this.aim = this.renderer.screenToWorld(((at.x + stick.x * reach) / width) * 2 - 1, -(((at.y - stick.y * reach) / height) * 2 - 1));
+    } else {
+      this.aim = this.input.pointer ? this.renderer.screenToWorld(this.input.pointer.x, this.input.pointer.y) : null;
+    }
 
     let alpha = 1;
     if (paused || help) {
@@ -464,13 +503,19 @@ export class Game {
         this.renderer.handleEvents(this.sim, events);
         for (const event of events) {
           const mine = event.type === 'collision' && (event.a === this.sim.playerId || event.b === this.sim.playerId);
-          if (mine && event.type === 'collision' && event.losses.some((l) => l.ship === this.sim.playerId && l.hull > 0)) this.hits++;
+          if (mine && event.type === 'collision' && event.losses.some((l) => l.ship === this.sim.playerId && l.hull > 0)) {
+            this.hits++;
+            this.rumble(0.6, 160);
+          }
+          if (event.type === 'hit' && event.target === this.sim.playerId) this.rumble(0.3, 80);
           if (event.type === 'shipDestroyed' && event.by === this.sim.playerId && event.id !== this.sim.playerId) {
             this.freezeUntil = this.clock + KILL_BEAT.freeze;
             this.slowUntil = this.freezeUntil + KILL_BEAT.slow;
+            this.rumble(0.8, 200);
           }
           if (event.type === 'shipDestroyed' && event.id === this.sim.playerId) {
             this.hits++;
+            this.rumble(1, 450);
             this.deathCause = this.causeOfDeath(event.by, events);
           }
           if (event.type === 'hit' && event.attacker === this.sim.playerId && this.sim.world.ships.has(event.target)) this.hitFlash = 1;
@@ -521,8 +566,8 @@ export class Game {
     if (this.radar) drawRadar(this.radar, this.sim, this.clock, this.target);
     this.hitFlash = Math.max(0, this.hitFlash - elapsed * 6);
     // Docked, the scene slides aside so the ship stays visible next to the station panel.
-    const docked = this.sim.world.ships.get(this.sim.playerId)?.docked !== null && snapshot.menu === null;
-    this.renderer.setSceneShift(docked && window.innerWidth >= 1100 ? 0.22 : 0);
+    const parked = this.sim.world.ships.get(this.sim.playerId)?.docked !== null && snapshot.menu === null;
+    this.renderer.setSceneShift(parked && window.innerWidth >= 1100 ? 0.22 : 0);
     if (this.overlay) drawTargeting(this.overlay, this.sim, this.renderer, this.target, this.hitFlash, this.input.pointer, this.waypoints(), this.markers(), this.labels.stop(), this.cruiseMarker());
 
     this.fpsFrames++;
@@ -674,12 +719,13 @@ export class Game {
   }
 
   /** The overlay's cruise mark: the destination while flying, else what the key would pick. */
-  private cruiseMarker(): { position: Vec2; label: string; active: boolean } | null {
-    if (this.cruise) return { position: this.cruise.order.to, label: this.cruise.label, active: true };
+  private cruiseMarker(): { position: Vec2; label: string; active: boolean; key: string } | null {
+    const key = this.input.device === 'gamepad' ? 'Ⓨ' : this.input.bindings.cruise.replace(/^Key/, '');
+    if (this.cruise) return { position: this.cruise.order.to, label: this.cruise.label, active: true, key };
     // Not in a fight or with the cursor off the canvas, so the tag does not clutter combat.
-    if (this.target !== null || this.input.pointer === null) return null;
+    if (this.target !== null || (this.input.pointer === null && this.input.padAim === null)) return null;
     const pick = this.pickCruiseTarget();
-    return pick ? { position: pick.position, label: pick.label, active: false } : null;
+    return pick ? { position: pick.position, label: pick.label, active: false, key } : null;
   }
 
   private endCruise(reason: 'off' | 'arrived' | 'blocked' | 'contact' | null): void {
