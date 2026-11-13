@@ -30,7 +30,7 @@ Instructions for AI coding agents working on Void Frontier. Read `docs/GDD.md`, 
 - The same commands from the same state give the same result, bit for bit.
 - A ship cannot tunnel through a rock at any speed it can reach.
 - Collisions conserve momentum between movable bodies; static bodies never move.
-- Hull damage is zero at or below the safe impact speed and grows with impact energy above it.
+- Impact damage is zero at or below the safe impact speed and never falls as impact energy grows; the shield takes its share first, the hull the rest.
 - The same sector seed produces the same asteroid field, with no overlaps and clear zones respected.
 - Weapon damage goes shield → armour → hull; a ship never damages itself.
 - Rounds and beams are blocked by rocks and the station.

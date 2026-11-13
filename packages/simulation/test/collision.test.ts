@@ -48,7 +48,8 @@ describe('collisions', () => {
     const fastLoss = kestrel.hull.integrity - ship(fast.sim, fast.id).hull;
     expect(mediumLoss).toBeGreaterThan(0);
     expect(fastLoss).toBeGreaterThan(mediumLoss * 3);
-    expect(mediumHit?.type === 'collision' && mediumHit.damage).toBeCloseTo(mediumLoss, 6);
+    const mediumShip = mediumHit?.type === 'collision' ? mediumHit.losses.find((l) => l.ship === medium.id) : undefined;
+    expect(mediumShip?.hull).toBeCloseTo(mediumLoss, 6);
     expect(fastHit?.type === 'collision' && fastHit.speed).toBeCloseTo(20, 0);
   });
 
@@ -118,12 +119,52 @@ describe('collisions', () => {
 });
 
 describe('impactDamage', () => {
-  it('is zero up to the safe speed and grows with the square of speed', () => {
-    const inv = 1 / 8500;
-    expect(impactDamage(COLLISION_RULES, COLLISION_RULES.safeImpactSpeed, inv)).toBe(0);
-    const d10 = impactDamage(COLLISION_RULES, 10, inv);
-    const d20 = impactDamage(COLLISION_RULES, 20, inv);
-    expect(d20 / d10).toBeCloseTo((400 - 9) / (100 - 9), 6);
+  const inv = 1 / 8500;
+  const safe = COLLISION_RULES.safeImpactSpeed;
+  const ramp = COLLISION_RULES.impactRampSpeed;
+  const energy = (v: number) => v * v - safe * safe;
+
+  it('is zero up to the safe speed and never falls as speed rises', () => {
+    expect(impactDamage(COLLISION_RULES, safe, inv)).toBe(0);
+    let last = 0;
+    for (let v = safe; v <= 60; v += 0.25) {
+      const d = impactDamage(COLLISION_RULES, v, inv);
+      expect(d).toBeGreaterThanOrEqual(last);
+      last = d;
+    }
+  });
+
+  it('is scaled down below the ramp speed and grows with energy above it', () => {
+    const d20 = impactDamage(COLLISION_RULES, ramp + 5, inv);
+    const d40 = impactDamage(COLLISION_RULES, ramp + 25, inv);
+    expect(d40 / d20).toBeCloseTo(energy(ramp + 25) / energy(ramp + 5), 6);
+    const scrape = impactDamage(COLLISION_RULES, safe + 2, inv);
+    const fullRate = (0.5 * 8500 * energy(safe + 2) * COLLISION_RULES.hullDamagePerKilojoule) / 1000;
+    expect(scrape).toBeCloseTo(fullRate * (2 / (ramp - safe)), 6);
+  });
+});
+
+describe('impacts and shields', () => {
+  it('lets the shield take its share of a crash first, and the hull the rest', () => {
+    const { sim, id } = headOn(20);
+    const before = ship(sim, id).shield;
+    const hit = runUntilHit(sim);
+    const loss = hit?.type === 'collision' ? hit.losses.find((l) => l.ship === id) : undefined;
+    expect(loss).toBeDefined();
+    expect(loss!.shield).toBeCloseTo(Math.min(before, hit!.type === 'collision' ? hit!.damage * COLLISION_RULES.impactShieldShare : 0), 6);
+    expect(loss!.shield + loss!.hull).toBeCloseTo(hit!.type === 'collision' ? hit!.damage : 0, 6);
+    expect(ship(sim, id).shield).toBeCloseTo(before - loss!.shield, 6);
+    expect(kestrel.hull.integrity - ship(sim, id).hull).toBeCloseTo(loss!.hull, 6);
+  });
+
+  it('puts the whole blow on the hull when the shield is down', () => {
+    const { sim, id } = headOn(20);
+    ship(sim, id).shield = 0;
+    ship(sim, id).lastDamageTick = sim.world.tick; // just hit: no recharge before the crash
+    const hit = runUntilHit(sim);
+    const loss = hit?.type === 'collision' ? hit.losses.find((l) => l.ship === id) : undefined;
+    expect(loss?.shield).toBe(0);
+    expect(loss?.hull).toBeCloseTo(hit?.type === 'collision' ? hit.damage : -1, 6);
   });
 });
 

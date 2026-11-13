@@ -213,13 +213,20 @@ function resolve(world: World, rules: CollisionRules, a: Entry, b: Entry, contac
     applyImpulse(A, B, tx * jt, ty * jt, rax, ray, rbx, rby);
 
     const damage = impactDamage(rules, closing, invMa + invMb);
+    const losses: { ship: EntityId; shield: number; hull: number }[] = [];
     for (const id of [a.id, b.id]) {
       const ship = world.ships.get(id);
       if (!ship || ship.destroyed || damage <= 0) continue;
       // Fleet pilots graze rocks rather than ram them: off-screen they never crash at all.
-      ship.hull = Math.max(0, ship.hull - (world.pilots.get(id)?.fleet !== undefined ? damage * FLEET_IMPACT_SHARE : damage));
+      const total = world.pilots.get(id)?.fleet !== undefined ? damage * FLEET_IMPACT_SHARE : damage;
+      // The shield takes the first share of the blow, as far as its charge goes.
+      const absorbed = Math.min(ship.shield, total * rules.impactShieldShare);
+      ship.shield -= absorbed;
+      const hullDamage = total - absorbed;
+      ship.hull = Math.max(0, ship.hull - hullDamage);
       ship.lastDamageTick = world.tick;
-      damageSubsystems(world, id, { x: contact.px, y: contact.py }, damage);
+      losses.push({ ship: id, shield: absorbed, hull: hullDamage });
+      if (hullDamage > 0) damageSubsystems(world, id, { x: contact.px, y: contact.py }, hullDamage);
       if (ship.hull === 0) destroyShip(world, id, null);
     }
     if (closing > 0.5) {
@@ -231,6 +238,7 @@ function resolve(world: World, rules: CollisionRules, a: Entry, b: Entry, contac
         normal: { x: contact.nx, y: contact.ny },
         speed: closing,
         damage,
+        losses,
       });
     }
   }
@@ -262,10 +270,16 @@ function applyImpulse(A: Body, B: Body, jx: number, jy: number, rax: number, ray
 /** Share of collision damage a hired pilot's ship takes. */
 const FLEET_IMPACT_SHARE = 0.1;
 
-/** Hull damage from the kinetic energy of the closing motion above the safe speed. */
+/**
+ * Impact damage from the kinetic energy of the closing motion above the safe speed. Just
+ * above the safe speed it is scaled down, reaching the full rate at the ramp speed, so a
+ * scrape costs a little and a crash costs a lot. It never falls as speed rises.
+ */
 export function impactDamage(rules: CollisionRules, closingSpeed: number, inverseMassSum: number): number {
   if (closingSpeed <= rules.safeImpactSpeed) return 0;
   const reducedMass = 1 / inverseMassSum;
   const joules = 0.5 * reducedMass * (closingSpeed * closingSpeed - rules.safeImpactSpeed * rules.safeImpactSpeed);
-  return (joules / 1000) * rules.hullDamagePerKilojoule;
+  const span = rules.impactRampSpeed - rules.safeImpactSpeed;
+  const ramp = span > 0 ? Math.min(1, (closingSpeed - rules.safeImpactSpeed) / span) : 1;
+  return (joules / 1000) * rules.hullDamagePerKilojoule * ramp;
 }

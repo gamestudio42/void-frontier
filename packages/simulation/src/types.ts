@@ -182,8 +182,10 @@ export type SimEvent =
       normal: { x: number; y: number };
       /** closing speed along the contact normal, m/s */
       speed: number;
-      /** hull points removed from ships in the pair */
+      /** impact damage dealt to each ship in the pair, before its shield takes a share */
       damage: number;
+      /** What each ship in the pair lost: shield first, then hull. */
+      losses: { ship: EntityId; shield: number; hull: number }[];
     }
   | { type: 'shipDestroyed'; id: EntityId; position: { x: number; y: number }; by: EntityId | null }
   | { type: 'contract'; id: number; kind: 'delivery' | 'mining' | 'bounty' | 'escort' | 'salvage' | 'patrol' | 'recon'; outcome: 'completed' | 'failed' | 'abandoned'; reward: number }
