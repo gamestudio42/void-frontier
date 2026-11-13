@@ -10,8 +10,13 @@ import type { Settings } from './settings.ts';
 import { TUTORIAL } from './tutorial.ts';
 import { drawRadar } from './radar.ts';
 import { drawTargeting } from './targeting.ts';
-import type { HudStore } from './store.ts';
+import type { DeathCause, HudStore } from './store.ts';
 
+/** When the docking checklist counts as an approach (metres, m/s, degrees). Presentation only. */
+const APPROACH = { near: 60, corridorLength: 400, corridorWidth: 60, facingAngle: 45, closingSpeed: 2, closingRange: 250 };
+
+/** Metres inside which a hostile is selected without pressing Tab. */
+const AUTO_LOCK_RANGE = 700;
 const HUD_INTERVAL = 0.1;
 const QUALITIES: Quality[] = ['high', 'medium', 'low'];
 
@@ -56,10 +61,15 @@ export class Game {
   /** Points of interest found anywhere. */
   private discovered = new Set<string>();
   private jumpedAt = -100;
+  private deathCause: DeathCause | null = null;
   /** Index into TUTORIAL, or null when no tutorial is running. */
   private tutorialStep: number | null = null;
   private tutorialStarted = 0;
   private tutorialStart = { heading: 0, credits: 0 };
+  /** Later tutorial steps whose verb the player has already done. */
+  private readonly tutorialLearned = new Set<string>();
+  /** Launch new games with flight assist on (a setting). */
+  private startAssisted = true;
 
   constructor(private readonly canvas: HTMLCanvasElement, private readonly store: HudStore) {
     this.renderer = this.createRenderer();
@@ -287,7 +297,9 @@ export class Game {
     this.memory = {};
     this.discovered = new Set();
     this.replaceSim(Simulation.fromSector(OUTPOST_ALPHA));
+    if (this.startAssisted) this.sim.setFlightMode(this.sim.playerId, 'assisted');
     this.tutorialStep = tutorial ? 0 : null;
+    this.tutorialLearned.clear();
     this.beginTutorialStep();
     this.store.update({ menu: null });
   }
@@ -319,6 +331,7 @@ export class Game {
     this.shakeEnabled = settings.cameraShake;
     this.renderer.rig.shakeEnabled = settings.cameraShake;
     this.input.steering = settings.mouseSteering;
+    this.startAssisted = settings.startAssisted;
     if (!new URLSearchParams(window.location.search).get('quality')) {
       this.autoQuality = settings.quality === 'auto';
       if (settings.quality !== 'auto') this.renderer.setQuality(settings.quality);
@@ -362,6 +375,7 @@ export class Game {
     const quality = this.renderer.currentQuality;
     this.renderer.dispose();
     this.sim = sim;
+    this.deathCause = null;
     this.renderer = this.createRenderer();
     this.renderer.rig.zoomBy(zoom);
     this.renderer.rig.shakeEnabled = this.shakeEnabled;
@@ -421,7 +435,10 @@ export class Game {
         for (const event of events) {
           const mine = event.type === 'collision' && (event.a === this.sim.playerId || event.b === this.sim.playerId);
           if (mine && event.type === 'collision' && event.damage > 0) this.hits++;
-          if (event.type === 'shipDestroyed' && event.id === this.sim.playerId) this.hits++;
+          if (event.type === 'shipDestroyed' && event.id === this.sim.playerId) {
+            this.hits++;
+            this.deathCause = this.causeOfDeath(event.by, events);
+          }
           if (event.type === 'hit' && event.attacker === this.sim.playerId && this.sim.world.ships.has(event.target)) this.hitFlash = 1;
           if (event.type === 'discovered') {
             this.discovered.add(event.id);
@@ -501,11 +518,13 @@ export class Game {
     if (this.tutorialStep === null) return;
     const telemetry = readTelemetry(this.sim.world, this.sim.playerId);
     if (!telemetry) return;
-    const step = TUTORIAL[this.tutorialStep];
-    const done = step.done({ telemetry, events, playerId: this.sim.playerId, stepTime: this.clock - this.tutorialStarted, fleetOpen: this.store.getSnapshot().fleetOpen, start: this.tutorialStart });
-    if (!done) return;
+    const ctx = { telemetry, events, playerId: this.sim.playerId, stepTime: this.clock - this.tutorialStarted, fleetOpen: this.store.getSnapshot().fleetOpen, start: this.tutorialStart };
+    for (let i = this.tutorialStep + 1; i < TUTORIAL.length; i++) if (TUTORIAL[i].early?.(ctx)) this.tutorialLearned.add(TUTORIAL[i].id);
+    if (!TUTORIAL[this.tutorialStep].done(ctx)) return;
     this.audio.click();
-    this.tutorialStep = this.tutorialStep + 1 < TUTORIAL.length ? this.tutorialStep + 1 : null;
+    let next = this.tutorialStep + 1;
+    while (next < TUTORIAL.length && this.tutorialLearned.has(TUTORIAL[next].id)) next++;
+    this.tutorialStep = next < TUTORIAL.length ? next : null;
     if (this.tutorialStep === null) this.notices.push({ text: 'tutorial', kind: 'completed', reward: 0, at: this.clock, id: -1 });
     this.beginTutorialStep();
   }
@@ -522,6 +541,22 @@ export class Game {
     }
   }
 
+  /** Names what broke the player's ship: a shooter, or the body it hit in the fatal step. */
+  private causeOfDeath(by: number | null, events: ReturnType<Simulation['drainEvents']>): DeathCause {
+    const world = this.sim.world;
+    const me = this.sim.playerId;
+    if (by !== null) return { kind: 'weapon', ship: world.ships.get(by)?.baseDefinition.id ?? null, speed: 0 };
+    for (const event of events) {
+      if (event.type !== 'collision' || (event.a !== me && event.b !== me) || event.damage <= 0) continue;
+      const other = event.a === me ? event.b : event.a;
+      const ship = world.ships.get(other);
+      if (ship) return { kind: 'ram', ship: ship.baseDefinition.id, speed: event.speed };
+      if (world.stations.has(other)) return { kind: 'station', ship: null, speed: event.speed };
+      return { kind: 'rock', ship: null, speed: event.speed };
+    }
+    return { kind: 'other', ship: null, speed: 0 };
+  }
+
   /** Drop a dead or out-of-range target; auto-acquire the nearest hostile when there is none. */
   private updateTarget(): void {
     const me = this.sim.world.ships.get(this.sim.playerId);
@@ -533,14 +568,42 @@ export class Game {
     const range = me.definition.sensors.range;
     const hostiles = hostilesNear(this.sim.world, this.sim.playerId, range * 1.2);
     if (this.target !== null && !hostiles.includes(this.target)) this.target = null;
-    if (this.target === null) this.target = hostilesNear(this.sim.world, this.sim.playerId, range)[0] ?? null;
+    if (this.target === null) {
+      // Auto-lock only what is a threat now: a hostile inside fighting distance, or one already
+      // hunting the player. A patrol far off on the edge of sensors waits for Tab.
+      const world = this.sim.world;
+      const close = hostilesNear(world, this.sim.playerId, Math.min(range, AUTO_LOCK_RANGE));
+      const hunting = hostiles.filter((id) => world.pilots.get(id)?.target === this.sim.playerId);
+      this.target = close[0] ?? hunting[0] ?? null;
+    }
+  }
+
+  /**
+   * The checklist is for an approach, not for loitering near the station: it shows inside
+   * the last stretch, in the lit corridor with the nose on the bay, or while closing on it.
+   */
+  private approachingBay(status: NonNullable<ReturnType<typeof dockingStatus>>): boolean {
+    if (status.distance <= APPROACH.near) return true;
+    const body = this.sim.world.bodies.get(this.sim.playerId);
+    const station = this.sim.world.bodies.get(status.station);
+    if (!body || !station) return false;
+    const { mouth, centre, axis } = status.bay;
+    const dx = body.position.x - mouth.x;
+    const dy = body.position.y - mouth.y;
+    const along = dx * axis.x + dy * axis.y;
+    const across = Math.abs(dx * axis.y - dy * axis.x);
+    const inCorridor = along > 0 && along < APPROACH.corridorLength && across < APPROACH.corridorWidth;
+    const toBay = { x: centre.x - body.position.x, y: centre.y - body.position.y };
+    const closing = ((body.velocity.x - station.velocity.x) * toBay.x + (body.velocity.y - station.velocity.y) * toBay.y) / Math.max(1, status.distance);
+    const facingBay = status.angleError < APPROACH.facingAngle;
+    return (inCorridor && facingBay && closing > -APPROACH.closingSpeed) || (closing > APPROACH.closingSpeed && status.distance < APPROACH.closingRange);
   }
 
   private dockingView() {
     const ship = this.sim.world.ships.get(this.sim.playerId);
     if (!ship || ship.docked !== null || ship.destroyed || this.clock - this.undockedAt < 10) return null;
     const status = dockingStatus(this.sim.world, this.sim.playerId, 400);
-    if (status?.refusals.includes('hostileStation')) return null;
+    if (!status || status.refusals.includes('hostileStation') || !this.approachingBay(status)) return null;
     return status ? { distance: status.distance, speed: status.speed, angleError: status.angleError, refusals: status.refusals, limits: status.limits } : null;
   }
 
@@ -799,6 +862,7 @@ export class Game {
         return me ? gravityAt(this.sim.world, me.position) : 0;
       })(),
       jumpedAt: this.jumpedAt,
+      deathCause: this.deathCause,
       discovered: [...this.discovered],
       news: (this.sim.economy?.news ?? []).slice(0, 8),
       events: (this.sim.economy?.events ?? []).map((e) => ({ id: e.id, secondsLeft: Math.max(0, (e.endsTick - this.sim.world.tick) / 60) })),

@@ -12,6 +12,12 @@ export default defineConfig({
     viewport: { width: 1280, height: 720 },
     screenshot: 'only-on-failure',
     locale: 'en-US',
+    // Most flows test Newtonian flight, so they launch with flight assist off; specs that
+    // test a first launch clear this with their own storage state.
+    storageState: {
+      cookies: [],
+      origins: [{ origin: 'http://localhost:5199', localStorage: [{ name: 'void-frontier.settings', value: JSON.stringify({ startAssisted: false }) }] }],
+    },
   },
   projects: [
     {

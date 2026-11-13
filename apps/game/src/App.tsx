@@ -11,6 +11,7 @@ import { FleetPanel } from './ui/Fleet.tsx';
 import { loadSettings, saveSettings, type Settings } from './settings.ts';
 import { DebugOverlay } from './ui/DebugOverlay.tsx';
 import { FlightHud } from './ui/FlightHud.tsx';
+import { formatNumber } from './ui/format.ts';
 
 export function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -21,10 +22,18 @@ export function App() {
   const [settings, setSettings] = useState<Settings>(loadSettings);
   const [locale, setLocale] = useState<Locale>(() => settings.locale ?? detectLocale());
   const [game, setGame] = useState<Game | null>(null);
+  const [bootError, setBootError] = useState<string | null>(null);
   const t = useMemo(() => translator(locale), [locale]);
 
   useEffect(() => {
-    const game = new Game(canvasRef.current!, store);
+    let game: Game;
+    try {
+      game = new Game(canvasRef.current!, store);
+    } catch (error) {
+      // Without WebGL there is nothing to draw: say so instead of leaving a black screen.
+      setBootError(error instanceof Error ? error.message : String(error));
+      return;
+    }
     game.attachRadar(radarRef.current);
     game.attachOverlay(overlayRef.current);
     game.start();
@@ -71,6 +80,18 @@ export function App() {
     setLocale(next);
     saveLocale(next);
   }
+
+  if (bootError)
+    return (
+      <div className="app">
+        <div className="boot-error" role="alert" data-testid="boot-error">
+          <h1>{t('boot.webgl.title')}</h1>
+          <p>{t('boot.webgl.body')}</p>
+          <p className="meta">{t('boot.webgl.hint')}</p>
+          <code>{bootError}</code>
+        </div>
+      </div>
+    );
 
   return (
     <div className="app" style={{ '--ui-scale': settings.textScale } as CSSProperties}>
@@ -126,7 +147,11 @@ export function App() {
       {hud.telemetry?.destroyed && (
         <div className="destroyed" data-testid="destroyed">
           <h2>{t('destroyed.title')}</h2>
-          <p>{t('destroyed.body')}</p>
+          <p data-testid="death-cause" data-kind={hud.deathCause?.kind ?? 'other'}>
+            {t(`destroyed.cause.${hud.deathCause?.kind ?? 'other'}` as MessageKey)
+              .replace('{ship}', hud.deathCause?.ship ? t(`ship.${hud.deathCause.ship}` as MessageKey) : '')
+              .replace('{speed}', formatNumber(locale, hud.deathCause?.speed ?? 0, 0))}
+          </p>
           <strong>{t('destroyed.action')}</strong>
         </div>
       )}

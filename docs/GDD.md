@@ -25,8 +25,8 @@ Milestones 1–6 deliver the specification's full loop: start docked, select a c
 - Mass = dry hull + equipment + cargo + fuel. Moment of inertia = mass × gyration radius², so cargo slows turning as well as acceleration.
 - Thruster groups: main (forward), reverse, lateral (left/right) and rotation. Boost multiplies main thrust and costs much more fuel.
 - Fuel burns in proportion to thrust delivered (kg per mega-newton-second). An empty tank means no thrust at all.
-- **Newtonian mode** (default): no input, no change. Spin continues too.
-- **Assisted mode**: any axis without input is driven to zero velocity by its thrusters, and rotation is damped. It is a pilot aid, not a speed limit.
+- **Newtonian mode**: no input, no change. Spin continues too.
+- **Assisted mode** (new games launch in it; a setting can change that): any axis without input is driven to zero velocity by its thrusters, and rotation is damped. It is a pilot aid, not a speed limit.
 - **Brake** (Space): every thruster works to stop translation and rotation, in either mode.
 - **Mouse steering** (on by default, V toggles): a controller fires the rotation thrusters to point the nose at the cursor without overshoot. Q and E override it.
 - No speed cap. The turn rate is capped only in the sense that rotation thrusters stop pushing past the rated rate.
@@ -39,7 +39,8 @@ Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kes
 - Amber line and amber compass arrow: where the ship is going (course). Drift is the angle between them.
 - Red ring: where the brake would stop the ship at the current orientation (d = v² / 2a per local axis).
 - Space dust and the plane grid give a sense of speed; beacons are fixed landmarks.
-- The camera does not rotate with the ship, leads in the direction of travel and pulls back as speed rises.
+- The camera does not rotate with the ship, leads in the direction of travel and pulls back as speed rises, but never so far that your ship drops below a tenth of the screen height (7% in a fight, 4.5% against a boss).
+- The docking checklist shows only on an approach: within 60 m of the bay, in the corridor with the nose on the bay, or closing on it.
 
 ## Controls
 
@@ -110,7 +111,7 @@ Ship numbers live in `packages/content/data/ships.json`. The starter scout (`kes
 ## First session (milestone 7)
 
 - The game opens on the main menu over the live station scene. New game starts docked with the guided first flight switched on.
-- The tutorial teaches one verb per step and moves on only when it has happened: undock, accelerate, coast, turn without changing course, brake, flight assist, scan, mine 8 units, dock, sell.
+- The tutorial teaches one verb per step and moves on only when it has happened: undock, accelerate, switch assist off, coast, turn without changing course, brake, assist back on, scan, mine 8 units, dock, sell, fight, fleet. Scanning, mining, docking, fighting and opening the fleet count even when done ahead of their step.
 - Progress is saved automatically on every docking and every two minutes, and manually to three slots from the pause menu. Continue loads the most recent save.
 
 ## The frontier (0.2)

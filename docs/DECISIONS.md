@@ -257,3 +257,15 @@ Giants sit far below the flight plane with no collider. They give scale without 
 ## 064. Four combat hulls are authored meshes scaled to their hull length
 
 Kestrel, Marauder, Bulwark and Dreadmaw are drawn from the studio ship family (atlas, roughness/metal, glow) instead of boxes. Each bake is rotated so the nose points +X and scaled so its length is `hull.length`. The collision circle stays the one in the ship data. The drawn turrets do not swivel: guns stay fixed, with the small gimbal from decision 016. Haulers, miners, the Jackal and the Lancer stay procedural; the family has no cargo hull, and reusing the interceptor would make the pirate the same shape as the scout. The Dreadmaw keeps the frigate's 22 m, so the picture stays inside the fight the circle already describes.
+
+## 065. New games launch with flight assist on
+
+The first thing a new pilot met was a ship that drifted forever. Assist is honest flight too: it fires the same thrusters and burns the same fuel (decision on assisted mode, GDD "Flight model"), so starting in it keeps pillar 1. The guided first flight now switches assist off to teach coasting, turning and the brake, and back on at the end. A setting (*New games start with flight assist on*) keeps Newtonian as the launch mode for those who want it, and the Playwright specs set it, since most of them test Newtonian flight.
+
+## 066. The camera never shrinks the player's ship below a share of the screen
+
+Speed and combat framing pulled the camera back until the scout was a few pixels across, so the flight model stopped reading. Automatic pull-back is now capped so the player's hull stays at least 10% of the screen height when cruising, 7% in a fight and 4.5% against a boss; the look-ahead and the shift toward a target are limited to keep the ship on screen. A target beyond the frame keeps its edge arrow. The wheel zoom is not capped.
+
+## 067. Only near or hunting hostiles are selected without Tab
+
+Auto-targeting picked a patrol at the edge of sensor range the moment the player undocked. A hostile is now selected on its own inside 700 m, or when its pilot is already hunting the player; anything else waits for Tab. The Outpost gate patrol moved about 300 m further from the station so the first minute is not spent watching it.
