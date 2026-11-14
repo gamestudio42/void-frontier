@@ -72,6 +72,9 @@ export class CameraRig {
     this.zoom = Math.min(this.settings.maxZoom, Math.max(this.settings.minZoom, this.zoom * factor));
   }
 
+  /** Close-up while mining, eased; 1 is the normal framing. */
+  private closeUp = 1;
+
   /** A pull-out shot: the camera starts at `from` zoom and eases out to normal. */
   private introFrom = 1;
   private introTotal = 0;
@@ -102,7 +105,7 @@ export class CameraRig {
    * `target` and `velocity` are in scene units (XZ plane). `frame` is an optional second
    * point to keep in view (the combat target): the camera eases back and shifts toward it.
    */
-  update(target: Vector3, velocity: Vector3, frameDt: number, frame: Vector3 | null = null, boss = false, shipLength = 0): Vector3 {
+  update(target: Vector3, velocity: Vector3, frameDt: number, frame: Vector3 | null = null, boss = false, shipLength = 0, closeUp = 1): Vector3 {
     const s = this.settings;
     const speed = Math.hypot(velocity.x, velocity.z);
     // Half the visible height around the focus, from last frame: the look-ahead and the
@@ -152,7 +155,10 @@ export class CameraRig {
       // Smoothstep, so the shot starts and settles without a jolt.
       intro = this.introFrom + (1 - this.introFrom) * t * t * (3 - 2 * t);
     }
-    const distance = s.distance * this.zoom * this.autoZoom * intro;
+    // Mining draws the camera in on the cut; a fight takes precedence.
+    const wantedCloseUp = frame ? 1 : closeUp;
+    this.closeUp += (wantedCloseUp - this.closeUp) * (1 - Math.exp(-frameDt / 0.8));
+    const distance = s.distance * this.zoom * this.autoZoom * intro * this.closeUp;
     this.lastDistance = distance;
     const tilt = (this.bossTilt * Math.PI) / 180;
     this.camera.position.set(this.focus.x, this.focus.y + Math.sin(tilt) * distance, this.focus.z + Math.cos(tilt) * distance);

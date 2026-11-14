@@ -793,6 +793,74 @@ button {
   color: var(--amber);
 }
 
+.mining-target .volatile {
+  color: var(--red);
+  font-style: normal;
+}
+
+/* The rock's laser heat: a bar with the sweet spot marked; the end of the bar is the crack. */
+.rock-heat {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.heat-bar {
+  position: relative;
+  display: inline-block;
+  width: 120px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--panel-edge);
+  border-right: 2px solid var(--red);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.heat-bar .sweet {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgba(125, 255, 178, 0.28);
+}
+
+.heat-bar b {
+  position: absolute;
+  left: 0;
+  top: 2px;
+  bottom: 2px;
+  background: var(--blue);
+  transition: width 0.1s linear;
+}
+
+.rock-heat[data-zone='sweet'] .heat-bar b {
+  background: var(--green);
+}
+
+.rock-heat[data-zone='hot'] .heat-bar b {
+  background: var(--red);
+}
+
+.rock-heat[data-zone='hot'] strong {
+  color: var(--red);
+}
+
+.rock-heat[data-zone='sweet'] strong {
+  color: var(--green);
+}
+
+.rock-heat .vein {
+  font-style: normal;
+}
+
+.rock-heat .vein.on {
+  color: var(--green);
+}
+
+.rock-heat .vein.off {
+  color: var(--amber);
+}
+
 .gains {
   position: absolute;
   right: 280px;
