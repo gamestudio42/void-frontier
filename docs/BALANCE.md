@@ -14,6 +14,21 @@ Measured on 2026-10-30 with the 0.7 numbers. Re-measure after changing lasers, p
 - **Hired pilot** is one game hour off-screen, net of wages and the 25% commission. A single run can end early if the ship is lost.
 - `packages/simulation/test/balance.test.ts` keeps flown above hired for a Prospector at Copper Reach. `crew.test.ts` keeps the hired belt figure under 14,500 cr/h.
 
+### Fracture mining (0.97)
+
+One game minute of a Kestrel cutting a 30 m ferrous rock with an unlimited hold, against the old flat 6 units/s (360 per minute). A first pass with 1.8× vein and 1.6× sweet spot gave 760 units pulsing on the vein (2.1×), so they were cut to the shipped 1.5× and 1.4×:
+
+| Play (shipped numbers) | Units per minute | Against the old 360 |
+| --- | --- | --- |
+| Pulsing in the sweet spot, on the vein | 560 | 1.56× |
+| Pulsing, off the vein | 264 | 0.73× |
+| Holding the trigger, on the vein | 72 | 0.20× |
+| Holding the trigger, off the vein | 116 | 0.32× |
+
+Holding the trigger cracks the rock and the script does not chase the fragments, so those rows are a floor, not what a player who retargets would get.
+
+The flown figures in the table above were not measured again: the 6 t hold, not the laser, limits a Kestrel's trip, so its cr/h moves less than the cutting rate. Re-measure them with the hand-mining script when the rest of Phase 2 changes prices.
+
 ## What changed because of this
 
 Hand mining was paying for every hull within minutes, so hull prices went up instead of cutting the lasers, which would change how mining feels:

@@ -174,6 +174,14 @@ export interface Asteroid {
   pendingOre: number;
   /** Stable per-rock value the renderer uses to pick a shape and tilt. */
   look: number;
+  /** Laser heat in the rock, 0 cold; it cracks at the fracture threshold. */
+  stress: number;
+  /** Direction of the rich vein in the rock's own frame, radians. */
+  vein: number;
+  /** Broken off a bigger rock in play, not part of the generated field. */
+  fragment?: boolean;
+  /** Tick of the last cut, so the rock does not cool on a step it was cut. */
+  cutTick?: number;
 }
 
 export interface MarketItem {
@@ -219,6 +227,8 @@ export type SimEvent =
   | { type: 'undocked'; ship: EntityId; station: EntityId }
   | { type: 'scan'; owner: EntityId; position: { x: number; y: number }; range: number; found: number }
   | { type: 'asteroidDepleted'; id: EntityId; position: { x: number; y: number }; radius: number; asteroidType: string }
+  /** A rock cut too hot cracked into `pieces` (0 when it crumbled); a volatile one exploded. */
+  | { type: 'asteroidFractured'; id: EntityId; position: { x: number; y: number }; radius: number; asteroidType: string; pieces: number; volatile: boolean; by: EntityId | null }
   | { type: 'collected'; ship: EntityId; resource: string; units: number }
   | { type: 'cargoFull'; ship: EntityId }
   | { type: 'shot'; owner: EntityId; position: { x: number; y: number }; direction: { x: number; y: number } }
@@ -261,7 +271,7 @@ export interface AiPilot {
   /** Owned-ship id when this is one of the player's fleet. */
   fleet?: number;
   /** A fleet miner at work: cut rocks near the site and let the tractor gather the ore. */
-  mine?: { site: { x: number; y: number }; rock: EntityId | null };
+  mine?: { site: { x: number; y: number }; rock: EntityId | null; resting?: boolean };
   /** A wingman: hold formation on the leader, fight what threatens it. */
   escort?: { leader: EntityId; slot: number };
 }

@@ -1,6 +1,7 @@
 import { atan2, type Vec2 } from '@void-frontier/kernel';
 import { getSector, getWeapon, type SectorDefinition } from '@void-frontier/content';
 import { resizeRock, spawnPickup } from './mining.ts';
+import { spawnAsteroid } from './universe.ts';
 import type { MissionBoard } from './missions.ts';
 import { stowFleet } from './orders.ts';
 import { Simulation } from './simulation.ts';
@@ -12,8 +13,10 @@ type Pair = [number, number];
 /** What a sector remembers while the player is elsewhere. */
 export interface SectorSnapshot {
   rng: [number, number, number, number];
-  /** Surviving rocks: [id, x, y, vx, vy, angle, spin, ore, pendingOre]. Missing ids were mined out. */
+  /** Surviving rocks: [id, x, y, vx, vy, angle, spin, ore, pendingOre, stress?]. Missing ids were mined out. */
   asteroids: number[][];
+  /** Pieces of rocks cracked by mining, which the generated field does not have. */
+  fragments?: { type: string; radius: number; look: number; vein: number; position: Pair; velocity: Pair; angle: number; spin: number; ore: number; oreMax: number; stress: number }[];
   /** Market stock per station, in sector order. */
   markets: number[][];
   pickups: { resource: string; units: number; position: Pair; velocity: Pair; life: number }[];
@@ -48,10 +51,30 @@ export function captureSector(sim: Simulation): SectorSnapshot {
   const world = sim.world;
   return {
     rng: world.rng.getState(),
-    asteroids: [...world.asteroids.entries()].map(([id, rock]) => {
-      const b = world.bodies.get(id)!;
-      return [id, b.position.x, b.position.y, b.velocity.x, b.velocity.y, b.angle, b.angularVelocity, rock.ore, rock.pendingOre];
-    }),
+    asteroids: [...world.asteroids.entries()]
+      .filter(([, rock]) => !rock.fragment)
+      .map(([id, rock]) => {
+        const b = world.bodies.get(id)!;
+        return [id, b.position.x, b.position.y, b.velocity.x, b.velocity.y, b.angle, b.angularVelocity, rock.ore, rock.pendingOre, rock.stress];
+      }),
+    fragments: [...world.asteroids.entries()]
+      .filter(([, rock]) => rock.fragment)
+      .map(([id, rock]) => {
+        const b = world.bodies.get(id)!;
+        return {
+          type: rock.type.id,
+          radius: rock.baseRadius,
+          look: rock.look,
+          vein: rock.vein,
+          position: [b.position.x, b.position.y] as Pair,
+          velocity: [b.velocity.x, b.velocity.y] as Pair,
+          angle: b.angle,
+          spin: b.angularVelocity,
+          ore: rock.ore + rock.pendingOre,
+          oreMax: rock.oreMax,
+          stress: rock.stress,
+        };
+      }),
     markets: [...world.stations.values()].map((s) => s.market.map((item) => item.stock)),
     pickups: [...world.pickups.values()].map((p) => ({
       resource: p.resource,
@@ -73,7 +96,7 @@ export function applySectorSnapshot(sim: Simulation, snapshot: SectorSnapshot): 
       world.destroyEntity(rockId);
       continue;
     }
-    const [, x, y, vx, vy, angle, spin, ore, pending] = row;
+    const [, x, y, vx, vy, angle, spin, ore, pending, stress] = row;
     const body = world.bodies.get(rockId)!;
     body.position = { x, y };
     body.previousPosition = { x, y };
@@ -84,7 +107,20 @@ export function applySectorSnapshot(sim: Simulation, snapshot: SectorSnapshot): 
     const rock = world.asteroids.get(rockId)!;
     rock.ore = ore;
     rock.pendingOre = pending;
+    rock.stress = stress ?? 0;
+    if (rock.stress > 0) world.heated.add(rockId);
     resizeRock(world, rockId);
+  }
+  for (const f of snapshot.fragments ?? []) {
+    const id = spawnAsteroid(world, f.type, f.radius, { x: f.position[0], y: f.position[1] }, { x: f.velocity[0], y: f.velocity[1] }, f.angle, f.spin, f.look);
+    const rock = world.asteroids.get(id)!;
+    rock.ore = f.ore;
+    rock.oreMax = f.oreMax;
+    rock.vein = f.vein;
+    rock.stress = f.stress;
+    rock.fragment = true;
+    if (rock.stress > 0) world.heated.add(id);
+    resizeRock(world, id);
   }
   for (const p of snapshot.pickups) {
     const id = spawnPickup(world, p.resource, p.units, { x: p.position[0], y: p.position[1] }, { x: p.velocity[0], y: p.velocity[1] });

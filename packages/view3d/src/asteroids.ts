@@ -1,5 +1,5 @@
 import type { AsteroidType } from '@void-frontier/content';
-import type { EntityId, World } from '@void-frontier/simulation';
+import type { Asteroid, EntityId, World } from '@void-frontier/simulation';
 import {
   BufferAttribute,
   Color,
@@ -89,7 +89,12 @@ interface Slot {
   index: number;
   tilt: Quaternion;
   lift: number;
+  /** Rock type whose fragment pool lent this instance. */
+  pooled?: string;
 }
+
+/** Spare instances per rock type for fragments; more than this many at once wait their turn. */
+const FRAGMENT_POOL = 48;
 
 /** All rocks of a type and shape share one instanced mesh: a few draw calls for the whole field. */
 export class AsteroidRenderer {
@@ -101,8 +106,11 @@ export class AsteroidRenderer {
   private readonly position = new Vector3();
   private readonly scaleVector = new Vector3();
   private readonly up = new Vector3(0, 1, 0);
+  private readonly materials = new Map<string, MeshStandardMaterial>();
+  /** Spare instances per rock type for fragments cracked off in play. */
+  private readonly pools = new Map<string, { mesh: InstancedMesh; free: number[] }>();
 
-  constructor(scene: Scene, world: World) {
+  constructor(private readonly scene: Scene, world: World) {
     const groups = new Map<string, EntityId[]>();
     for (const [id, asteroid] of world.asteroids) {
       const key = `${asteroid.type.id}:${asteroid.look % VARIANTS}:${asteroid.radius >= DETAIL_RADIUS ? 4 : 3}`;
@@ -110,7 +118,7 @@ export class AsteroidRenderer {
       if (list) list.push(id);
       else groups.set(key, [id]);
     }
-    const materials = new Map<string, MeshStandardMaterial>();
+    const materials = this.materials;
     for (const [key, ids] of [...groups.entries()].sort(([a], [b]) => a.localeCompare(b))) {
       const asteroid = world.asteroids.get(ids[0])!;
       const type = asteroid.type;
@@ -140,14 +148,48 @@ export class AsteroidRenderer {
     }
   }
 
+  /** Gives a fragment that appeared in play an instance from its type's pool. */
+  private adopt(id: EntityId, rock: Asteroid): void {
+    let pool = this.pools.get(rock.type.id);
+    if (!pool) {
+      let material = this.materials.get(rock.type.id);
+      if (!material) {
+        material = new MeshStandardMaterial({ vertexColors: true, roughness: rock.type.look.roughness, metalness: rock.type.look.metalness });
+        this.materials.set(rock.type.id, material);
+      }
+      const mesh = new InstancedMesh(buildRockGeometry(rock.type, 0, 3), material, FRAGMENT_POOL);
+      mesh.instanceMatrix.setUsage(DynamicDrawUsage);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.frustumCulled = false;
+      this.matrix.makeScale(0, 0, 0);
+      for (let i = 0; i < FRAGMENT_POOL; i++) {
+        mesh.setMatrixAt(i, this.matrix);
+        mesh.setColorAt(i, new Color(1, 1, 1));
+      }
+      this.scene.add(mesh);
+      this.meshes.push(mesh);
+      pool = { mesh, free: Array.from({ length: FRAGMENT_POOL }, (_, i) => FRAGMENT_POOL - 1 - i) };
+      this.pools.set(rock.type.id, pool);
+    }
+    const index = pool.free.pop();
+    // A sector cracked past the pool's size shows its newest pieces only after others go.
+    if (index === undefined) return;
+    const rand = visualRng(rock.look);
+    const tilt = new Quaternion().setFromEuler(new Euler(rand() * Math.PI * 2, rand() * Math.PI * 2, rand() * Math.PI * 2));
+    this.slots.set(id, { mesh: pool.mesh, index, tilt, lift: (rand() - 0.5) * Math.min(14, rock.radius), pooled: rock.type.id });
+  }
+
   update(world: World, alpha: number): void {
+    for (const [id, rock] of world.asteroids) if (rock.fragment && !this.slots.has(id)) this.adopt(id, rock);
     for (const [id, slot] of this.slots) {
       const body = world.bodies.get(id);
       const rock = world.asteroids.get(id);
       if (!body || !rock) {
-        // Mined out: collapse the instance and forget it.
+        // Mined out or cracked: collapse the instance and forget it.
         this.matrix.makeScale(0, 0, 0);
         slot.mesh.setMatrixAt(slot.index, this.matrix);
+        if (slot.pooled) this.pools.get(slot.pooled)?.free.push(slot.index);
         this.slots.delete(id);
         continue;
       }

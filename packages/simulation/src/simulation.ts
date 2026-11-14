@@ -3,7 +3,7 @@ import { FIXED_DT, Rng, toRadians } from '@void-frontier/kernel';
 import { forwardOf, spawnShip } from './ship.ts';
 import { aiSystem, encounterSystem, spawnEncounter } from './ai.ts';
 import { projectileSystem, weaponSystem } from './combat.ts';
-import { jettison, pickupSystem, scan, scanExpirySystem } from './mining.ts';
+import { jettison, pickupSystem, rockCoolingSystem, scan, scanExpirySystem } from './mining.ts';
 import { createEconomy, detachTraders, economySystem, setContractCloser, type Economy } from './economy.ts';
 import { campaignSystem, chooseCampaign, createCampaign, type Campaign } from './campaign.ts';
 import { assignPilot, crewOffers, crewSystem, dismissPilot, hirePilot } from './crew.ts';
@@ -126,6 +126,7 @@ export class Simulation {
     projectileSystem(this.world, this.dt);
     subsystemSystem(this.world, this.dt);
     pickupSystem(this.world, this.dt);
+    rockCoolingSystem(this.world, this.dt);
     scanExpirySystem(this.world);
     encounterSystem(this.world, this.dt);
     marketSystem(this.world, this.dt);

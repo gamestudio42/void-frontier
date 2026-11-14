@@ -1,4 +1,4 @@
-import { getShip, type EncounterDefinition } from '@void-frontier/content';
+import { MINING_RULES, getShip, type EncounterDefinition } from '@void-frontier/content';
 import { atan2, clamp, cos, length, sin, toRadians, worldToLocal, wrapAngle, type Vec2 } from '@void-frontier/kernel';
 import { hostilesNear, leadPoint, muzzlePosition } from './combat.ts';
 import { nearestObstacle } from './proximity.ts';
@@ -227,7 +227,11 @@ function mine(world: World, id: EntityId, ship: Ship, body: Body, job: NonNullab
     desired = { x: rockBody.velocity.x + (gap > 1 ? (sx / gap) * speed : 0), y: rockBody.velocity.y + (gap > 1 ? (sy / gap) * speed : 0) };
     aim = rockBody.position;
     const error = Math.abs(wrapAngle(atan2(-ry, -rx) - body.angle));
-    command.fireMining = d - rock.radius < laser.definition.range * 0.9 && error < toRadians(laser.definition.gimbal + 4);
+    // Pulse the laser like a careful pilot: off when the rock runs hot, on again once it cools
+    // back to the sweet spot, so it never cracks.
+    if (rock.stress >= MINING_RULES.aiCutBelow) job.resting = true;
+    else if (rock.stress <= MINING_RULES.sweetSpot[0]) job.resting = false;
+    command.fireMining = !job.resting && d - rock.radius < laser.definition.range * 0.9 && error < toRadians(laser.definition.gimbal + 4);
   }
   desired = avoid(world, id, body, desired);
   const error = worldToLocal(forwardOf(body.angle), { x: desired.x - body.velocity.x, y: desired.y - body.velocity.y });
