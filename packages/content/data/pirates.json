@@ -1,0 +1,22 @@
+{
+  "archetypes": [
+    { "id": "skirmisher", "preferredRange": 230, "orbitSpeed": 45, "approachSpeed": 150, "courage": 0.6, "style": "orbit" },
+    { "id": "brawler", "preferredRange": 0, "orbitSpeed": 0, "approachSpeed": 210, "courage": 0.85, "style": "ram" },
+    { "id": "kiter", "preferredRange": 560, "orbitSpeed": 60, "approachSpeed": 140, "courage": 0.45, "style": "kite" },
+    { "id": "boss", "preferredRange": 230, "orbitSpeed": 45, "approachSpeed": 150, "courage": 1, "style": "orbit", "fearless": true }
+  ],
+  "shipArchetypes": { "jackal": "skirmisher", "marauder": "brawler", "dreadmaw": "boss" },
+  "morale": {
+    "hullWeight": 0.7,
+    "squadLoss": 0.25,
+    "leaderLoss": 0.35,
+    "recoverPerSecond": 0.015,
+    "calmAfter": 6,
+    "fleeBelow": 0.3,
+    "fleeSeconds": 9,
+    "surrenderBelow": 0.18,
+    "surrenderHull": 0.45,
+    "surrenderChance": 0.6,
+    "ransom": 1.6
+  }
+}

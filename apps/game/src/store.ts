@@ -171,7 +171,7 @@ export interface HudState {
   /** Every readout, or only what a pilot needs at a glance. */
   hudDetails: boolean;
   /** A disabled pirate within reach of boarding. */
-  boarding: { distance: number; relativeSpeed: number; ready: boolean } | null;
+  boarding: { distance: number; relativeSpeed: number; ready: boolean; surrendered: boolean } | null;
   /** The system player fire is aimed at, if any. */
   aimedSystem: string | null;
   fleet: FleetView | null;

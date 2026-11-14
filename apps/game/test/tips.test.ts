@@ -22,6 +22,7 @@ function ctx(now: number, patch: Partial<TipContext> = {}, telemetry: Partial<ty
     sinceHit: 100,
     hunted: false,
     targetLocked: false,
+    surrenderNear: false,
     ...patch,
   };
 }

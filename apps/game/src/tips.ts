@@ -25,6 +25,8 @@ export interface TipContext {
   /** A hostile is hunting the player. */
   hunted: boolean;
   targetLocked: boolean;
+  /** A pirate that surrendered is in boarding range of the prompt, not yet lined up. */
+  surrenderNear: boolean;
 }
 
 export interface Tip {
@@ -68,6 +70,7 @@ export const TIPS: Tip[] = [
     when: (c) => c.telemetry.miningTarget?.onVein === false,
     solved: (c) => c.telemetry.miningTarget?.onVein === true,
   },
+  { id: 'surrender', text: 'tip.surrender', when: (c) => c.surrenderNear, solved: (c) => !c.surrenderNear },
   { id: 'heat', text: 'tip.heat', when: (c) => c.telemetry.weapons.some((w) => w.overheated) },
   {
     id: 'spin',

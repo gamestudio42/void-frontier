@@ -49,6 +49,12 @@ function TargetPanel({ hud, t, locale }: FlightHudProps) {
         <span className="hostile">{t(`faction.${target.faction}` as MessageKey)}</span>
       </div>
       <strong className="target-name">{t(`ship.${target.shipId}` as MessageKey)}</strong>
+      {target.archetype && (
+        <div className="row target-pilot" data-testid="target-pilot" data-nerve={target.nerve ?? ''}>
+          <span>{t(`archetype.${target.archetype}` as MessageKey)}</span>
+          {target.nerve && <span className={`nerve ${target.nerve}`}>{t(`nerve.${target.nerve}` as MessageKey)}</span>}
+        </div>
+      )}
       <div className="row">
         <span>{formatDistance(locale, target.distance)}</span>
         <span>
@@ -243,11 +249,11 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
       )}
       {hud.boarding && !hud.docking && (
         <section className={`panel gate-panel ${hud.boarding.ready ? 'ready' : ''}`} data-testid="boarding">
-          <span className="label">{t('board.title')}</span>
+          <span className="label">{t(hud.boarding.surrendered ? 'board.surrendered' : 'board.title')}</span>
           <span>
             {formatDistance(locale, hud.boarding.distance)} · {formatNumber(locale, hud.boarding.relativeSpeed)} {t('unit.speed')}
           </span>
-          <em>{hud.boarding.ready ? t('board.ready') : t('board.hint')}</em>
+          <em>{hud.boarding.ready ? t(hud.boarding.surrendered ? 'board.ransom' : 'board.ready') : t('board.hint')}</em>
         </section>
       )}
       {hud.docking && <DockingPanel docking={hud.docking} refused={hud.dockRefused} t={t} locale={locale} />}

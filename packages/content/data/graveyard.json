@@ -157,7 +157,8 @@
           800
         ]
       ],
-      "respawnDelay": 240
+      "respawnDelay": 240,
+      "archetype": "brawler"
     }
   ],
   "pointsOfInterest": [

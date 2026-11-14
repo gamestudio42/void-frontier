@@ -9,6 +9,7 @@ import factionData from '../data/factions.json';
 import traderData from '../data/traders.json';
 import tutorialData from '../data/tutorial.json';
 import miningData from '../data/mining.json';
+import pirateData from '../data/pirates.json';
 import anomalyZoneData from '../data/anomaly-zone.json';
 import emberReachData from '../data/ember-reach.json';
 import graveyardData from '../data/graveyard.json';
@@ -30,6 +31,7 @@ import {
   cruiseRulesSchema,
   tutorialRulesSchema,
   miningRulesSchema,
+  pirateRulesSchema,
   eventRulesSchema,
   factionSchema,
   traderRouteSchema,
@@ -47,6 +49,7 @@ import {
   type CruiseRules,
   type TutorialRules,
   type MiningRules,
+  type PirateRules,
   type EventRules,
   type FactionDefinition,
   type TraderRoute,
@@ -79,6 +82,13 @@ export const COLLISION_RULES: CollisionRules = collisionRulesSchema.parse(physic
 export const CRUISE_RULES: CruiseRules = cruiseRulesSchema.parse(cruiseData);
 export const TUTORIAL_RULES: TutorialRules = tutorialRulesSchema.parse(tutorialData);
 export const MINING_RULES: MiningRules = miningRulesSchema.parse(miningData);
+export const PIRATE_RULES: PirateRules = pirateRulesSchema.parse(pirateData);
+const ARCHETYPES = byId(PIRATE_RULES.archetypes);
+
+/** A pirate archetype by id, or the hull's default, or the skirmisher. */
+export function getArchetype(id: string | undefined, ship?: string): PirateRules['archetypes'][number] {
+  return ARCHETYPES.get(id ?? '') ?? ARCHETYPES.get(PIRATE_RULES.shipArchetypes[ship ?? ''] ?? '') ?? ARCHETYPES.get('skirmisher')!;
+}
 export const OUTPOST_ALPHA: SectorDefinition = sectorDefinitionSchema.parse(outpostAlphaData);
 
 /** Every sector, keyed by id. Outpost Alpha is where a new game starts. */

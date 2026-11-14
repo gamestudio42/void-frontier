@@ -29,3 +29,4 @@ export * from './crew.ts';
 export * from './campaign.ts';
 export * from './boarding.ts';
 export { fleetEntities, miningYield, orderProblem, roomFor, siteOf, sitePlace, stowFleet, type OrderResult } from './orders.ts';
+export * from './morale.ts';

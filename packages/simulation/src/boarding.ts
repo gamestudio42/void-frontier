@@ -1,4 +1,4 @@
-import { CONTRACT_RULES } from '@void-frontier/content';
+import { CONTRACT_RULES, PIRATE_RULES } from '@void-frontier/content';
 import { destroyShip } from './damage.ts';
 import { holdSpaceFor } from './ship.ts';
 import type { Simulation } from './simulation.ts';
@@ -10,6 +10,8 @@ export interface BoardingStatus {
   distance: number;
   relativeSpeed: number;
   ready: boolean;
+  /** The crew gave up (boarding pays a ransom) rather than the ship being crippled. */
+  surrendered: boolean;
 }
 
 /** The nearest disabled pirate in reach of the player, if any. */
@@ -31,7 +33,7 @@ export function boardingStatus(sim: Simulation): BoardingStatus | null {
     const vx = other.velocity.x - body.velocity.x;
     const vy = other.velocity.y - body.velocity.y;
     const relativeSpeed = Math.sqrt(vx * vx + vy * vy);
-    best = { id, distance, relativeSpeed, ready: distance <= rules.range && relativeSpeed <= rules.maxSpeed };
+    best = { id, distance, relativeSpeed, ready: distance <= rules.range && relativeSpeed <= rules.maxSpeed, surrendered: ship.surrendered === true };
   }
   return best;
 }
@@ -43,11 +45,13 @@ export function boardDisabled(sim: Simulation): { ok: true; credits: number; sal
   const world = sim.world;
   const rules = CONTRACT_RULES.boarding;
   const me = world.ships.get(sim.playerId)!;
-  const credits = Math.round(world.rng.range(rules.minCredits, rules.maxCredits));
+  // A crew that gave up pays to be let go.
+  const ransom = world.ships.get(status.id)?.surrendered === true;
+  const credits = Math.round(world.rng.range(rules.minCredits, rules.maxCredits) * (ransom ? PIRATE_RULES.morale.ransom : 1));
   const salvage = Math.min(Math.round(world.rng.range(rules.minSalvage, rules.maxSalvage)), holdSpaceFor(me, 'salvage'));
   world.credits += credits;
   if (salvage > 0) me.cargo.set('salvage', (me.cargo.get('salvage') ?? 0) + salvage);
   destroyShip(world, status.id, sim.playerId);
-  world.events.push({ type: 'boarded', ship: status.id, credits, salvage });
+  world.events.push({ type: 'boarded', ship: status.id, credits, salvage, ransom });
   return { ok: true, credits, salvage };
 }

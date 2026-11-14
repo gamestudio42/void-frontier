@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased: pirate archetypes and morale
+
+- Pirates fight in different ways: skirmishers circle, brawlers try to ram you, kiters fire missiles from long range. The target panel says which one you face.
+- Groups fly as squads behind a leader; kill the leader and the rest lose heart.
+- Pirates break under fire: they run and regroup later, or surrender. Board a surrendered ship for a ransom.
+
 ## Unreleased: fracture mining
 
 - Rocks have a rich vein: scan to see it as a bright arc, and cut from that side for about twice the ore you get anywhere else.

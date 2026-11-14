@@ -1,5 +1,6 @@
-import { FACTIONS } from '@void-frontier/content';
+import { FACTIONS, PIRATE_RULES } from '@void-frontier/content';
 import { dropSalvage } from './mining.ts';
+import { shaken, squadLost } from './morale.ts';
 import { damageChosenSystem, damageSubsystems } from './subsystems.ts';
 import type { EntityId } from './types.ts';
 import type { World } from './world.ts';
@@ -19,7 +20,10 @@ export function destroyShip(world: World, id: EntityId, by: EntityId | null): vo
   world.colliders.delete(id);
   const body = world.bodies.get(id)!;
   world.events.push({ type: 'shipDestroyed', id, position: { x: body.position.x, y: body.position.y }, by });
-  if (ship.faction === 'pirate') dropSalvage(world, body.position, body.velocity);
+  if (ship.faction === 'pirate') {
+    dropSalvage(world, body.position, body.velocity);
+    squadLost(world, id);
+  }
   if (by !== null) {
     const killer = world.ships.get(by);
     if (killer) killer.kills++;
@@ -84,6 +88,7 @@ export function applyWeaponDamage(
     world.standing[ship.allegiance] = Math.max(-100, (world.standing[ship.allegiance] ?? 0) - (shieldDamage + hullDamage) * 0.02);
   }
   ship.hull = Math.max(0, ship.hull - hullDamage);
+  shaken(world, targetId, (PIRATE_RULES.morale.hullWeight * hullDamage) / ship.definition.hull.integrity);
   if (chosen) damageChosenSystem(world, targetId, chosen, hullDamage / AIMED_HULL_SHARE);
   else damageSubsystems(world, targetId, point, hullDamage);
   world.events.push({ type: 'hit', target: targetId, attacker: attackerId, point: { ...point }, shieldDamage, hullDamage, beam });

@@ -578,6 +578,15 @@ export class Game {
             this.deathCause = this.causeOfDeath(event.by, events);
           }
           if (event.type === 'hit' && event.attacker === this.sim.playerId && this.sim.world.ships.has(event.target)) this.hitFlash = 1;
+          if (event.type === 'morale' && event.state !== 'rallied') {
+            // Only what the player can act on: a crew giving up nearby, or the pirate they are fighting running.
+            const me = this.sim.world.bodies.get(this.sim.playerId)?.position;
+            const them = this.sim.world.bodies.get(event.ship)?.position;
+            const near = me && them && Math.hypot(them.x - me.x, them.y - me.y) < 1500;
+            if (near && (event.state === 'surrendered' || event.ship === this.target)) {
+              this.notices.push({ text: `morale:${event.state}`, kind: event.state === 'surrendered' ? 'completed' : 'abandoned', reward: 0, at: this.clock, id: -9700 - event.ship });
+            }
+          }
           if (event.type === 'discovered') {
             this.discovered.add(event.id);
             this.notices.push({ text: `poi:${event.kind}`, kind: 'completed', reward: event.credits, at: this.clock, id: -2 - this.discovered.size });
@@ -715,6 +724,10 @@ export class Game {
         sinceHit: this.clock - this.lastHitAt,
         hunted: hostiles.some((id) => world.pilots.get(id)?.target === me),
         targetLocked: this.target !== null,
+        surrenderNear: (() => {
+          const board = boardingStatus(this.sim);
+          return !!board && board.surrendered && !board.ready;
+        })(),
       },
       () => {
         try {

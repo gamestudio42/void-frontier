@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ASTEROID_TYPES, FACTIONS, OUTPOST_ALPHA, RESOURCES, SECTORS, SHIPS, STATIONS, UPGRADES, getResource, getShip, getUpgrade, getWeapon, shipDefinitionSchema, validateSector } from '../src/index.ts';
+import { ASTEROID_TYPES, FACTIONS, PIRATE_RULES, getArchetype, OUTPOST_ALPHA, RESOURCES, SECTORS, SHIPS, STATIONS, UPGRADES, getResource, getShip, getUpgrade, getWeapon, shipDefinitionSchema, validateSector } from '../src/index.ts';
 
 describe('content', () => {
   it('ships four player hulls, two pirate types and the campaign flagship', () => {
@@ -82,5 +82,20 @@ describe('content', () => {
 
   it('throws on an unknown ship id', () => {
     expect(() => getShip('nope')).toThrow();
+  });
+
+  it('names only existing archetypes and weapons in pirate encounters', () => {
+    const archetypes = new Set(PIRATE_RULES.archetypes.map((a) => a.id));
+    for (const id of Object.values(PIRATE_RULES.shipArchetypes)) expect(archetypes).toContain(id);
+    for (const sector of SECTORS.values()) {
+      for (const encounter of sector.encounters) {
+        if (encounter.archetype) expect(archetypes).toContain(encounter.archetype);
+        expect(encounter.loadout?.length ?? 0).toBeLessThanOrEqual(getShip(encounter.ship).hardpoints.length);
+        for (const weapon of encounter.loadout ?? []) expect(() => getWeapon(weapon)).not.toThrow();
+      }
+    }
+    expect(getArchetype(undefined, 'marauder').style).toBe('ram');
+    expect(getArchetype(undefined, 'dreadmaw').fearless).toBe(true);
+    expect(getArchetype('nope').id).toBe('skirmisher');
   });
 });

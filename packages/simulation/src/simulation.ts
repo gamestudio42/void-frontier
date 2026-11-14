@@ -2,6 +2,7 @@ import { COLLISION_RULES, getShip, type CollisionRules, type SectorDefinition } 
 import { FIXED_DT, Rng, toRadians } from '@void-frontier/kernel';
 import { forwardOf, spawnShip } from './ship.ts';
 import { aiSystem, encounterSystem, spawnEncounter } from './ai.ts';
+import { moraleSystem } from './morale.ts';
 import { projectileSystem, weaponSystem } from './combat.ts';
 import { jettison, pickupSystem, rockCoolingSystem, scan, scanExpirySystem } from './mining.ts';
 import { createEconomy, detachTraders, economySystem, setContractCloser, type Economy } from './economy.ts';
@@ -116,6 +117,7 @@ export class Simulation {
   /** Systems run in a fixed order; see docs/ARCHITECTURE.md. */
   step(): void {
     massSystem(this.world);
+    moraleSystem(this.world, this.dt);
     aiSystem(this.world);
     flightControlSystem(this.world, this.dt);
     thrusterSystem(this.world, this.dt);

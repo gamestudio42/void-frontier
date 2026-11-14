@@ -184,6 +184,10 @@ export const encounterSchema = z.object({
   patrol: z.array(z.tuple([z.number(), z.number()])).min(1),
   /** seconds after the whole group is destroyed before it returns */
   respawnDelay: positive,
+  /** how the group fights (pirates.json); defaults by hull */
+  archetype: z.string().optional(),
+  /** weapon on each hardpoint, in order, replacing the hull's stock fit */
+  loadout: z.array(z.string()).optional(),
 });
 
 export type EncounterDefinition = z.infer<typeof encounterSchema>;
@@ -494,6 +498,52 @@ export const miningRulesSchema = z.object({
 });
 
 export type MiningRules = z.infer<typeof miningRulesSchema>;
+
+/** How pirates fight, and when they break. */
+export const pirateRulesSchema = z.object({
+  archetypes: z.array(
+    z.object({
+      id: z.string().regex(/^[a-z][a-z0-9_]*$/),
+      /** metres the pilot tries to hold from its target (0: straight at it) */
+      preferredRange: z.number().min(0),
+      /** m/s of sideways circling around the target */
+      orbitSpeed: z.number().min(0),
+      /** m/s the pilot closes at */
+      approachSpeed: positive,
+      /** starting morale, 0..1 */
+      courage: z.number().gt(0).max(1),
+      /** orbit: circle and shoot; ram: fly into the target; kite: hold range, back off when pressed */
+      style: z.enum(['orbit', 'ram', 'kite']),
+      /** never flees or surrenders */
+      fearless: z.boolean().optional(),
+    }),
+  ),
+  /** archetype of each pirate hull when the encounter does not name one */
+  shipArchetypes: z.record(z.string(), z.string()),
+  morale: z.object({
+    /** morale lost per share of the hull lost */
+    hullWeight: z.number().min(0),
+    /** morale lost when a squadmate dies, and when it was the leader */
+    squadLoss: z.number().min(0),
+    leaderLoss: z.number().min(0),
+    /** morale regained per second once nothing has hit the pilot for `calmAfter` seconds */
+    recoverPerSecond: z.number().min(0),
+    calmAfter: positive,
+    /** under this the pilot runs for `fleeSeconds`, then regroups */
+    fleeBelow: z.number().min(0).max(1),
+    fleeSeconds: positive,
+    /** under this, with the hull under `surrenderHull`, the pilot may give up instead */
+    surrenderBelow: z.number().min(0).max(1),
+    surrenderHull: z.number().gt(0).max(1),
+    /** chance a breaking pilot surrenders rather than runs */
+    surrenderChance: z.number().min(0).max(1),
+    /** boarding a ship that surrendered pays this times the usual strongbox */
+    ransom: z.number().min(1),
+  }),
+});
+
+export type PirateRules = z.infer<typeof pirateRulesSchema>;
+export type PirateArchetype = PirateRules['archetypes'][number];
 
 /** The guided first sortie: the launch, the quiet pocket and the contextual tips. */
 export const tutorialRulesSchema = z.object({

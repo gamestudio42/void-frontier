@@ -423,6 +423,13 @@ export class AudioEngine {
           else if (e.note.kind === 'attacked' || e.note.kind === 'unpaid' || e.note.kind === 'quit') this.chime([659, 523], 0.05);
           else if (e.note.kind === 'skill') this.chime([659, 880], 0.04);
           break;
+        case 'morale':
+          // A crew giving up nearby: a falling two-note signal, like a comm channel opening.
+          if (e.state === 'surrendered' && at(sim.world.bodies.get(e.ship)?.position ?? { x: 1e6, y: 0 }).gain > 0.15) this.chime([784, 587], 0.06);
+          break;
+        case 'boarded':
+          if (e.ransom) this.chime([523, 784, 1047], 0.07);
+          break;
         case 'contract':
           this.chime(e.outcome === 'completed' ? [523, 659, 784, 1047] : [440, 349, 294], 0.07);
           this.duck(0.3, 1.2);

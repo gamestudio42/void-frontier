@@ -1,4 +1,4 @@
-import { MINING_RULES, getShip, type EncounterDefinition } from '@void-frontier/content';
+import { MINING_RULES, getArchetype, getShip, getWeapon, type EncounterDefinition, type PirateArchetype } from '@void-frontier/content';
 import { atan2, clamp, cos, length, sin, toRadians, worldToLocal, wrapAngle, type Vec2 } from '@void-frontier/kernel';
 import { hostilesNear, leadPoint, muzzlePosition } from './combat.ts';
 import { nearestObstacle } from './proximity.ts';
@@ -8,13 +8,10 @@ import { isDisabled } from './subsystems.ts';
 import { idleCommand, type AiPilot, type Body, type EntityId, type Ship } from './types.ts';
 import type { World } from './world.ts';
 
-/** Tuning for pirate pilots; kept together so balance passes touch one place. */
+/** Tuning shared by every AI pilot; how each pirate archetype fights lives in pirates.json. */
 const AI = {
   patrolSpeed: 55,
   waypointRadius: 80,
-  preferredRange: 230,
-  approachSpeed: 150,
-  orbitSpeed: 45,
   /** Gain from velocity error (m/s) to thruster throttle. */
   steeringGain: 0.2,
   /** Engagement is dropped beyond this multiple of sensor range. */
@@ -46,6 +43,8 @@ export function aiSystem(world: World): void {
     if (!ship || !body) continue;
     if (ship.destroyed || isDisabled(ship)) {
       ship.command = idleCommand();
+      // A crew that gave up holds still to be boarded.
+      if (ship.surrendered) ship.command.brake = true;
       continue;
     }
     think(world, id, ship, body, pilot);
@@ -80,6 +79,11 @@ function think(world: World, id: EntityId, ship: Ship, body: Body, pilot: AiPilo
     return;
   }
   const range = sensorRange(ship);
+  const archetype = getArchetype(pilot.archetype, ship.baseDefinition.id);
+  if (pilot.mode === 'flee') {
+    flee(world, id, ship, body, pilot, range);
+    return;
+  }
 
   // Keep a target while it stays inside the leash; otherwise take the nearest hostile in sensor range.
   if (pilot.target !== null) {
@@ -146,14 +150,18 @@ function think(world: World, id: EntityId, ship: Ship, body: Body, pilot: AiPilo
       aim = { x: body.position.x - ux * 100, y: body.position.y - uy * 100 };
       command.boost = true;
     } else {
-      // Close to preferred range, match the target's motion and circle it.
-      const radial = clamp((d - AI.preferredRange) * 0.5, -AI.approachSpeed * 0.6, AI.approachSpeed);
-      desired = {
-        x: targetBody.velocity.x + ux * radial - uy * AI.orbitSpeed * pilot.orbit,
-        y: targetBody.velocity.y + uy * radial + ux * AI.orbitSpeed * pilot.orbit,
-      };
+      desired = engageVelocity(archetype, pilot, targetBody.velocity, ux, uy, d);
+      // A brawler burns in; a kiter burns away when the target gets inside half its range.
+      if (archetype.style === 'ram' && d > 140) command.boost = true;
+      if (archetype.style === 'kite' && d < archetype.preferredRange * 0.5) command.boost = true;
       const gun = ship.weapons[0];
-      if (gun && gun.definition.kind === 'projectile') {
+      if (gun && gun.definition.kind === 'missile') {
+        aim = targetBody.position;
+        const reach = gun.definition.speed * gun.definition.lifetime * 0.7;
+        const error = Math.abs(wrapAngle(atan2(ry, rx) - body.angle));
+        command.fireSecondary = d < reach && error < toRadians(gun.definition.gimbal);
+        command.firePrimary = command.fireSecondary;
+      } else if (gun && gun.definition.kind === 'projectile') {
         const muzzle = muzzlePosition(body, gun);
         const lead = leadPoint(muzzle, body.velocity, targetBody.position, targetBody.velocity, gun.definition.projectileSpeed, gun.definition.velocityInheritance);
         aim = lead ? lead.point : targetBody.position;
@@ -173,12 +181,47 @@ function think(world: World, id: EntityId, ship: Ship, body: Body, pilot: AiPilo
     }
   }
 
-  desired = avoid(world, id, body, desired);
+  // A brawler means to hit its target: it only steers around everything else.
+  desired = avoid(world, id, body, desired, archetype.style === 'ram' ? pilot.target : null);
   const error = worldToLocal(forwardOf(body.angle), { x: desired.x - body.velocity.x, y: desired.y - body.velocity.y });
   command.thrust = clamp(error.x * AI.steeringGain, -1, 1);
   command.strafe = clamp(error.y * AI.steeringGain, -1, 1);
   if (command.boost && error.x < 40) command.boost = false;
   command.aim = aim;
+  ship.command = command;
+}
+
+/**
+ * The velocity a pilot wants against its target, by archetype: an orbiter closes to its
+ * range and circles; a brawler flies straight in, faster than the target, to ram it; a
+ * kiter holds a long range and backs off quickly when pressed.
+ */
+export function engageVelocity(archetype: PirateArchetype, pilot: AiPilot, target: Vec2, ux: number, uy: number, d: number): Vec2 {
+  if (archetype.style === 'ram') return { x: target.x + ux * archetype.approachSpeed, y: target.y + uy * archetype.approachSpeed };
+  const back = archetype.style === 'kite' ? archetype.approachSpeed : archetype.approachSpeed * 0.6;
+  const radial = clamp((d - archetype.preferredRange) * 0.5, -back, archetype.approachSpeed);
+  const orbit = archetype.orbitSpeed * pilot.orbit;
+  return { x: target.x + ux * radial - uy * orbit, y: target.y + uy * radial + ux * orbit };
+}
+
+/** A pilot whose nerve broke: boost straight away from whatever it was fighting. */
+function flee(world: World, id: EntityId, ship: Ship, body: Body, pilot: AiPilot, range: number): void {
+  const command = idleCommand();
+  const threatId = pilot.target ?? hostilesNear(world, id, range)[0] ?? null;
+  const threat = threatId !== null ? world.bodies.get(threatId) : undefined;
+  let away = forwardOf(body.angle);
+  if (threat) {
+    const dx = body.position.x - threat.position.x;
+    const dy = body.position.y - threat.position.y;
+    const d = Math.sqrt(dx * dx + dy * dy) || 1;
+    away = { x: dx / d, y: dy / d };
+  }
+  const desired = avoid(world, id, body, { x: away.x * AI.retreatSpeed, y: away.y * AI.retreatSpeed });
+  const error = worldToLocal(forwardOf(body.angle), { x: desired.x - body.velocity.x, y: desired.y - body.velocity.y });
+  command.thrust = clamp(error.x * AI.steeringGain, -1, 1);
+  command.strafe = clamp(error.y * AI.steeringGain, -1, 1);
+  command.boost = error.x > 40;
+  command.aim = { x: body.position.x + away.x * 100, y: body.position.y + away.y * 100 };
   ship.command = command;
 }
 
@@ -242,9 +285,9 @@ function mine(world: World, id: EntityId, ship: Ship, body: Body, job: NonNullab
 }
 
 /** Bend the desired velocity away from an obstacle that is about to be hit. */
-function avoid(world: World, id: EntityId, body: Body, desired: Vec2): Vec2 {
+function avoid(world: World, id: EntityId, body: Body, desired: Vec2, ignore: EntityId | null = null): Vec2 {
   const threat = nearestObstacle(world, id, 250);
-  if (!threat || threat.timeToImpact === null || threat.timeToImpact > AI.avoidHorizon) return desired;
+  if (!threat || threat.id === ignore || threat.timeToImpact === null || threat.timeToImpact > AI.avoidHorizon) return desired;
   const other = world.bodies.get(threat.id)!.position;
   const ax = body.position.x - other.x;
   const ay = body.position.y - other.y;
@@ -265,6 +308,11 @@ export function spawnEncounter(world: World, definition: EncounterDefinition): E
       angle: world.rng.range(-3.14159, 3.14159),
       faction: definition.faction,
     });
+    const ship = world.ships.get(id)!;
+    definition.loadout?.forEach((weapon, slot) => {
+      if (ship.weapons[slot]) ship.weapons[slot].definition = getWeapon(weapon);
+    });
+    const archetype = getArchetype(definition.archetype, definition.ship);
     world.pilots.set(id, {
       mode: 'patrol',
       patrol: definition.patrol.map(([x, y]) => ({ x, y })),
@@ -272,6 +320,11 @@ export function spawnEncounter(world: World, definition: EncounterDefinition): E
       target: null,
       retreatUntil: 0,
       orbit: i % 2 === 0 ? 1 : -1,
+      archetype: archetype.id,
+      morale: archetype.courage,
+      // The first ship leads; the others fly on its wing and fight near it.
+      squad: definition.count > 1 ? members[0] ?? id : undefined,
+      escort: i > 0 ? { leader: members[0], slot: i - 1 } : undefined,
     });
     members.push(id);
   }
@@ -282,7 +335,11 @@ export function spawnEncounter(world: World, definition: EncounterDefinition): E
 export function encounterSystem(world: World, dt: number): void {
   if (world.hostilesHeld) return;
   for (const encounter of world.encounters) {
-    const alive = encounter.members.some((id) => !world.ships.get(id)?.destroyed);
+    // A crew that surrendered no longer holds the group's place in the sector.
+    const alive = encounter.members.some((id) => {
+      const ship = world.ships.get(id);
+      return !ship?.destroyed && !ship?.surrendered;
+    });
     if (alive) continue;
     if (encounter.respawnAt === null) {
       encounter.respawnAt = world.tick + Math.round(encounter.definition.respawnDelay / dt);

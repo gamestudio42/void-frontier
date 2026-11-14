@@ -235,7 +235,8 @@ export function hostilesNear(world: World, id: EntityId, range: number): EntityI
   if (!self || !body) return [];
   const found: { id: EntityId; d: number }[] = [];
   for (const [other, ship] of world.ships) {
-    if (other === id || ship.destroyed || ship.docked !== null || !isHostile(self.faction, ship.faction)) continue;
+    // A pirate that surrendered is no longer a threat to anyone.
+    if (other === id || ship.destroyed || ship.surrendered || ship.docked !== null || !isHostile(self.faction, ship.faction)) continue;
     const p = world.bodies.get(other)!.position;
     const dx = p.x - body.position.x;
     const dy = p.y - body.position.y;

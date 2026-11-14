@@ -170,7 +170,11 @@
           -1300
         ]
       ],
-      "respawnDelay": 150
+      "respawnDelay": 150,
+      "archetype": "kiter",
+      "loadout": [
+        "pirate_missile"
+      ]
     }
   ],
   "gates": [
