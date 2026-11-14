@@ -167,6 +167,13 @@ export function App() {
           onClose={() => store.update({ help: false })}
         />
       )}
+      {hud.launching && !hud.menu && <div className="letterbox" data-testid="launch" aria-hidden="true" />}
+      {hud.tip && !hud.menu && !hud.help && !hud.station && (
+        <aside className={`tip ${hud.tip === 'tip.brake' ? 'urgent' : ''}`} key={hud.tip} role="status" data-testid="tip" data-tip={hud.tip}>
+          <span>{t('tip.label')}</span>
+          {t(hud.tip as MessageKey)}
+        </aside>
+      )}
       {hud.tutorial && !hud.menu && game && <TutorialCard tutorial={hud.tutorial} t={t} onSkip={() => game.skipTutorial()} top={!!hud.station} />}
       {hud.menu === 'main' && game && !hud.help && (
         <MainMenu game={game} t={t} locale={locale} settings={settings} onSettings={changeSettings} onControls={() => store.update({ help: true })} />

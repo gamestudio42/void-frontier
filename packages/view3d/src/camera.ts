@@ -72,6 +72,18 @@ export class CameraRig {
     this.zoom = Math.min(this.settings.maxZoom, Math.max(this.settings.minZoom, this.zoom * factor));
   }
 
+  /** A pull-out shot: the camera starts at `from` zoom and eases out to normal. */
+  private introFrom = 1;
+  private introTotal = 0;
+  private introLeft = 0;
+
+  /** Starts a pull-out shot (the launch from the bay) lasting `seconds`. */
+  pullOut(from: number, seconds: number): void {
+    this.introFrom = from;
+    this.introTotal = seconds;
+    this.introLeft = seconds;
+  }
+
   /** Players can turn shake off in the settings. */
   shakeEnabled = true;
 
@@ -133,7 +145,14 @@ export class CameraRig {
       const cap = shipLength / (share * 2 * s.distance * Math.tan((s.fov * Math.PI) / 360));
       this.autoZoom = Math.min(this.autoZoom, Math.max(1, cap));
     }
-    const distance = s.distance * this.zoom * this.autoZoom;
+    let intro = 1;
+    if (this.introLeft > 0) {
+      this.introLeft = Math.max(0, this.introLeft - frameDt);
+      const t = 1 - this.introLeft / this.introTotal;
+      // Smoothstep, so the shot starts and settles without a jolt.
+      intro = this.introFrom + (1 - this.introFrom) * t * t * (3 - 2 * t);
+    }
+    const distance = s.distance * this.zoom * this.autoZoom * intro;
     this.lastDistance = distance;
     const tilt = (this.bossTilt * Math.PI) / 180;
     this.camera.position.set(this.focus.x, this.focus.y + Math.sin(tilt) * distance, this.focus.z + Math.cos(tilt) * distance);

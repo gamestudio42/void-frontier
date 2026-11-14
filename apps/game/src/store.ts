@@ -149,6 +149,10 @@ export interface HudState {
   /** Which menu is open over the game, if any. */
   menu: 'main' | 'pause' | null;
   tutorial: { index: number; total: number; title: string; hint: string } | null;
+  /** The contextual tip on screen, as a message key. */
+  tip: string | null;
+  /** The launch from the bay is playing: letterbox on, controls held. */
+  launching: boolean;
   sectorId: string;
   gate: { to: string; distance: number; speed: number; ready: boolean } | null;
   /** m/s^2 of pull from gravity wells where the ship is */
@@ -227,6 +231,8 @@ export const initialHudState = (): HudState => ({
   notices: [],
   menu: 'main',
   tutorial: null,
+  tip: null,
+  launching: false,
   sectorId: 'outpost_alpha',
   gate: null,
   gravity: 0,

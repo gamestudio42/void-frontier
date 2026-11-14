@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased: first sortie
+
+- A new game launches you out of the bay with a short camera pull-out instead of opening on the contract board.
+- No pirates around while you learn; the fight lesson sends a single raider your way, and the sector's pirates return after the lessons.
+- The brake is taught right after your first burn.
+- Contextual tips at the moment you need them ("closing fast on something: hold Space to brake!"), at most three times each; they can be turned off in the settings.
+
 ## Unreleased: audio
 
 - Adaptive music: drone, pad, bass pulse, drums and brass come in as danger grows and fall back after the fight.

@@ -122,8 +122,10 @@ With a controller (standard mapping): left stick thrust and strafe, right stick 
 
 ## First session (milestone 7)
 
-- The game opens on the main menu over the live station scene. New game starts docked with the guided first flight switched on.
-- The tutorial teaches one verb per step and moves on only when it has happened: undock, accelerate, switch assist off, coast, turn without changing course, brake, assist back on, scan, mine 8 units, dock, sell, fight, fleet. Scanning, mining, docking, fighting and opening the fleet count even when done ahead of their step.
+- The game opens on the main menu over the live station scene. New game starts the guided first sortie: the ship leaves the bay on its own under cinema bars while the camera pulls out, and control comes back after 3.5 s (or at once, on any flight key). Without the tutorial, a new game starts docked.
+- The first sortie is a quiet pocket: the sector's pirate groups and raids stay away until the lessons end (or are skipped), then return after 45 s. The fight lesson sends one Jackal straight at the player.
+- The tutorial teaches one verb per step and moves on only when it has happened: accelerate, brake (with the brake itself, before any speed is worth fearing), switch assist off, coast, turn without changing course, kill the drift, assist back on, scan, mine 8 units, dock, sell, fight, fleet. Scanning, mining, docking, fighting and opening the fleet count even when done ahead of their step. The campaign card waits for the lessons to end.
+- Contextual tips appear at the moment they apply, one at a time: closing fast on something (brake), shields down while hit (boost away), hunted with nothing locked (Tab), guns overheated, spinning or coasting in Newtonian flight, low fuel, a full hold, and a long trip flown by hand (cruise). Each shows at most three times ever, with gaps between tips; danger pushes a calmer tip aside. They can be turned off in the settings. Numbers in `tutorial.json`.
 - Progress is saved automatically on every docking and every two minutes, and manually to three slots from the pause menu. Continue loads the most recent save.
 
 ## The frontier (0.2)

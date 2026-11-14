@@ -2244,3 +2244,76 @@ body.gamepad :focus {
   outline: 2px solid #6fd3ff;
   outline-offset: 2px;
 }
+
+/* A contextual tip: one line above the tutorial card, at the moment it applies. */
+.tip {
+  position: absolute;
+  bottom: 172px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(520px, calc(100% - 32px));
+  padding: 8px 14px;
+  background: rgba(10, 14, 20, 0.88);
+  border: 1px solid var(--panel-edge);
+  border-left: 3px solid var(--blue);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.4;
+  pointer-events: none;
+  z-index: 6;
+  animation: tip-in 0.25s ease-out;
+}
+
+.tip span {
+  margin-right: 8px;
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tip.urgent {
+  border-left-color: var(--red);
+}
+
+.tip.urgent span {
+  color: var(--red);
+}
+
+@keyframes tip-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+}
+
+/* The launch from the bay: cinema bars that slide away as control is handed over. */
+.letterbox {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+  animation: letterbox 3.5s ease-in-out forwards;
+  background:
+    linear-gradient(#000, #000) top / 100% 11vh no-repeat,
+    linear-gradient(#000, #000) bottom / 100% 11vh no-repeat;
+}
+
+@keyframes letterbox {
+  0%,
+  70% {
+    background-size: 100% 11vh, 100% 11vh;
+  }
+  100% {
+    background-size: 100% 0, 100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tip {
+    animation: none;
+  }
+}

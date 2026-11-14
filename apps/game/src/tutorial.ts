@@ -9,6 +9,8 @@ export interface TutorialContext {
   /** Seconds since the step started. */
   stepTime: number;
   fleetOpen: boolean;
+  /** The brake is held this frame. */
+  braking: boolean;
   /** Values remembered when the step started. */
   start: { heading: number; credits: number };
 }
@@ -32,14 +34,17 @@ const docked = (c: TutorialContext) => c.events.some((e) => e.type === 'docked' 
 const fought = (c: TutorialContext) => c.events.some((e) => e.type === 'hit' && e.attacker === c.playerId && e.shieldDamage + e.hullDamage > 0);
 
 /**
- * The first flight, one verb at a time: each step checks the live simulation, so the
- * player learns by doing it rather than by reading about it. New pilots launch with flight
- * assist on, so the flight lesson switches it off to feel inertia and back on at the end.
- * Verbs done early (scanning, mining, docking, fighting, the fleet panel) are not asked twice.
+ * The first sortie, one verb at a time: each step checks the live simulation, so the
+ * player learns by doing it rather than by reading about it. The game launches the ship
+ * out of the bay itself, so the lessons start in open space. The brake comes right after
+ * the first burn, before any speed is worth fearing; with flight assist on, letting go
+ * also stops the ship, so the step asks for the brake itself. The flight lesson then
+ * switches assist off to feel inertia, and on again at the end. Verbs done early
+ * (scanning, mining, docking, fighting, the fleet panel) are not asked twice.
  */
 export const TUTORIAL: Step[] = [
-  { id: 'undock', title: 'tutorial.undock.title', hint: 'tutorial.undock.hint', done: (c) => !c.telemetry.docked },
   { id: 'thrust', title: 'tutorial.thrust.title', hint: 'tutorial.thrust.hint', done: (c) => c.telemetry.speed > 20 },
+  { id: 'brake', title: 'tutorial.brake.title', hint: 'tutorial.brake.hint', done: (c) => c.braking && c.telemetry.speed < 2 },
   { id: 'newtonian', title: 'tutorial.newtonian.title', hint: 'tutorial.newtonian.hint', done: (c) => c.telemetry.mode === 'newtonian' },
   {
     id: 'coast',
@@ -53,7 +58,7 @@ export const TUTORIAL: Step[] = [
     hint: 'tutorial.turn.hint',
     done: (c) => Math.abs(((c.telemetry.heading - c.start.heading + 540) % 360) - 180) > 90,
   },
-  { id: 'brake', title: 'tutorial.brake.title', hint: 'tutorial.brake.hint', done: (c) => c.telemetry.speed < 1 },
+  { id: 'stop', title: 'tutorial.stop.title', hint: 'tutorial.stop.hint', done: (c) => c.telemetry.speed < 1 },
   { id: 'assist', title: 'tutorial.assist.title', hint: 'tutorial.assist.hint', done: (c) => c.telemetry.mode === 'assisted' },
   { id: 'scan', title: 'tutorial.scan.title', hint: 'tutorial.scan.hint', done: scanned, early: scanned },
   { id: 'mine', title: 'tutorial.mine.title', hint: 'tutorial.mine.hint', done: (c) => ore(c.telemetry) >= 8, early: (c) => ore(c.telemetry) >= 8 },

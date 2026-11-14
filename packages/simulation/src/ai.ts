@@ -276,6 +276,7 @@ export function spawnEncounter(world: World, definition: EncounterDefinition): E
 
 /** Brings destroyed groups back after their respawn delay; wrecks are cleared first. */
 export function encounterSystem(world: World, dt: number): void {
+  if (world.hostilesHeld) return;
   for (const encounter of world.encounters) {
     const alive = encounter.members.some((id) => !world.ships.get(id)?.destroyed);
     if (alive) continue;

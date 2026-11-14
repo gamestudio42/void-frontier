@@ -263,6 +263,7 @@ function materialise(world: World, trader: TraderState): void {
 
 /** Spawns a raid's pirates once on the busiest lane of the simulated sector. */
 function raidHere(world: World, economy: Economy): void {
+  if (world.hostilesHeld) return;
   for (const active of economy.events) {
     const def = eventOf(active.id);
     if (def.kind !== 'raid' || def.sector !== world.sectorId || active.spawnedIn.includes(world.sectorId)) continue;

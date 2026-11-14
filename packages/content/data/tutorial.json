@@ -1,0 +1,22 @@
+{
+  "launchSeconds": 3.5,
+  "launchZoom": 0.45,
+  "releaseSeconds": 45,
+  "sparring": { "ship": "jackal", "distance": 700 },
+  "tips": {
+    "minGap": 6,
+    "minShow": 4,
+    "cooldown": 40,
+    "maxShows": 3,
+    "impactSeconds": 4,
+    "impactSpeed": 40,
+    "driftSpeed": 60,
+    "driftIdle": 6,
+    "spinRate": 120,
+    "lowFuel": 0.2,
+    "holdFull": 0.95,
+    "shieldLow": 0.15,
+    "cruiseDistance": 1800,
+    "cruiseManual": 12
+  }
+}

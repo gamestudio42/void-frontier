@@ -1,13 +1,14 @@
-import { CAMPAIGN, CREW_RULES, OUTPOST_ALPHA, STATION_PLACEMENTS, getFaction, getSector } from '@void-frontier/content';
+import { CAMPAIGN, CREW_RULES, OUTPOST_ALPHA, TUTORIAL_RULES, STATION_PLACEMENTS, getFaction, getSector } from '@void-frontier/content';
 import { FIXED_DT, FixedStepper, type Vec2 } from '@void-frontier/kernel';
 import { getUpgrade, getWeapon, weaponGroup } from '@void-frontier/content';
-import { Simulation, WEAPON_RESALE, boardDisabled, boardingStatus, campaignStep, campaignTarget, fleetEntities, hireFee, isParkedAt, orderProblem, payroll, shipValue, shipyardOffers, type FleetOrder, slotUsage, applySectorSnapshot, captureSector, gateStatus, gravityAt, jump, markDiscovered, nextGate, dockedStationKey, type SectorSnapshot, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, bayEntryPoint, type CruiseOrder, installUpgrades, hostilesNear, nearestObstacle, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
+import { Simulation, WEAPON_RESALE, boardDisabled, boardingStatus, campaignStep, campaignTarget, fleetEntities, hireFee, isParkedAt, orderProblem, payroll, shipValue, shipyardOffers, type FleetOrder, slotUsage, applySectorSnapshot, captureSector, gateStatus, gravityAt, jump, markDiscovered, nextGate, dockedStationKey, type SectorSnapshot, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, bayEntryPoint, type CruiseOrder, installUpgrades, hostilesNear, nearestObstacle, sensorRange, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
 import { SpaceRenderer, type Quality } from '@void-frontier/view3d';
 import { AudioEngine } from './audio.ts';
 import { DEFAULT_BINDINGS, InputController } from './input.ts';
 import { saveStore, type SlotId } from './saves.ts';
 import type { Settings } from './settings.ts';
 import { TUTORIAL } from './tutorial.ts';
+import { TipCoach, type TipHistory } from './tips.ts';
 import { drawRadar } from './radar.ts';
 import { drawTargeting } from './targeting.ts';
 import type { DeathCause, HudStore } from './store.ts';
@@ -36,6 +37,18 @@ const AUTO_LOCK_RANGE = 700;
  */
 const KILL_BEAT = { freeze: 0.06, slow: 0.28, scale: 0.35 };
 const HUD_INTERVAL = 0.1;
+/** Where the count of each contextual tip shown is kept between sessions. */
+const TIPS_KEY = 'void-frontier.tips';
+/** The main engine share the launch pushes the ship out of the bay with. */
+const LAUNCH_THRUST = 0.45;
+
+function loadTipHistory(): TipHistory {
+  try {
+    return JSON.parse(localStorage.getItem(TIPS_KEY) ?? '{}') as TipHistory;
+  } catch {
+    return {};
+  }
+}
 const QUALITIES: Quality[] = ['high', 'medium', 'low'];
 
 /** Owns the frame loop: input → fixed simulation steps → effects → interpolated render → HUD. */
@@ -94,6 +107,18 @@ export class Game {
   private readonly tutorialLearned = new Set<string>();
   /** Launch new games with flight assist on (a setting). */
   private startAssisted = true;
+  /** Game clock time the launch from the bay ends; the controls are held until then. */
+  private launchUntil = -1;
+  /** The fight lesson's pirate has been sent. */
+  private sparringSent = false;
+  /** Read by the tutorial and the tips: the brake held, and the last touch on a flight control. */
+  private braking = false;
+  private lastFlightInput = 0;
+  private manualSince: number | null = null;
+  private lastHitAt = -100;
+  private tipsEnabled = true;
+  private readonly tips = new TipCoach(TUTORIAL_RULES.tips, loadTipHistory());
+  private tip: string | null = null;
 
   constructor(private readonly canvas: HTMLCanvasElement, private readonly store: HudStore) {
     this.renderer = this.createRenderer();
@@ -340,8 +365,31 @@ export class Game {
     if (this.startAssisted) this.sim.setFlightMode(this.sim.playerId, 'assisted');
     this.tutorialStep = tutorial ? 0 : null;
     this.tutorialLearned.clear();
+    this.sparringSent = false;
+    this.tips.clear(this.clock);
+    this.tip = null;
+    if (tutorial) this.launch();
     this.beginTutorialStep();
     this.store.update({ menu: null });
+  }
+
+  /**
+   * The first sortie opens in open space: the sector's pirates stay away until the
+   * lessons end, and the ship leaves the bay on its own while the camera pulls out.
+   */
+  private launch(): void {
+    this.sim.holdHostiles(true);
+    this.sim.undock(this.sim.playerId);
+    this.sim.drainEvents();
+    this.undockedAt = this.clock;
+    this.launchUntil = this.clock + TUTORIAL_RULES.launchSeconds;
+    this.renderer.rig.pullOut(TUTORIAL_RULES.launchZoom, TUTORIAL_RULES.launchSeconds);
+  }
+
+  /** The lessons are over (done or skipped): the sector's pirates come back after a while. */
+  private endTutorial(): void {
+    this.tutorialStep = null;
+    this.sim.holdHostiles(false, TUTORIAL_RULES.releaseSeconds);
   }
 
   /** Saves the current game into a slot. Saves only happen between steps, so the state is consistent. */
@@ -358,6 +406,7 @@ export class Game {
     this.discovered = state.discovered;
     this.replaceSim(state.sim);
     this.tutorialStep = null;
+    this.launchUntil = -1;
     this.store.update({ menu: null });
   }
 
@@ -377,6 +426,7 @@ export class Game {
     this.renderer.rig.shakeEnabled = settings.cameraShake;
     this.input.steering = settings.mouseSteering;
     this.startAssisted = settings.startAssisted;
+    this.tipsEnabled = settings.tips;
     if (!new URLSearchParams(window.location.search).get('quality')) {
       this.autoQuality = settings.quality === 'auto';
       if (settings.quality !== 'auto') this.renderer.setQuality(settings.quality);
@@ -385,7 +435,7 @@ export class Game {
   }
 
   skipTutorial(): void {
-    this.tutorialStep = null;
+    this.endTutorial();
     this.publish();
   }
 
@@ -485,9 +535,17 @@ export class Game {
     } else {
       this.updateTarget();
       // One command per frame, applied to every fixed step the frame runs.
-      const command = this.input.command(this.aim);
+      let command = this.input.command(this.aim);
+      const touched = command.thrust !== 0 || command.strafe !== 0 || command.turn !== 0 || command.brake;
+      // The launch holds the controls; a hand on them takes the ship at once.
+      if (this.launchUntil > this.clock && touched) this.launchUntil = -1;
+      if (this.launchUntil > this.clock) command = { ...command, thrust: LAUNCH_THRUST, aim: null };
+      this.braking = command.brake;
+      if (touched) this.lastFlightInput = this.clock;
+      const burning = command.thrust !== 0 || command.strafe !== 0;
+      this.manualSince = burning && !this.cruise ? (this.manualSince ?? this.clock) : null;
       // Any hand on the flight controls takes the ship back from the autopilot.
-      if (this.cruise && (command.thrust !== 0 || command.strafe !== 0 || command.turn !== 0 || command.brake)) this.endCruise('off');
+      if (this.cruise && touched) this.endCruise('off');
       this.sim.setCommand(this.sim.playerId, { ...command, cruise: this.cruise?.order ?? null, target: this.target, targetSystem: this.target !== null ? this.aimedSystem : null });
       const result = this.stepper.advance(elapsed * this.timeScale());
       for (let i = 0; i < result.steps; i++) this.sim.step();
@@ -498,6 +556,7 @@ export class Game {
       this.updateCruise();
       this.audio.handle(this.sim, events);
       this.updateTutorial(events);
+      this.updateTips(events);
       this.autosave(elapsed, events);
       if (events.length) {
         this.renderer.handleEvents(this.sim, events);
@@ -595,17 +654,76 @@ export class Game {
 
   private updateTutorial(events: ReturnType<Simulation['drainEvents']>): void {
     if (this.tutorialStep === null) return;
+    // The launch is the game's flying, not the player's: no lesson counts until it ends.
+    if (this.launchUntil > this.clock) {
+      this.beginTutorialStep();
+      return;
+    }
     const telemetry = readTelemetry(this.sim.world, this.sim.playerId);
     if (!telemetry) return;
-    const ctx = { telemetry, events, playerId: this.sim.playerId, stepTime: this.clock - this.tutorialStarted, fleetOpen: this.store.getSnapshot().fleetOpen, start: this.tutorialStart };
+    // The fight lesson sends its own pirate once the ship is out in space.
+    if (TUTORIAL[this.tutorialStep].id === 'fight' && !this.sparringSent && !telemetry.docked) {
+      this.sparringSent = this.sim.spawnSparring(TUTORIAL_RULES.sparring.ship, TUTORIAL_RULES.sparring.distance) !== null;
+    }
+    const ctx = { telemetry, events, playerId: this.sim.playerId, stepTime: this.clock - this.tutorialStarted, fleetOpen: this.store.getSnapshot().fleetOpen, braking: this.braking, start: this.tutorialStart };
     for (let i = this.tutorialStep + 1; i < TUTORIAL.length; i++) if (TUTORIAL[i].early?.(ctx)) this.tutorialLearned.add(TUTORIAL[i].id);
     if (!TUTORIAL[this.tutorialStep].done(ctx)) return;
     this.audio.click();
     let next = this.tutorialStep + 1;
     while (next < TUTORIAL.length && this.tutorialLearned.has(TUTORIAL[next].id)) next++;
-    this.tutorialStep = next < TUTORIAL.length ? next : null;
+    if (next < TUTORIAL.length) this.tutorialStep = next;
+    else this.endTutorial();
     if (this.tutorialStep === null) this.notices.push({ text: 'tutorial', kind: 'completed', reward: 0, at: this.clock, id: -1 });
     this.beginTutorialStep();
+  }
+
+  /** The contextual tip for this moment, from what the ship is doing. */
+  private updateTips(events: ReturnType<Simulation['drainEvents']>): void {
+    const me = this.sim.playerId;
+    if (events.some((e) => (e.type === 'hit' && e.target === me) || (e.type === 'collision' && (e.a === me || e.b === me)))) this.lastHitAt = this.clock;
+    const telemetry = readTelemetry(this.sim.world, me);
+    if (!this.tipsEnabled || !telemetry || this.launchUntil > this.clock) {
+      this.tip = null;
+      return;
+    }
+    const world = this.sim.world;
+    const body = world.bodies.get(me);
+    const obstacle = body && telemetry.speed > 1 ? nearestObstacle(world, me, Math.min(1500, telemetry.speed * TUTORIAL_RULES.tips.impactSeconds)) : null;
+    let destinationAhead: number | null = null;
+    if (body && telemetry.speed > 20) {
+      const course = Math.atan2(body.velocity.y, body.velocity.x);
+      for (const place of this.cruiseTargets()) {
+        const dx = place.position.x - body.position.x;
+        const dy = place.position.y - body.position.y;
+        const off = Math.abs(((Math.atan2(dy, dx) - course + 3 * Math.PI) % (2 * Math.PI)) - Math.PI);
+        if (off < (CRUISE_PICK_DEGREES * Math.PI) / 180) destinationAhead = Math.max(destinationAhead ?? 0, Math.hypot(dx, dy));
+      }
+    }
+    const ship = world.ships.get(me);
+    const hostiles = ship ? hostilesNear(world, me, sensorRange(ship)) : [];
+    const tip = this.tips.update(
+      {
+        now: this.clock,
+        telemetry,
+        braking: this.braking,
+        idle: this.clock - this.lastFlightInput,
+        impactIn: obstacle?.timeToImpact ?? null,
+        cruising: this.cruise !== null,
+        manualFor: this.manualSince === null ? 0 : this.clock - this.manualSince,
+        destinationAhead,
+        sinceHit: this.clock - this.lastHitAt,
+        hunted: hostiles.some((id) => world.pilots.get(id)?.target === me),
+        targetLocked: this.target !== null,
+      },
+      () => {
+        try {
+          localStorage.setItem(TIPS_KEY, JSON.stringify(this.tips.history));
+        } catch {
+          // Not critical: the tips only come back a few more times.
+        }
+      },
+    );
+    this.tip = tip?.text ?? null;
   }
 
   /** Autosave on docking and every two minutes in flight; never while destroyed. */
@@ -1071,6 +1189,8 @@ export class Game {
         this.tutorialStep === null
           ? null
           : { index: this.tutorialStep, total: TUTORIAL.length, title: TUTORIAL[this.tutorialStep].title, hint: TUTORIAL[this.tutorialStep].hint },
+      tip: this.tip,
+      launching: this.launchUntil > this.clock,
       notices: this.notices.filter((n) => this.clock - n.at < 4.5).map((n) => ({ id: n.id, kind: n.text, outcome: n.kind, reward: n.reward })),
       holdFull: (() => {
         const t = readTelemetry(this.sim.world, this.sim.playerId);
