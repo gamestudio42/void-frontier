@@ -47,6 +47,8 @@ export interface RenderOptions {
   frame?: Vec2 | null;
   /** The framed ship is the Dreadmaw: pull back and drop the tilt so the flagship reads. */
   boss?: boolean;
+  /** Camera zoom wanted while mining (below 1 moves in); 1 or absent for the normal framing. */
+  closeUp?: number;
 }
 
 /** What a sector's own colour needs from its data. */
@@ -269,6 +271,24 @@ export class SpaceRenderer {
         }
       } else if (event.type === 'scan') {
         this.ring(toScene(event.position, 0.6), event.range, 1.3, 0x6fd3ff, null);
+      } else if (event.type === 'asteroidFractured') {
+        const p = toScene(event.position, 0);
+        // The crack: a burst of dust and sparks out of the seam; a volatile rock goes up like a ship.
+        for (let i = 0; i < 40 + event.radius * 6; i++) {
+          const a = Math.random() * Math.PI * 2;
+          const s = 3 + Math.random() * 18;
+          this.particles.emit(p.x, (Math.random() - 0.5) * event.radius, p.z, Math.cos(a) * s, (Math.random() - 0.5) * 4, Math.sin(a) * s, DUST, DUST_END, 2 + Math.random() * event.radius * 0.6, 1.2 + Math.random() * 1.5, 0.4);
+        }
+        for (let i = 0; i < 24; i++) {
+          const a = Math.random() * Math.PI * 2;
+          const s = 10 + Math.random() * 30;
+          this.particles.emit(p.x, 0, p.z, Math.cos(a) * s, Math.random() * 4, Math.sin(a) * s, SPARK, SPARK_END, 1, 0.3 + Math.random() * 0.4, 1);
+        }
+        if (event.volatile) {
+          this.explode(event.position);
+          this.ring(p, event.radius + 70, 0.6, 0xc77dff, null);
+        }
+        if (event.by === sim.playerId) this.rig.shake(event.volatile ? 0.5 : 0.15);
       } else if (event.type === 'asteroidDepleted') {
         const p = toScene(event.position, 0);
         for (let i = 0; i < 80 + event.radius * 10; i++) {
@@ -336,7 +356,7 @@ export class SpaceRenderer {
     if (body && ship) {
       const position = toScene(lerp2(body.previousPosition, body.position, alpha));
       const velocity = toScene(body.velocity);
-      const focus = this.rig.update(position, velocity, frameDt, options.frame ? toScene(options.frame) : null, options.boss === true, ship.definition.hull.length);
+      const focus = this.rig.update(position, velocity, frameDt, options.frame ? toScene(options.frame) : null, options.boss === true, ship.definition.hull.length, options.closeUp ?? 1);
       this.dust.setFocus(focus, this.rig.camera.position.distanceTo(focus));
       this.grid.setFocus(focus);
       this.starfield.position.copy(this.rig.camera.position);

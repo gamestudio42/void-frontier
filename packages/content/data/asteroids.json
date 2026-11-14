@@ -57,7 +57,8 @@
       "vein": "#c77dff",
       "metalness": 0.3,
       "roughness": 0.35
-    }
+    },
+    "volatile": true
   },
   {
     "id": "hulk",

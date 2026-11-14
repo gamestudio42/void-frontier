@@ -1,4 +1,6 @@
 import { atan2, length, toDegrees, worldToLocal } from '@void-frontier/kernel';
+import { MINING_RULES } from '@void-frontier/content';
+import { onVein } from './mining.ts';
 import { forwardOf, holdMass, holdVolume, shipMass } from './ship.ts';
 import { leadPoint, muzzlePosition } from './combat.ts';
 import type { EntityId, FlightMode, SubsystemId, ThrusterOutput } from './types.ts';
@@ -37,7 +39,19 @@ export interface FlightTelemetry {
   /** Seconds until the scanner can pulse again. */
   scanCooldown: number;
   /** The rock under the mining laser, if any. */
-  miningTarget: { asteroidType: string; resource: string; ore: number; oreMax: number } | null;
+  miningTarget: {
+    asteroidType: string;
+    resource: string;
+    ore: number;
+    oreMax: number;
+    /** Laser heat in the rock; it cracks at `fractureAt`, cuts best inside `sweetSpot`. */
+    stress: number;
+    sweetSpot: [number, number];
+    fractureAt: number;
+    /** Whether the cut is on the rich vein; null until a scan has read the rock. */
+    onVein: boolean | null;
+    volatile: boolean;
+  } | null;
   /** The mining laser is firing but touches no rock. */
   miningIdle: boolean;
   destroyed: boolean;
@@ -120,7 +134,18 @@ export function readTelemetry(world: World, id: EntityId): FlightTelemetry | nul
     miningTarget: (() => {
       const beam = ship.weapons.find((w) => w.definition.kind === 'mining')?.beam;
       const rock = beam?.hit !== null && beam?.hit !== undefined ? world.asteroids.get(beam.hit) : undefined;
-      return rock ? { asteroidType: rock.type.id, resource: rock.type.resource, ore: rock.ore, oreMax: rock.oreMax } : null;
+      if (!rock || !beam || beam.hit === null) return null;
+      return {
+        asteroidType: rock.type.id,
+        resource: rock.type.resource,
+        ore: rock.ore,
+        oreMax: rock.oreMax,
+        stress: rock.stress,
+        sweetSpot: [...MINING_RULES.sweetSpot] as [number, number],
+        fractureAt: MINING_RULES.fractureAt,
+        onVein: world.scanned.has(beam.hit) ? onVein(world, beam.hit, beam.to) : null,
+        volatile: rock.type.volatile === true,
+      };
     })(),
     miningIdle: (() => {
       const beam = ship.weapons.find((w) => w.definition.kind === 'mining')?.beam;

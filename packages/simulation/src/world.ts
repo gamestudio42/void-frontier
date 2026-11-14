@@ -19,6 +19,8 @@ export class World {
   readonly pickups = new Map<EntityId, Pickup>();
   /** Asteroids revealed by a scanner pulse, with the tick the reading expires. */
   readonly scanned = new Map<EntityId, number>();
+  /** Rocks with laser heat in them, cooled each step by the mining system. */
+  readonly heated = new Set<EntityId>();
   readonly encounters: EncounterState[] = [];
   /** While true (the guided first sortie) encounters stay away and raids wait. */
   hostilesHeld = false;
@@ -57,6 +59,7 @@ export class World {
     this.pilots.delete(id);
     this.pickups.delete(id);
     this.scanned.delete(id);
+    this.heated.delete(id);
     this.beacons.delete(id);
   }
 

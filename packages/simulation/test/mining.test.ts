@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getResource, getShip } from '@void-frontier/content';
+import { MINING_RULES, getResource, getShip } from '@void-frontier/content';
 import { CHUNK_UNITS, Simulation, applyWeaponDamage, holdMass, holdSpaceFor, readTelemetry, spawnAsteroid, spawnPickup, spawnShip } from '../src/index.ts';
 import { body, ship } from './helpers.ts';
 
@@ -15,12 +15,24 @@ function rig(radius = 8, gap = 30, type = 'cupric') {
   return { sim, id, rock };
 }
 
+/** Cuts like a careful pilot: lets the laser off when the rock runs hot, so it never cracks. */
+function pulse(sim: Simulation, id: number, rock: number, steps: number, onEach?: () => boolean) {
+  let resting = false;
+  for (let i = 0; i < steps; i++) {
+    const stress = sim.world.asteroids.get(rock)?.stress ?? 0;
+    if (stress >= MINING_RULES.aiCutBelow) resting = true;
+    else if (stress <= MINING_RULES.sweetSpot[0]) resting = false;
+    sim.setCommand(id, { fireMining: !resting });
+    sim.step();
+    if (onEach?.()) return;
+  }
+}
+
 describe('mining laser', () => {
   it('extracts ore and ejects it as chunks', () => {
     const { sim, id, rock } = rig();
     const before = sim.world.asteroids.get(rock)!.ore;
-    sim.setCommand(id, { fireMining: true });
-    sim.run(60 * 3);
+    pulse(sim, id, rock, 60 * 3);
     expect(sim.world.asteroids.get(rock)!.ore).toBeLessThan(before);
     expect(sim.world.pickups.size).toBeGreaterThan(0);
     for (const p of sim.world.pickups.values()) expect(p.resource).toBe('copper_ore');
@@ -48,15 +60,14 @@ describe('mining laser', () => {
   it('shrinks the rock as ore runs out and breaks small rocks when empty', () => {
     const { sim, id, rock } = rig(5, 20);
     const startRadius = sim.world.asteroids.get(rock)!.radius;
-    sim.setCommand(id, { fireMining: true });
     let shrunk = false;
     let broke = false;
-    for (let i = 0; i < 60 * 60 && !broke; i++) {
-      sim.step();
+    pulse(sim, id, rock, 60 * 60, () => {
       const r = sim.world.asteroids.get(rock);
       if (r && r.radius < startRadius) shrunk = true;
       broke = sim.drainEvents().some((e) => e.type === 'asteroidDepleted' && e.id === rock);
-    }
+      return broke;
+    });
     expect(shrunk).toBe(true);
     expect(broke).toBe(true);
     expect(sim.world.colliders.has(rock)).toBe(false);

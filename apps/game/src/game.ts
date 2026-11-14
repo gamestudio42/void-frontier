@@ -1,4 +1,4 @@
-import { CAMPAIGN, CREW_RULES, OUTPOST_ALPHA, TUTORIAL_RULES, STATION_PLACEMENTS, getFaction, getSector } from '@void-frontier/content';
+import { CAMPAIGN, CREW_RULES, MINING_RULES, OUTPOST_ALPHA, TUTORIAL_RULES, STATION_PLACEMENTS, getFaction, getSector } from '@void-frontier/content';
 import { FIXED_DT, FixedStepper, type Vec2 } from '@void-frontier/kernel';
 import { getUpgrade, getWeapon, weaponGroup } from '@void-frontier/content';
 import { Simulation, WEAPON_RESALE, boardDisabled, boardingStatus, campaignStep, campaignTarget, fleetEntities, hireFee, isParkedAt, orderProblem, payroll, shipValue, shipyardOffers, type FleetOrder, slotUsage, applySectorSnapshot, captureSector, gateStatus, gravityAt, jump, markDiscovered, nextGate, dockedStationKey, type SectorSnapshot, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, bayEntryPoint, type CruiseOrder, installUpgrades, hostilesNear, nearestObstacle, sensorRange, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
@@ -621,7 +621,8 @@ export class Game {
     const gap = targetBody && me ? Math.hypot(targetBody.position.x - me.position.x, targetBody.position.y - me.position.y) : Infinity;
     const frameTarget = targetBody && gap < (boss ? 1600 : 650) ? targetBody.position : null;
     this.audio.update(this.sim, !paused && !help, elapsed);
-    const stats = this.renderer.render(this.sim, alpha, frameDt, { aim: this.input.steering ? this.aim : null, frame: frameTarget, boss: boss && frameTarget !== null });
+    const cutting = this.sim.world.ships.get(this.sim.playerId)?.weapons.some((w) => w.definition.kind === 'mining' && w.beam?.hit != null && this.sim.world.asteroids.has(w.beam.hit));
+    const stats = this.renderer.render(this.sim, alpha, frameDt, { aim: this.input.steering ? this.aim : null, frame: frameTarget, boss: boss && frameTarget !== null, closeUp: cutting ? MINING_RULES.cameraZoom : 1 });
     if (this.radar) drawRadar(this.radar, this.sim, this.clock, this.target);
     this.hitFlash = Math.max(0, this.hitFlash - elapsed * 6);
     // Docked, the scene slides aside so the ship stays visible next to the station panel.

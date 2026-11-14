@@ -258,10 +258,12 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
         </span>
         {tel.miningTarget && (
           <span className="mining-target" data-testid="mining-target">
-            {t('hud.mining')}: <strong>{t(`rock.${tel.miningTarget.asteroidType}` as MessageKey)}</strong> · {Math.ceil(tel.miningTarget.ore)} / {tel.miningTarget.oreMax}{' '}
+            {t('hud.mining')}: <strong>{t(`rock.${tel.miningTarget.asteroidType}` as MessageKey)}</strong> · {Math.ceil(tel.miningTarget.ore)} / {Math.ceil(tel.miningTarget.oreMax)}{' '}
             {t('unit.units')} {t('hud.oreLeft')}
+            {tel.miningTarget.volatile && <em className="volatile"> · {t('hud.volatile')}</em>}
           </span>
         )}
+        {tel.miningTarget && <RockHeat target={tel.miningTarget} t={t} />}
         {!tel.miningTarget && tel.miningIdle && (
           <span className="mining-target idle" data-testid="mining-idle">
             {t('hud.miningNoRock')}
@@ -291,5 +293,22 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
         )}
       </footer>
     </div>
+  );
+}
+
+/** The rock's laser heat against its sweet spot and fracture point, and whether the cut is on the vein. */
+function RockHeat({ target, t }: { target: NonNullable<FlightTelemetry['miningTarget']>; t: Translate }) {
+  const [low, high] = target.sweetSpot;
+  const zone = target.stress < low ? 'cold' : target.stress <= high ? 'sweet' : 'hot';
+  const share = (value: number) => `${Math.min(100, (value / target.fractureAt) * 100)}%`;
+  const vein = target.onVein === null ? 'unknown' : target.onVein ? 'on' : 'off';
+  return (
+    <span className="rock-heat" data-testid="rock-heat" data-zone={zone} data-vein={vein}>
+      <span className="heat-bar" aria-hidden="true">
+        <i className="sweet" style={{ left: share(low), width: `calc(${share(high)} - ${share(low)})` }} />
+        <b style={{ width: share(target.stress) }} />
+      </span>
+      <strong>{t(`hud.heat.${zone}` as MessageKey)}</strong> · <em className={`vein ${vein}`}>{t(`hud.vein.${vein}` as MessageKey)}</em>
+    </span>
   );
 }

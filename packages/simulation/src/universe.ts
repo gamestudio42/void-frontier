@@ -86,6 +86,9 @@ export function spawnStation(world: World, definitionId: string, name: string, p
   return id;
 }
 
+/** A rock's vein direction, spread evenly from its look value (golden-angle steps). */
+export const veinOf = (look: number): number => ((look * 2.399963229728653) % 6.283185307179586) - 3.141592653589793;
+
 export function spawnAsteroid(
   world: World,
   typeId: string,
@@ -114,7 +117,8 @@ export function spawnAsteroid(
   world.colliders.set(id, { circles: [{ x: 0, y: 0, r: radius }], bound: radius });
   // Ore scales with cross-section, so big rocks are worth the trip.
   const ore = Math.max(4, Math.round(type.oreUnitsPerSquareMetre * PI * radius * radius));
-  world.asteroids.set(id, { type, radius, baseRadius: radius, ore, oreMax: ore, pendingOre: 0, look });
+  // The vein comes from the look value, so placing rocks draws nothing more from the RNG.
+  world.asteroids.set(id, { type, radius, baseRadius: radius, ore, oreMax: ore, pendingOre: 0, look, stress: 0, vein: veinOf(look) });
   return id;
 }
 

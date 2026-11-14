@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased: fracture mining
+
+- Rocks have a rich vein: scan to see it as a bright arc, and cut from that side for about twice the ore you get anywhere else.
+- The laser heats the rock. Keep the heat in the sweet spot (shown around the rock and in the HUD) by pulsing the laser; too hot and the rock cracks into drifting fragments, losing a quarter of its ore.
+- Exotic rocks are volatile: overheat one and it explodes.
+- The camera moves in while you mine.
+
 ## Unreleased: first sortie
 
 - A new game launches you out of the bay with a short camera pull-out instead of opening on the contract board.

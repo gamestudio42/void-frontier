@@ -361,6 +361,20 @@ export class AudioEngine {
           this.duck(0.4 + where.gain * 0.6, e.id === sim.playerId ? 2.5 : 1.2);
           break;
         }
+        case 'asteroidFractured': {
+          const where = at(e.position);
+          if (e.volatile) {
+            this.explosion(where.gain, where.pan, e.by === sim.playerId);
+            this.duck(0.3 + where.gain * 0.5, 1.2);
+            break;
+          }
+          if (!this.admit(PRIORITY.impact, where.gain, 1.2, 'crack')) break;
+          // A sharp crack, then the halves grinding apart.
+          this.burst({ duration: 0.12, freq: 2400, type: 'highpass', gain: 0.5 * where.gain, pan: where.pan, send: 0.4 });
+          this.burst({ duration: 1.1, freq: 380, type: 'lowpass', gain: 0.4 * where.gain, pan: where.pan, sweepTo: 90, send: 0.6 });
+          this.debris(where.gain * 0.7, where.pan, 7);
+          break;
+        }
         case 'asteroidDepleted': {
           const where = at(e.position);
           if (!this.admit(PRIORITY.impact, where.gain, 1, 'rock')) break;

@@ -1,4 +1,5 @@
-import { getResource } from '@void-frontier/content';
+import { MINING_RULES, getResource } from '@void-frontier/content';
+import type { Vec2 } from '@void-frontier/kernel';
 import { dockingStatus, hostilesNear, readTarget, readTelemetry, type Simulation } from '@void-frontier/simulation';
 import type { SpaceRenderer } from '@void-frontier/view3d';
 
@@ -199,8 +200,10 @@ export function drawTargeting(
     const rock = sim.world.asteroids.get(id);
     const body = sim.world.bodies.get(id);
     if (!rock || !body) continue;
-    // Label only rocks worth flying to: close ones, or big ones further out.
     const d = Math.hypot(body.position.x - myBody.position.x, body.position.y - myBody.position.y);
+    // Close by, the scan shows the rich vein: a bright arc on the side to cut from.
+    if (d < VEIN_SHOW_RANGE) drawVein(ctx, renderer, width, height, body, rock, getResource(rock.type.resource).color);
+    // Label only rocks worth flying to: close ones, or big ones further out.
     if (d > 350 && rock.ore < 150) continue;
     const s = renderer.worldToScreen(body.position, width, height);
     if (!s.onScreen) continue;
@@ -218,6 +221,12 @@ export function drawTargeting(
     ctx.fillText(`${RESOURCE_TAGS[rock.type.resource] ?? '?'} ${Math.ceil(rock.ore)}`, s.x + 14, s.y - 13);
     ctx.globalAlpha = 1;
   }
+
+  // The rock under the player's mining laser: a ring that fills with its heat.
+  const cutting = me.weapons.find((w) => w.definition.kind === 'mining')?.beam?.hit;
+  const hot = cutting !== null && cutting !== undefined ? sim.world.asteroids.get(cutting) : undefined;
+  const hotBody = hot ? sim.world.bodies.get(cutting!) : undefined;
+  if (hot && hotBody) drawHeatRing(ctx, renderer, width, height, hotBody.position, hot.radius, hot.stress);
 
   for (const id of hostilesNear(sim.world, sim.playerId, me.definition.sensors.range)) {
     const body = sim.world.bodies.get(id)!;
@@ -363,4 +372,57 @@ function drawEdgeChevron(
   ctx.restore();
   ctx.textAlign = 'center';
   ctx.fillText(label, ax - Math.cos(angle) * 52, ay - Math.sin(angle) * 34 + 4);
+}
+
+/** Metres within which a scanned rock shows its vein. */
+const VEIN_SHOW_RANGE = 450;
+
+/** The arc of a rock's rim that lies on its vein, projected onto the screen. */
+function drawVein(ctx: CanvasRenderingContext2D, renderer: SpaceRenderer, width: number, height: number, body: { position: Vec2; angle: number }, rock: { radius: number; vein: number }, color: string): void {
+  const half = (MINING_RULES.veinWidth * Math.PI) / 180;
+  const centre = body.angle + rock.vein;
+  const rim = rock.radius * 1.08;
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 8;
+  ctx.globalAlpha = 0.9;
+  ctx.beginPath();
+  for (let i = 0; i <= 8; i++) {
+    const a = centre - half + (i / 8) * half * 2;
+    const p = renderer.worldToScreen({ x: body.position.x + Math.cos(a) * rim, y: body.position.y + Math.sin(a) * rim }, width, height);
+    if (i === 0) ctx.moveTo(p.x, p.y);
+    else ctx.lineTo(p.x, p.y);
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+
+/** A ring around the rock being cut, filled clockwise with its heat; the sweet spot is marked. */
+function drawHeatRing(ctx: CanvasRenderingContext2D, renderer: SpaceRenderer, width: number, height: number, position: Vec2, radius: number, stress: number): void {
+  const c = renderer.worldToScreen(position, width, height);
+  if (!c.onScreen) return;
+  const edge = renderer.worldToScreen({ x: position.x + radius, y: position.y }, width, height);
+  const r = Math.max(14, Math.abs(edge.x - c.x) + 10);
+  const [low, high] = MINING_RULES.sweetSpot;
+  const at = (share: number) => -Math.PI / 2 + Math.min(1, share / MINING_RULES.fractureAt) * Math.PI * 2;
+  ctx.save();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+  ctx.beginPath();
+  ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(125, 255, 178, 0.35)';
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.arc(c.x, c.y, r, at(low), at(high));
+  ctx.stroke();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = stress < low ? '#6fd3ff' : stress <= high ? '#7dffb2' : '#ff6b5a';
+  ctx.beginPath();
+  ctx.arc(c.x, c.y, r, at(0), at(stress));
+  ctx.stroke();
+  ctx.restore();
 }

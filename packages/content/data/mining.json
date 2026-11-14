@@ -1,0 +1,18 @@
+{
+  "veinWidth": 40,
+  "veinYield": 1.5,
+  "offVeinYield": 0.7,
+  "heatPerSecond": 0.25,
+  "referenceRadius": 15,
+  "coolPerSecond": 0.4,
+  "sweetSpot": [0.5, 0.85],
+  "coldYield": 0.8,
+  "sweetYield": 1.4,
+  "hotYield": 1,
+  "fractureAt": 1,
+  "fractureLoss": 0.25,
+  "fragmentMinRadius": 4,
+  "volatileBlast": { "radius": 70, "damage": 140 },
+  "aiCutBelow": 0.8,
+  "cameraZoom": 0.8
+}

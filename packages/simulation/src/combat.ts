@@ -2,7 +2,7 @@ import { atan2, clamp, cos, sin, toRadians, wrapAngle, type Vec2 } from '@void-f
 import { applyWeaponDamage } from './damage.ts';
 import { moduleModifiers } from './station.ts';
 import { sensorRange, shieldCapacity } from './ship.ts';
-import { extractOre } from './mining.ts';
+import { cutRock } from './mining.ts';
 import { raycast } from './spatial.ts';
 import { isHostile, type Body, type EntityId, type Projectile, type Ship, type WeaponMount } from './types.ts';
 import type { World } from './world.ts';
@@ -165,7 +165,7 @@ export function weaponSystem(world: World, dt: number): void {
           const distance = hit.t * def.range;
           // Full rate inside the optimal range, falling linearly to 25% at maximum range.
           const falloff = distance <= def.optimalRange ? 1 : 1 - 0.75 * ((distance - def.optimalRange) / (def.range - def.optimalRange));
-          if (world.asteroids.has(hit.id)) extractOre(world, hit.id, def.extractionRate * falloff * dt, hit.point);
+          if (world.asteroids.has(hit.id)) cutRock(world, hit.id, def.extractionRate * falloff, hit.point, dt, id);
           else if (world.ships.has(hit.id)) applyWeaponDamage(world, hit.id, id, def.damagePerSecond * dt, def.multipliers, hit.point, true);
         }
       } else {

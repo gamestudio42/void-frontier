@@ -200,6 +200,8 @@ export const asteroidTypeSchema = z.object({
   density: positive,
   /** ore units per square metre of cross-section: a 10 m rock of 0.5 holds about 157 units */
   oreUnitsPerSquareMetre: positive,
+  /** overheated, the rock explodes instead of cracking */
+  volatile: z.boolean().optional(),
   look: z.object({ base: hexColor, vein: hexColor, metalness: z.number().min(0).max(1), roughness: z.number().min(0).max(1) }),
 });
 
@@ -455,6 +457,43 @@ export const cruiseRulesSchema = z.object({
 });
 
 export type CruiseRules = z.infer<typeof cruiseRulesSchema>;
+
+/**
+ * Fracture mining: every rock has a rich vein on one side and heats as the laser cuts it.
+ * Cutting on the vein and inside the heat's sweet spot pays; too hot, the rock cracks.
+ */
+export const miningRulesSchema = z.object({
+  /** degrees either side of the vein's direction that count as on the vein */
+  veinWidth: z.number().gt(0).lt(180),
+  /** extraction multiplier cutting on the vein, and anywhere else */
+  veinYield: positive,
+  offVeinYield: positive,
+  /** rock stress gained per second of cutting, for a rock of `referenceRadius`; smaller rocks heat faster */
+  heatPerSecond: positive,
+  referenceRadius: positive,
+  /** stress lost per second while nothing cuts the rock */
+  coolPerSecond: positive,
+  /** stress band where the cut is cleanest */
+  sweetSpot: z.tuple([z.number().min(0), z.number().max(1)]),
+  /** extraction multipliers below, inside and above the sweet spot */
+  coldYield: positive,
+  sweetYield: positive,
+  hotYield: positive,
+  /** stress at which the rock cracks apart */
+  fractureAt: positive,
+  /** share of the rock's remaining ore lost in the crack */
+  fractureLoss: z.number().min(0).max(1),
+  /** fragments smaller than this crumble into loose ore instead */
+  fragmentMinRadius: positive,
+  /** a volatile rock that cracks explodes: metres, and damage at the centre */
+  volatileBlast: z.object({ radius: positive, damage: positive }),
+  /** AI miners let the laser off above this stress and wait for it to cool */
+  aiCutBelow: z.number().gt(0).max(1),
+  /** camera zoom while the player's laser is on a rock (1 = normal) */
+  cameraZoom: z.number().gt(0).max(1),
+});
+
+export type MiningRules = z.infer<typeof miningRulesSchema>;
 
 /** The guided first sortie: the launch, the quiet pocket and the contextual tips. */
 export const tutorialRulesSchema = z.object({

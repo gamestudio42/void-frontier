@@ -55,6 +55,19 @@ export const TIPS: Tip[] = [
     when: (c, r) => share(c.telemetry.shield, c.telemetry.shieldMax) < r.shieldLow && c.sinceHit < 2 && !c.telemetry.destroyed,
   },
   { id: 'target', text: 'tip.target', when: (c) => c.hunted && !c.targetLocked && !c.telemetry.docked, solved: (c) => c.targetLocked },
+  {
+    id: 'rockHot',
+    text: 'tip.rockHot',
+    urgent: true,
+    when: (c) => !!c.telemetry.miningTarget && c.telemetry.miningTarget.stress > c.telemetry.miningTarget.sweetSpot[1],
+    solved: (c) => !c.telemetry.miningTarget,
+  },
+  {
+    id: 'vein',
+    text: 'tip.vein',
+    when: (c) => c.telemetry.miningTarget?.onVein === false,
+    solved: (c) => c.telemetry.miningTarget?.onVein === true,
+  },
   { id: 'heat', text: 'tip.heat', when: (c) => c.telemetry.weapons.some((w) => w.overheated) },
   {
     id: 'spin',
