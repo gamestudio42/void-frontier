@@ -4,20 +4,27 @@ test.describe('a first launch', () => {
   // Fresh browser: default settings, so the new game starts with flight assist on.
   test.use({ storageState: { cookies: [], origins: [] } });
 
-  test('opens on the main menu and walks the first tutorial steps', async ({ page }) => {
+  test('opens on the main menu, launches from the bay and walks the first tutorial steps', async ({ page }) => {
     await page.goto('/?quality=low');
     await expect(page.getByTestId('main-menu')).toBeVisible();
     await page.getByTestId('start').click();
     await expect(page.getByTestId('main-menu')).toBeHidden();
+    // The first sortie starts out of the bay, not on the contract board.
+    await expect(page.getByTestId('launch')).toBeVisible();
+    await expect(page.getByTestId('station')).toBeHidden();
     const card = page.getByTestId('tutorial');
     await expect(card).toContainText('1/13');
-    await page.getByTestId('undock').click();
-    await expect(card).toContainText('2/13');
+    await expect(page.getByTestId('launch')).toBeHidden({ timeout: 10_000 });
+    await expect(card).toContainText('1/13');
     await expect(page.getByTestId('flight-mode')).toHaveAttribute('data-mode', 'assisted');
     await page.mouse.move(0, 0);
     await page.keyboard.down('w');
-    await expect(card).toContainText('3/13', { timeout: 30_000 });
+    await expect(card).toContainText('2/13', { timeout: 30_000 });
     await page.keyboard.up('w');
+    // Assist would stop the ship anyway; the step waits for the brake itself.
+    await page.keyboard.down('Space');
+    await expect(card).toContainText('3/13', { timeout: 30_000 });
+    await page.keyboard.up('Space');
     await page.keyboard.press('c');
     await expect(page.getByTestId('flight-mode')).toHaveAttribute('data-mode', 'newtonian');
     await expect(card).toContainText('4/13');
@@ -27,16 +34,15 @@ test.describe('a first launch', () => {
     await page.goto('/?quality=low');
     await page.getByTestId('start').click();
     const card = page.getByTestId('tutorial');
-    await page.getByTestId('undock').click();
-    await expect(card).toContainText('2/13');
+    await expect(page.getByTestId('launch')).toBeHidden({ timeout: 10_000 });
     // Scan now, long before the scanning step, then jump to the end of the flight lessons.
     await page.keyboard.press('r');
     await page.evaluate(() => {
       const game = (window as unknown as { voidFrontier: { tutorialStep: number | null; beginTutorialStep(): void } }).voidFrontier;
-      game.tutorialStep = 5; // brake: flight assist brings the ship to a stop
+      game.tutorialStep = 5; // stop: flight assist brings the ship to a stop
       game.beginTutorialStep();
     });
-    // Brake (6/13) and assist (7/13) pass on their own; scanning (8/13) was already done,
+    // Stop (6/13) and assist (7/13) pass on their own; scanning (8/13) was already done,
     // so the card goes straight to mining.
     await expect(card).toContainText('9/13', { timeout: 20_000 });
   });

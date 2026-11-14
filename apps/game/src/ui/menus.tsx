@@ -182,6 +182,10 @@ export function SettingsPanel({ settings, onSettings, t }: { settings: Settings;
         <span>{t('settings.startAssisted')}</span>
         <input type="checkbox" checked={settings.startAssisted} onChange={(e) => set({ startAssisted: e.target.checked })} data-testid="start-assisted" />
       </label>
+      <label className="setting check">
+        <span>{t('settings.tips')}</span>
+        <input type="checkbox" checked={settings.tips} onChange={(e) => set({ tips: e.target.checked })} data-testid="tips-toggle" />
+      </label>
       <label className="setting">
         <span>{t('settings.flashes')}</span>
         <input type="checkbox" checked={settings.reduceFlashes} onChange={(e) => set({ reduceFlashes: e.target.checked })} data-testid="reduce-flashes" />

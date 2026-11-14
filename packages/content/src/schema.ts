@@ -456,6 +456,50 @@ export const cruiseRulesSchema = z.object({
 
 export type CruiseRules = z.infer<typeof cruiseRulesSchema>;
 
+/** The guided first sortie: the launch, the quiet pocket and the contextual tips. */
+export const tutorialRulesSchema = z.object({
+  /** seconds the launch from the bay holds the controls while the camera pulls out */
+  launchSeconds: positive,
+  /** camera zoom the launch starts from (1 = normal) */
+  launchZoom: z.number().gt(0).max(1),
+  /** seconds after the tutorial ends before the sector's pirates come back */
+  releaseSeconds: positive,
+  /** the lone pirate sent at the player for the fight lesson */
+  sparring: z.object({ ship: z.string().min(1), distance: positive }),
+  tips: z.object({
+    /** seconds between two tips */
+    minGap: positive,
+    /** seconds a tip stays up at the least */
+    minShow: positive,
+    /** seconds before the same tip may show again */
+    cooldown: positive,
+    /** times a tip shows before it retires for good */
+    maxShows: z.number().int().positive(),
+    /** seconds to impact under which the brake tip shows */
+    impactSeconds: positive,
+    /** m/s above which a closing obstacle is worth a warning */
+    impactSpeed: positive,
+    /** m/s of drift with no input that earns the inertia tip */
+    driftSpeed: positive,
+    /** seconds without input before the inertia tip */
+    driftIdle: positive,
+    /** deg/s of spin that earns the spin tip */
+    spinRate: positive,
+    /** fuel share under which the fuel tip shows */
+    lowFuel: z.number().gt(0).lt(1),
+    /** hold share at which the full-hold tip shows */
+    holdFull: z.number().gt(0).max(1),
+    /** shield share under which, while hit, the retreat tip shows */
+    shieldLow: z.number().gt(0).lt(1),
+    /** metres to a marked destination that make the cruise tip worth it */
+    cruiseDistance: positive,
+    /** seconds of flying by hand toward it before the cruise tip */
+    cruiseManual: positive,
+  }),
+});
+
+export type TutorialRules = z.infer<typeof tutorialRulesSchema>;
+
 export const collisionRulesSchema = z.object({
   /** 0 = no bounce, 1 = perfectly elastic */
   restitution: z.number().min(0).max(1),

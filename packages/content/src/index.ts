@@ -7,6 +7,7 @@ import cruiseData from '../data/cruise.json';
 import eventData from '../data/events.json';
 import factionData from '../data/factions.json';
 import traderData from '../data/traders.json';
+import tutorialData from '../data/tutorial.json';
 import anomalyZoneData from '../data/anomaly-zone.json';
 import emberReachData from '../data/ember-reach.json';
 import graveyardData from '../data/graveyard.json';
@@ -26,6 +27,7 @@ import {
   campaignSchema,
   crewRulesSchema,
   cruiseRulesSchema,
+  tutorialRulesSchema,
   eventRulesSchema,
   factionSchema,
   traderRouteSchema,
@@ -41,6 +43,7 @@ import {
   type CampaignDefinition,
   type CrewRules,
   type CruiseRules,
+  type TutorialRules,
   type EventRules,
   type FactionDefinition,
   type TraderRoute,
@@ -71,6 +74,7 @@ export const CAMPAIGN: CampaignDefinition = campaignSchema.parse(campaignData);
 export const CONTRACT_RULES: ContractRules = contractRulesSchema.parse(contractData);
 export const COLLISION_RULES: CollisionRules = collisionRulesSchema.parse(physicsData);
 export const CRUISE_RULES: CruiseRules = cruiseRulesSchema.parse(cruiseData);
+export const TUTORIAL_RULES: TutorialRules = tutorialRulesSchema.parse(tutorialData);
 export const OUTPOST_ALPHA: SectorDefinition = sectorDefinitionSchema.parse(outpostAlphaData);
 
 /** Every sector, keyed by id. Outpost Alpha is where a new game starts. */

@@ -12,6 +12,8 @@ export interface Settings {
   mouseSteering: boolean;
   /** New games launch with flight assist on. */
   startAssisted: boolean;
+  /** Short tips at the moment they apply (closing on a rock, shields down…). */
+  tips: boolean;
   locale: Locale | null;
   /** No full-screen flashes on damage and jumps. */
   reduceFlashes: boolean;
@@ -32,6 +34,7 @@ export const DEFAULT_SETTINGS: Settings = {
   rumble: true,
   mouseSteering: true,
   startAssisted: true,
+  tips: true,
   locale: null,
   reduceFlashes: false,
   textScale: 1,

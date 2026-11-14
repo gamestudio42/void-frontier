@@ -1,6 +1,6 @@
 import { COLLISION_RULES, getShip, type CollisionRules, type SectorDefinition } from '@void-frontier/content';
 import { FIXED_DT, Rng, toRadians } from '@void-frontier/kernel';
-import { spawnShip } from './ship.ts';
+import { forwardOf, spawnShip } from './ship.ts';
 import { aiSystem, encounterSystem, spawnEncounter } from './ai.ts';
 import { projectileSystem, weaponSystem } from './combat.ts';
 import { jettison, pickupSystem, scan, scanExpirySystem } from './mining.ts';
@@ -162,6 +162,40 @@ export class Simulation {
 
   requestDock(id: EntityId) {
     return requestDock(this.world, id);
+  }
+
+  /**
+   * The guided first sortie keeps the sector quiet: holding removes the encounter groups
+   * and stops raids; releasing brings them back after `releaseSeconds`.
+   */
+  holdHostiles(held: boolean, releaseSeconds = 0): void {
+    const world = this.world;
+    if (held === world.hostilesHeld) return;
+    world.hostilesHeld = held;
+    for (const encounter of world.encounters) {
+      if (held) {
+        for (const id of encounter.members) world.destroyEntity(id);
+        encounter.members = [];
+        encounter.respawnAt = null;
+      } else if (encounter.members.length === 0) {
+        encounter.respawnAt = world.tick + Math.round(releaseSeconds / this.dt);
+      }
+    }
+  }
+
+  /** One pirate `distance` metres ahead of the player, already hunting it: the fight lesson. */
+  spawnSparring(ship: string, distance: number): EntityId | null {
+    const me = this.world.bodies.get(this.playerId);
+    if (!me) return null;
+    const ahead = forwardOf(me.angle);
+    const at = { x: me.position.x + ahead.x * distance, y: me.position.y + ahead.y * distance };
+    const [id] = spawnEncounter(this.world, { id: 'sparring', ship, faction: 'pirate', count: 1, spawn: at, patrol: [[at.x, at.y]], respawnDelay: 1e6 });
+    const pilot = this.world.pilots.get(id);
+    if (pilot) {
+      pilot.target = this.playerId;
+      pilot.mode = 'engage';
+    }
+    return id ?? null;
   }
 
   undock(id: EntityId): boolean {

@@ -20,6 +20,8 @@ export class World {
   /** Asteroids revealed by a scanner pulse, with the tick the reading expires. */
   readonly scanned = new Map<EntityId, number>();
   readonly encounters: EncounterState[] = [];
+  /** While true (the guided first sortie) encounters stay away and raids wait. */
+  hostilesHeld = false;
   /** Broad-phase index of colliders, rebuilt by the collision system every step. */
   spatial: SpatialIndex | null = null;
   /** Gameplay randomness (weapon spread, AI choices); seeded so runs replay exactly. */
