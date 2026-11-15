@@ -228,6 +228,19 @@ export function drawTargeting(
   const hotBody = hot ? sim.world.bodies.get(cutting!) : undefined;
   if (hot && hotBody) drawHeatRing(ctx, renderer, width, height, hotBody.position, hot.radius, hot.stress);
 
+  // Crews that gave up: pale brackets, so the player can find them to board.
+  for (const [id, other] of sim.world.ships) {
+    if (!other.surrendered || other.destroyed) continue;
+    const body = sim.world.bodies.get(id)!;
+    const s = renderer.worldToScreen(body.position, width, height);
+    if (!s.onScreen) continue;
+    ctx.strokeStyle = 'rgba(214, 221, 228, 0.8)';
+    ctx.lineWidth = 1.25;
+    ctx.setLineDash([4, 3]);
+    brackets(ctx, s.x, s.y, 18);
+    ctx.setLineDash([]);
+  }
+
   for (const id of hostilesNear(sim.world, sim.playerId, me.definition.sensors.range)) {
     const body = sim.world.bodies.get(id)!;
     const s = renderer.worldToScreen(body.position, width, height);

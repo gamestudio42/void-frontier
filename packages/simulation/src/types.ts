@@ -118,6 +118,8 @@ export interface Ship {
   energy: number;
   /** Tick of the last weapon damage; shields recharge after the definition's delay. */
   lastDamageTick: number;
+  /** A pirate that gave up: engines cut, guns cold, waiting to be boarded. */
+  surrendered?: boolean;
   weapons: WeaponMount[];
   kills: number;
   /** Hull integrity points; the ship is destroyed at 0. */
@@ -219,7 +221,9 @@ export type SimEvent =
   | { type: 'contract'; id: number; kind: 'delivery' | 'mining' | 'bounty' | 'escort' | 'salvage' | 'patrol' | 'recon'; outcome: 'completed' | 'failed' | 'abandoned'; reward: number }
   | { type: 'news'; item: NewsItem }
   | { type: 'fleet'; note: FleetNote }
-  | { type: 'boarded'; ship: EntityId; credits: number; salvage: number }
+  | { type: 'boarded'; ship: EntityId; credits: number; salvage: number; ransom: boolean }
+  /** A pirate's nerve broke (it runs, or gives up) or came back. */
+  | { type: 'morale'; ship: EntityId; state: 'fleeing' | 'surrendered' | 'rallied' }
   | { type: 'campaign'; step: string; credits: number; finished: boolean }
   | { type: 'subsystemDamaged'; ship: EntityId; system: SubsystemId | 'weapon'; health: number }
   | { type: 'discovered'; id: string; kind: 'derelict' | 'deposit' | 'cache'; credits: number }
@@ -255,7 +259,7 @@ export interface Projectile {
   homing?: { target: EntityId | null; turnRate: number };
 }
 
-export type AiMode = 'patrol' | 'engage' | 'retreat';
+export type AiMode = 'patrol' | 'engage' | 'retreat' | 'flee' | 'surrendered';
 
 export interface AiPilot {
   mode: AiMode;
@@ -272,6 +276,16 @@ export interface AiPilot {
   fleet?: number;
   /** A fleet miner at work: cut rocks near the site and let the tractor gather the ore. */
   mine?: { site: { x: number; y: number }; rock: EntityId | null; resting?: boolean };
+  /** How a pirate fights (pirates.json); absent for the player's fleet and haulers. */
+  archetype?: string;
+  /** A pirate's nerve, 0..1: it runs or gives up when this breaks. */
+  morale?: number;
+  /** Tick the current flight ends and the pilot regroups. */
+  fleeUntil?: number;
+  /** A breaking pilot decides once whether to give up. */
+  surrenderRolled?: boolean;
+  /** Pirate squads: the leader's id, shared by every member (the leader included). */
+  squad?: EntityId;
   /** A wingman: hold formation on the leader, fight what threatens it. */
   escort?: { leader: EntityId; slot: number };
 }

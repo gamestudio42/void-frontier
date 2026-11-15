@@ -48,7 +48,8 @@ export function damageChosenSystem(world: World, shipId: EntityId, system: Subsy
 }
 
 /** A pirate with dead engines or a dead reactor drifts, helpless, until someone boards or finishes it. */
-export const isDisabled = (ship: { faction: string; destroyed: boolean; subsystems: Record<SubsystemId, number> }): boolean => ship.faction === 'pirate' && !ship.destroyed && (ship.subsystems.engines <= 0.05 || ship.subsystems.reactor <= 0.05);
+export const isDisabled = (ship: { faction: string; destroyed: boolean; surrendered?: boolean; subsystems: Record<SubsystemId, number> }): boolean =>
+  ship.faction === 'pirate' && !ship.destroyed && (ship.surrendered === true || ship.subsystems.engines <= 0.05 || ship.subsystems.reactor <= 0.05);
 
 function hit(world: World, shipId: EntityId, system: SubsystemId, amount: number): void {
   const ship = world.ships.get(shipId)!;

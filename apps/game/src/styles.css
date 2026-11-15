@@ -2385,3 +2385,21 @@ body.gamepad :focus {
     animation: none;
   }
 }
+
+/* The target's pilot: how it fights and whether its nerve holds. */
+.target-pilot {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.target-pilot .nerve.steady {
+  color: var(--text);
+}
+
+.target-pilot .nerve.wavering {
+  color: var(--amber);
+}
+
+.target-pilot .nerve.fleeing {
+  color: var(--green);
+}

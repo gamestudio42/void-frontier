@@ -1,5 +1,5 @@
 import { atan2, length, toDegrees, worldToLocal } from '@void-frontier/kernel';
-import { MINING_RULES } from '@void-frontier/content';
+import { MINING_RULES, PIRATE_RULES, getArchetype } from '@void-frontier/content';
 import { onVein } from './mining.ts';
 import { forwardOf, holdMass, holdVolume, shipMass } from './ship.ts';
 import { leadPoint, muzzlePosition } from './combat.ts';
@@ -169,6 +169,10 @@ export function readTelemetry(world: World, id: EntityId): FlightTelemetry | nul
 export interface TargetInfo {
   id: EntityId;
   shipId: string;
+  /** How a pirate fights (its archetype), or null for other ships. */
+  archetype: string | null;
+  /** A pirate's nerve as the HUD names it, or null for other ships. */
+  nerve: 'steady' | 'wavering' | 'fleeing' | null;
   faction: string;
   position: { x: number; y: number };
   distance: number;
@@ -201,9 +205,14 @@ export function readTarget(world: World, viewer: EntityId, target: EntityId | nu
     const solution = leadPoint(muzzlePosition(me, gun), me.velocity, body.position, body.velocity, gun.definition.projectileSpeed, gun.definition.velocityInheritance);
     if (solution && solution.time <= gun.definition.projectileLifetime) lead = solution.point;
   }
+  const pilot = world.pilots.get(target);
+  const nerve =
+    pilot?.morale === undefined ? null : pilot.mode === 'flee' ? 'fleeing' : pilot.morale < PIRATE_RULES.morale.fleeBelow + 0.15 ? 'wavering' : 'steady';
   return {
     id: target,
     shipId: ship.definition.id,
+    archetype: pilot?.morale === undefined ? null : getArchetype(pilot.archetype, ship.baseDefinition.id).id,
+    nerve,
     faction: ship.faction,
     position: { ...body.position },
     distance,
