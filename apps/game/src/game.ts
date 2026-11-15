@@ -604,6 +604,11 @@ export class Game {
               this.notices.push({ text: `morale:${event.state}`, kind: event.state === 'surrendered' ? 'completed' : 'abandoned', reward: 0, at: this.clock, id: -9700 - event.ship });
             }
           }
+          if (event.type === 'cargo' && event.state !== 'strain') {
+            const states = ['shattered', 'detonated', 'bonusLost'];
+            this.notices.push({ text: `cargo:${event.state}`, kind: event.state === 'bonusLost' ? 'abandoned' : 'failed', reward: 0, at: this.clock, id: -20000 - event.id * 4 - states.indexOf(event.state) });
+            if (event.state !== 'bonusLost') this.rumble(event.state === 'detonated' ? 1 : 0.5, 300);
+          }
           if (event.type === 'discovered') {
             this.discovered.add(event.id);
             this.notices.push({ text: `poi:${event.kind}`, kind: 'completed', reward: event.credits, at: this.clock, id: -2 - this.discovered.size });
@@ -741,6 +746,10 @@ export class Game {
         sinceHit: this.clock - this.lastHitAt,
         hunted: hostiles.some((id) => world.pilots.get(id)?.target === me),
         targetLocked: this.target !== null,
+        fragileStrain: (() => {
+          const fragile = this.sim.missions?.active.find((c) => c.cargo);
+          return fragile?.cargo ? fragile.cargo.g / (this.sim.missions!.rules.modifiers.fragile.maxG) : null;
+        })(),
         surrenderNear: (() => {
           const board = boardingStatus(this.sim);
           return !!board && board.surrendered && !board.ready;
@@ -1038,6 +1047,14 @@ export class Game {
       id: c.id,
       kind: c.kind,
       elite: c.elite,
+      client: c.client ?? null,
+      loyalty: c.client ? (board.clients[c.client] ?? 0) : 0,
+      regular: !!c.client && (board.clients[c.client] ?? 0) >= board.rules.loyalty.regularAt,
+      modifier: c.modifier ?? null,
+      integrity: c.cargo?.integrity ?? null,
+      g: c.cargo ? c.cargo.g : null,
+      maxG: c.modifier === 'fragile' ? board.rules.modifiers.fragile.maxG : null,
+      bonusLost: !!c.bonusLost,
       reward: payout(board, c),
       seconds: c.duration,
       units: c.delivery?.units ?? c.mining?.units ?? c.bounty?.count ?? c.patrol?.stops.length ?? 0,

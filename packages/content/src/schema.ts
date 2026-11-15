@@ -802,6 +802,42 @@ export const contractRulesSchema = z.object({
     /** metres: stay this close to the hauler when it arrives */
     range: positive,
   }),
+  /**
+   * Conditions that make a contract a piloting job. `reward` multiplies the pay; a
+   * delivery without a client takes one with probability `chance`.
+   */
+  modifiers: z.object({
+    chance: z.number().min(0).max(1),
+    /**
+     * Crates that crack above `maxG` (felt acceleration: thrust, impacts, dashes; not
+     * gravity). Integrity falls by `lossPerGSecond` per g over the limit per second, at
+     * most `maxLossPerStep` in one step; below `failBelow` they are lost. Pay scales
+     * with what arrives intact.
+     */
+    fragile: z.object({ maxG: positive, lossPerGSecond: positive, maxLossPerStep: positive, failBelow: z.number().min(0).max(1), reward: positive }),
+    /** Cargo that goes off on an impact over `impactSpeed` m/s or a hull hit, for `blastDamage`. */
+    volatile: z.object({ impactSpeed: positive, blastDamage: positive, reward: positive }),
+    /** `time` times the usual deadline. */
+    rush: z.object({ time: z.number().positive().max(1), reward: positive }),
+    /** The bonus is paid only if the brake is never used. */
+    noBrake: z.object({ reward: positive }),
+  }),
+  /** Named clients come back: each job done for one pays a little more, up to `maxBonus`. */
+  loyalty: z.object({ offerChance: z.number().min(0).max(1), bonusPerJob: z.number().min(0), maxBonus: z.number().min(0), regularAt: z.number().int().min(1) }),
+  clients: z
+    .array(
+      z.object({
+        id: z.string().regex(/^[a-z][a-z0-9_]*$/),
+        faction: z.string(),
+        kinds: z.array(z.enum(['delivery', 'mining', 'bounty', 'escort', 'salvage', 'patrol', 'recon'])).min(1),
+        modifier: z.enum(['fragile', 'volatile', 'rush', 'noBrake']).optional(),
+      }),
+    )
+    .min(1),
 });
+
+export type ContractModifier = 'fragile' | 'volatile' | 'rush' | 'noBrake';
+/** Modifiers that only make sense when the ship carries the goods. */
+export const CARGO_MODIFIERS: readonly ContractModifier[] = ['fragile', 'volatile', 'noBrake'];
 
 export type ContractRules = z.infer<typeof contractRulesSchema>;

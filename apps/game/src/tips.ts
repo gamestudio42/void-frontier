@@ -27,6 +27,8 @@ export interface TipContext {
   targetLocked: boolean;
   /** A pirate that surrendered is in boarding range of the prompt, not yet lined up. */
   surrenderNear: boolean;
+  /** Felt g over the fragile cargo's limit (1 = at the limit), or null with no fragile job. */
+  fragileStrain: number | null;
 }
 
 export interface Tip {
@@ -81,6 +83,13 @@ export const TIPS: Tip[] = [
     solved: (c) => c.telemetry.chaff,
   },
   { id: 'dash', text: 'tip.dash', when: (c) => c.hunted && ready(c, 'dash') && !c.telemetry.docked, solved: (c) => !ready(c, 'dash') },
+  {
+    id: 'fragile',
+    text: 'tip.fragile',
+    urgent: true,
+    when: (c) => c.fragileStrain !== null && c.fragileStrain > 0.85 && !c.telemetry.docked,
+    solved: (c) => c.fragileStrain === null || c.fragileStrain < 0.6,
+  },
   { id: 'surrender', text: 'tip.surrender', when: (c) => c.surrenderNear, solved: (c) => !c.surrenderNear },
   { id: 'heat', text: 'tip.heat', when: (c) => c.telemetry.weapons.some((w) => w.overheated) },
   {

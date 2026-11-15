@@ -15,7 +15,10 @@ const local = (sim: Simulation) => sim.missions!.offers[HOME];
 function offerOf(sim: Simulation, kind: Contract['kind'], where: 'drop' | 'station' = 'drop'): Contract {
   const board = sim.missions!;
   for (let i = 0; i < 400; i++) {
-    const found = local(sim).find((o) => o.kind === kind && (kind !== 'delivery' || (where === 'drop' ? !!o.delivery!.drop : !!o.delivery!.station)));
+    // Plain jobs only: modifiers and named clients have their own tests.
+    const found = local(sim).find(
+      (o) => o.kind === kind && !o.modifier && !o.client && (kind !== 'delivery' || (where === 'drop' ? !!o.delivery!.drop : !!o.delivery!.station)),
+    );
     if (found) return found;
     local(sim).shift();
     board.refreshTick = 0;

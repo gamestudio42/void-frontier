@@ -23,6 +23,7 @@ import stationData from '../data/stations.json';
 import upgradeData from '../data/upgrades.json';
 import weaponData from '../data/weapons.json';
 import {
+  CARGO_MODIFIERS,
   asteroidTypeSchema,
   collisionRulesSchema,
   contractRulesSchema,
@@ -115,6 +116,12 @@ export const getWeapon = (id: string): WeaponDefinition => lookup(WEAPONS, 'weap
 for (const ship of SHIPS.values()) for (const hardpoint of ship.hardpoints) getWeapon(hardpoint.weapon);
 for (const type of ASTEROID_TYPES.values()) getResource(type.resource);
 for (const upgrade of UPGRADES.values()) if (upgrade.requires) getFaction(upgrade.requires.faction);
+for (const client of CONTRACT_RULES.clients) {
+  getFaction(client.faction);
+  if (client.modifier && CARGO_MODIFIERS.includes(client.modifier) && client.kinds.some((k) => k !== 'delivery')) {
+    throw new Error(`Client ${client.id}: a ${client.modifier} job must be a delivery`);
+  }
+}
 
 /** The family a module belongs to and its rank in it (Mk I = 1). */
 export const upgradeFamily = (id: string): string => getUpgrade(id).family ?? id;

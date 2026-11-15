@@ -1,4 +1,6 @@
-import { CONTRACT_RULES, FACTIONS, SECTORS, getFaction, getResource, getStation, type ContractRules } from '@void-frontier/content';
+import { CARGO_MODIFIERS, CONTRACT_RULES, FACTIONS, SECTORS, getFaction, getResource, getStation, type ContractModifier, type ContractRules } from '@void-frontier/content';
+import { applyWeaponDamage } from './damage.ts';
+import { gravityAt } from './exploration.ts';
 import { holdSpaceFor } from './ship.ts';
 import type { EntityId } from './types.ts';
 import type { World } from './world.ts';
@@ -44,6 +46,17 @@ export interface Contract {
   patrol?: { stops: string[]; next: number };
   /** Pulse the scanner close to this relay beacon. */
   recon?: { drop: string };
+  /** The named client behind the job, if any (see `clients` in contracts.json). */
+  client?: string;
+  /** What makes it a piloting job: fragile or volatile cargo, a rush, no brake. */
+  modifier?: ContractModifier;
+  /**
+   * Fragile crates: share still intact, the felt g of the last step (for the HUD), and
+   * the velocity the last step ended with, to measure the next one against.
+   */
+  cargo?: { integrity: number; g: number; lastVelocity: { x: number; y: number } | null; lastTick: number };
+  /** A no-brake job whose pilot touched the brake: the bonus is gone. */
+  bonusLost?: boolean;
 }
 
 export type ContractOutcome = 'completed' | 'failed' | 'abandoned';
@@ -61,6 +74,8 @@ export interface MissionBoard {
   nextId: number;
   /** Tick of the next automatic board refresh. */
   refreshTick: number;
+  /** Jobs done for each named client, net of failures: their loyalty. */
+  clients: Record<string, number>;
 }
 
 /** A board covering every sector: drops from all of them, and every friendly station. */
@@ -78,7 +93,7 @@ export function createBoard(rules: ContractRules = CONTRACT_RULES): MissionBoard
     }
   }
   const reputation = Object.fromEntries([...FACTIONS.values()].map((f) => [f.id, f.hostile ? rules.reputation.min : 0]));
-  return { rules, drops, stations, offers: {}, active: [], history: [], reputation, nextId: 1, refreshTick: 0 };
+  return { rules, drops, stations, offers: {}, active: [], history: [], reputation, nextId: 1, refreshTick: 0, clients: {} };
 }
 
 /** Jumps between two sectors along the gate network (breadth-first). */
@@ -134,8 +149,37 @@ function pickWeighted(world: World, weights: Record<string, number>): string {
 
 const int = (world: World, min: number, max: number) => min + Math.floor(world.rng.next() * (max - min + 1));
 
-/** A new offer for a station's board; elite contracts appear once reputation is high enough. */
+/**
+ * A new offer for a station's board; elite contracts appear once reputation is high
+ * enough. A named client of the station's faction may take the job and bring its own
+ * condition; a delivery without one may still carry a modifier.
+ */
 export function generateOffer(world: World, board: MissionBoard, issuer: ContractStation): Contract {
+  const offer = baseOffer(world, board, issuer);
+  const rules = board.rules;
+  const clients = rules.clients.filter((c) => c.faction === issuer.faction && c.kinds.includes(offer.kind));
+  if (clients.length > 0 && world.rng.next() < rules.loyalty.offerChance) {
+    const client = clients[Math.floor(world.rng.next() * clients.length)];
+    offer.client = client.id;
+    if (client.modifier) applyModifier(rules, offer, client.modifier);
+  } else if (offer.delivery && world.rng.next() < rules.modifiers.chance) {
+    const kinds: ContractModifier[] = ['fragile', 'volatile', 'rush', 'noBrake'];
+    applyModifier(rules, offer, kinds[Math.floor(world.rng.next() * kinds.length)]);
+  }
+  return offer;
+}
+
+/** Puts a condition on a contract and adjusts its pay and time. Cargo conditions need cargo. */
+export function applyModifier(rules: ContractRules, contract: Contract, modifier: ContractModifier): boolean {
+  if (CARGO_MODIFIERS.includes(modifier) && !contract.delivery) return false;
+  contract.modifier = modifier;
+  contract.reward = Math.round(contract.reward * rules.modifiers[modifier].reward);
+  if (modifier === 'rush') contract.duration = Math.round(contract.duration * rules.modifiers.rush.time);
+  if (modifier === 'fragile') contract.cargo = { integrity: 1, g: 0, lastVelocity: null, lastTick: -1 };
+  return true;
+}
+
+function baseOffer(world: World, board: MissionBoard, issuer: ContractStation): Contract {
   const rules = board.rules;
   const elite = standing(board, issuer.faction) >= rules.reputation.eliteThreshold && world.rng.next() < 0.5;
   const unitsScale = elite ? rules.elite.unitsMultiplier : 1;
@@ -207,8 +251,24 @@ export function fillOffers(world: World, board: MissionBoard): void {
   }
 }
 
-/** Reward actually paid for a contract at the current reputation. */
-export const payout = (board: MissionBoard, contract: Contract): number => Math.round(contract.reward * rewardScale(board, contract.faction));
+/** Share added to a named client's pay for the jobs already done for them. */
+export function loyaltyBonus(board: MissionBoard, client: string | undefined): number {
+  if (!client) return 0;
+  const loyalty = board.rules.loyalty;
+  return Math.min(loyalty.maxBonus, (board.clients[client] ?? 0) * loyalty.bonusPerJob);
+}
+
+/**
+ * Reward actually paid for a contract: scaled by reputation and the client's loyalty,
+ * by the share of fragile crates still intact, and without the no-brake bonus once the
+ * brake was used.
+ */
+export function payout(board: MissionBoard, contract: Contract): number {
+  let reward = contract.reward * rewardScale(board, contract.faction) * (1 + loyaltyBonus(board, contract.client));
+  if (contract.cargo) reward *= contract.cargo.integrity;
+  if (contract.bonusLost) reward /= board.rules.modifiers.noBrake.reward;
+  return Math.round(reward);
+}
 
 /** Changes reputation in place: the world's `standing` is the same object. */
 function adjustReputation(board: MissionBoard, faction: string, delta: number): void {
@@ -224,6 +284,10 @@ function close(world: World, board: MissionBoard, contract: Contract, outcome: C
     adjustReputation(board, contract.faction, contract.repGain);
   } else {
     adjustReputation(board, contract.faction, -(outcome === 'failed' ? board.rules.penalty.failed : board.rules.penalty.abandoned));
+  }
+  if (contract.client) {
+    const done = board.clients[contract.client] ?? 0;
+    board.clients[contract.client] = outcome === 'completed' ? done + 1 : Math.max(0, done - 1);
   }
   board.history.unshift({ id: contract.id, kind: contract.kind, outcome, reward });
   board.history.length = Math.min(board.history.length, 12);
@@ -326,6 +390,7 @@ export function missionSystem(world: World, board: MissionBoard, shipId: EntityI
       close(world, board, contract, 'failed');
       continue;
     }
+    if (contract.modifier && ship && body && !ship.destroyed && watchCargo(world, board, contract, shipId, dt)) continue;
     if (contract.patrol && ship && body && !ship.destroyed) {
       const stop = board.drops.find((p) => p.id === contract.patrol!.stops[contract.patrol!.next])!;
       const near = stop.sector === world.sectorId && separation(stop.position, body.position) <= board.rules.patrol.radius;
@@ -360,6 +425,71 @@ export function missionSystem(world: World, board: MissionBoard, shipId: EntityI
     fillOffers(world, board);
     board.refreshTick = world.tick + Math.round(board.rules.refreshSeconds / dt);
   }
+}
+
+const STANDARD_GRAVITY = 9.81;
+
+/**
+ * The conditions of a modified job, checked each step while it runs. Returns true when
+ * the job ended here (the cargo was lost).
+ */
+function watchCargo(world: World, board: MissionBoard, contract: Contract, shipId: EntityId, dt: number): boolean {
+  const ship = world.ships.get(shipId)!;
+  const body = world.bodies.get(shipId)!;
+  const rules = board.rules.modifiers;
+  const flying = ship.docked === null;
+  if (contract.modifier === 'noBrake' && flying && ship.command.brake && !contract.bonusLost) {
+    contract.bonusLost = true;
+    world.events.push({ type: 'cargo', id: contract.id, state: 'bonusLost', integrity: 1 });
+  }
+  if (contract.modifier === 'fragile' && contract.cargo) {
+    const cargo = contract.cargo;
+    // Felt acceleration: the change in velocity over the last step, less what gravity
+    // did (crates fall with the ship). Thrust, impacts and dashes all count.
+    if (flying && cargo.lastVelocity && cargo.lastTick === world.tick - 1) {
+      const dvx = body.velocity.x - cargo.lastVelocity.x;
+      const dvy = body.velocity.y - cargo.lastVelocity.y;
+      const felt = Math.max(0, Math.sqrt(dvx * dvx + dvy * dvy) / dt - gravityAt(world, body.position));
+      cargo.g = felt / STANDARD_GRAVITY;
+      if (cargo.g > rules.fragile.maxG) {
+        const loss = Math.min(rules.fragile.maxLossPerStep, (cargo.g - rules.fragile.maxG) * rules.fragile.lossPerGSecond * dt);
+        cargo.integrity = Math.max(0, cargo.integrity - loss);
+        world.events.push({ type: 'cargo', id: contract.id, state: 'strain', integrity: cargo.integrity });
+      }
+    } else cargo.g = 0;
+    cargo.lastVelocity = flying ? { ...body.velocity } : null;
+    cargo.lastTick = world.tick;
+    if (cargo.integrity < rules.fragile.failBelow) return loseCargo(world, board, contract, shipId, 'shattered');
+  }
+  if (contract.modifier === 'volatile' && flying) {
+    const jolted = world.events.some(
+      (e) =>
+        (e.type === 'collision' && (e.a === shipId || e.b === shipId) && e.speed >= rules.volatile.impactSpeed) ||
+        (e.type === 'hit' && e.target === shipId && e.hullDamage > 0),
+    );
+    if (jolted) {
+      loseCargo(world, board, contract, shipId, 'detonated');
+      // The blast goes off inside the shield: it hits the hull alone.
+      const shield = ship.shield;
+      ship.shield = 0;
+      applyWeaponDamage(world, shipId, -1, rules.volatile.blastDamage, { shield: 1, hull: 1 }, { ...body.position }, false);
+      if (!ship.destroyed) ship.shield = shield;
+      return true;
+    }
+  }
+  return false;
+}
+
+/** The job's crates are gone (broken or blown): out of the hold, and the contract fails. */
+function loseCargo(world: World, board: MissionBoard, contract: Contract, shipId: EntityId, state: 'shattered' | 'detonated'): true {
+  const ship = world.ships.get(shipId)!;
+  const crates = board.rules.delivery.cargo;
+  const left = (ship.cargo.get(crates) ?? 0) - (contract.delivery?.units ?? 0);
+  if (left > 0) ship.cargo.set(crates, left);
+  else ship.cargo.delete(crates);
+  world.events.push({ type: 'cargo', id: contract.id, state, integrity: contract.cargo?.integrity ?? 0 });
+  close(world, board, contract, 'failed');
+  return true;
 }
 
 /**

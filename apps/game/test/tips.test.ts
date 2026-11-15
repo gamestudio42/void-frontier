@@ -23,6 +23,7 @@ function ctx(now: number, patch: Partial<TipContext> = {}, telemetry: Partial<ty
     hunted: false,
     targetLocked: false,
     surrenderNear: false,
+    fragileStrain: null,
     ...patch,
   };
 }
@@ -105,5 +106,11 @@ describe('contextual tips', () => {
     const dash = { kind: 'dash' as const, module: 'afterburner', tier: 1, ready: 1, readyIn: 0, block: null };
     // Locked on already, so the target tip is quiet and the dash tip can speak.
     expect(coach.update(ctx(0, { hunted: true, targetLocked: true }, { abilities: [dash] }))?.id).toBe('dash');
+  });
+  it('warns a pilot about to crack fragile crates, and lets go once they ease off', () => {
+    const coach = new TipCoach(rules, {});
+    expect(coach.update(ctx(0, { fragileStrain: 0.5 }))).toBeNull();
+    expect(coach.update(ctx(0.2, { fragileStrain: 1.3 }))?.id).toBe('fragile');
+    expect(coach.update(ctx(0.4, { fragileStrain: 0.3 }))).toBeNull();
   });
 });

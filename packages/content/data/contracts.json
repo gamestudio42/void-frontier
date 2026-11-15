@@ -84,5 +84,100 @@
     "maxCredits": 800,
     "minSalvage": 12,
     "maxSalvage": 30
-  }
+  },
+  "modifiers": {
+    "chance": 0.3,
+    "fragile": {
+      "maxG": 2.0,
+      "lossPerGSecond": 0.25,
+      "maxLossPerStep": 0.35,
+      "failBelow": 0.3,
+      "reward": 1.6
+    },
+    "volatile": {
+      "impactSpeed": 6,
+      "blastDamage": 240,
+      "reward": 1.8
+    },
+    "rush": {
+      "time": 0.55,
+      "reward": 1.4
+    },
+    "noBrake": {
+      "reward": 1.35
+    }
+  },
+  "loyalty": {
+    "offerChance": 0.45,
+    "bonusPerJob": 0.04,
+    "maxBonus": 0.2,
+    "regularAt": 3
+  },
+  "clients": [
+    {
+      "id": "halden_optics",
+      "faction": "outpost_authority",
+      "kinds": [
+        "delivery"
+      ],
+      "modifier": "fragile"
+    },
+    {
+      "id": "dr_maru",
+      "faction": "outpost_authority",
+      "kinds": [
+        "delivery"
+      ],
+      "modifier": "rush"
+    },
+    {
+      "id": "vel_corsa",
+      "faction": "outpost_authority",
+      "kinds": [
+        "delivery"
+      ],
+      "modifier": "noBrake"
+    },
+    {
+      "id": "lark_salvage",
+      "faction": "outpost_authority",
+      "kinds": [
+        "salvage",
+        "recon"
+      ]
+    },
+    {
+      "id": "ferrum_demolitions",
+      "faction": "ferrum_combine",
+      "kinds": [
+        "delivery"
+      ],
+      "modifier": "volatile"
+    },
+    {
+      "id": "brask_assay",
+      "faction": "ferrum_combine",
+      "kinds": [
+        "mining"
+      ],
+      "modifier": "rush"
+    },
+    {
+      "id": "sgt_okafor",
+      "faction": "frontier_guard",
+      "kinds": [
+        "bounty",
+        "patrol"
+      ],
+      "modifier": "rush"
+    },
+    {
+      "id": "guard_ordnance",
+      "faction": "frontier_guard",
+      "kinds": [
+        "delivery"
+      ],
+      "modifier": "volatile"
+    }
+  ]
 }
