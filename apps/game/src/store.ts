@@ -114,6 +114,18 @@ export interface ContractView {
   sector: string | null;
   /** Escorts: the hauler's route id. */
   route: string | null;
+  /** The named client and how many jobs the player has done for them. */
+  client: string | null;
+  loyalty: number;
+  /** Enough jobs done that the client counts the player as a regular. */
+  regular: boolean;
+  modifier: 'fragile' | 'volatile' | 'rush' | 'noBrake' | null;
+  /** Fragile crates: share intact, felt g now, and the limit. */
+  integrity: number | null;
+  g: number | null;
+  maxG: number | null;
+  /** A no-brake job whose bonus is gone. */
+  bonusLost: boolean;
 }
 
 export interface ActiveContractView extends ContractView {

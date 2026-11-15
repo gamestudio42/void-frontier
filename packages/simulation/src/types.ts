@@ -225,6 +225,8 @@ export type SimEvent =
       losses: { ship: EntityId; shield: number; hull: number }[];
     }
   | { type: 'shipDestroyed'; id: EntityId; position: { x: number; y: number }; by: EntityId | null }
+  /** A modified job's cargo: strained (fragile), lost (shattered, detonated), or its no-brake bonus gone. */
+  | { type: 'cargo'; id: number; state: 'strain' | 'shattered' | 'detonated' | 'bonusLost'; integrity: number }
   | { type: 'contract'; id: number; kind: 'delivery' | 'mining' | 'bounty' | 'escort' | 'salvage' | 'patrol' | 'recon'; outcome: 'completed' | 'failed' | 'abandoned'; reward: number }
   | { type: 'news'; item: NewsItem }
   | { type: 'fleet'; note: FleetNote }

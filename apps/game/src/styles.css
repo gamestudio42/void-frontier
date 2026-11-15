@@ -2540,3 +2540,78 @@ body.gamepad :focus {
   font-size: 11px;
   letter-spacing: 0.08em;
 }
+
+/* Named clients and job conditions on contract cards and the tracker. */
+.job-terms {
+  margin: 4px 0 6px;
+  font-size: 12px;
+}
+
+.job-terms p {
+  margin: 3px 0;
+}
+
+.job-terms .client strong {
+  color: var(--text);
+}
+
+.job-terms .client q {
+  display: block;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.job-terms .regular,
+.job-terms .loyalty {
+  margin-left: 6px;
+  font-style: normal;
+  font-size: 11px;
+  color: var(--green);
+}
+
+.modifier .badge {
+  padding: 0 5px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.modifier {
+  color: var(--muted);
+}
+
+.modifier.fragile .badge {
+  color: var(--blue);
+}
+
+.modifier.volatile .badge {
+  color: var(--red);
+}
+
+.modifier.rush .badge {
+  color: var(--amber);
+}
+
+.modifier.noBrake .badge {
+  color: var(--green);
+}
+
+.job-status {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--blue);
+}
+
+.job-status.strained,
+.job-status.volatile,
+.job-status.lost {
+  color: var(--amber);
+}
+
+.job-status.strained {
+  color: var(--red);
+}

@@ -272,6 +272,21 @@ export class SpaceRenderer {
           if (mine && mine.hull > 0) this.ring(toScene(event.point, 0.5), 6 + Math.min(28, event.speed * 0.45), 0.35, 0xff6b5a, null);
           else if (mine && mine.shield > 0) this.ring(toScene(event.point, 0.5), 6 + Math.min(20, event.speed * 0.35), 0.3, 0x6fd3ff, null);
         }
+      } else if (event.type === 'cargo' && (event.state === 'detonated' || event.state === 'shattered')) {
+        // The job's cargo going: a blast in the hold, or a spray of glittering fragments.
+        const at = sim.world.bodies.get(sim.playerId)?.position;
+        if (at && event.state === 'detonated') {
+          this.explode(at);
+          this.rig.shake(0.8);
+        } else if (at) {
+          const p = toScene(at, 1);
+          for (let i = 0; i < 50; i++) {
+            const a = Math.random() * Math.PI * 2;
+            const s = 6 + Math.random() * 18;
+            this.particles.emit(p.x, p.y, p.z, Math.cos(a) * s, (Math.random() - 0.5) * 6, Math.sin(a) * s, HIT_FLASH, SHIELD_SPARK_END, 0.8 + Math.random(), 0.8 + Math.random() * 0.8, 0.6);
+          }
+          this.rig.shake(0.3);
+        }
       } else if (event.type === 'ability') {
         this.abilityFx(event, event.ship === sim.playerId, sim.world.bodies.get(event.ship)?.velocity ?? { x: 0, y: 0 });
       } else if (event.type === 'scan') {

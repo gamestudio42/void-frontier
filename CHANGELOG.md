@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased: job conditions and named clients
+
+- Some contracts now come with a condition and pay more for it: fragile cargo (keep it under 2 g: no boosting, no dashes, no bumps; you are paid for what arrives intact), volatile cargo (one hard bump or hull hit and it blows up in your hold), rush jobs with half the time, and no-brake runs with a bonus if you never touch the brake.
+- Eight named clients post jobs of their own on the boards, each with their own kind of work and condition. The more jobs you do for one, the more they pay.
+- The tracker shows fragile cargo's condition and the g you are pulling, and a tip warns you before the crates crack.
+
 ## Unreleased: module verbs and tiers
 
 - The afterburner now dashes on 1: an instant kick along the stick, or straight ahead.

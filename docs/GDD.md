@@ -183,6 +183,8 @@ With a controller (standard mapping): left stick thrust and strafe, right stick 
 - **Hulls.** Bulwark frigate (60,000 cr at Bastion Watch, Guard +30) and Magpie salvager (20,000 cr at Ferrum Refinery, double salvage).
 - **Places.** The Graveyard (beyond the Anomaly Zone, hulks full of salvage, shields recharge at half speed) and Ember Reach (beyond Pirate Territory, rich ore, weapons cool slowly).
 - **Contracts.** Salvage orders, patrols past relay beacons, and recon with a scanner pulse at a beacon.
+- **Job conditions.** Some contracts carry a condition that makes them a piloting job, for more pay: fragile cargo that cracks above 2 g of felt acceleration (thrust is fine; boost, dashes and bumps are not) and pays for what arrives intact; volatile cargo that blows up in the hold on a hard bump or a hull hit; a rush at about half the time; and no-brake runs whose bonus is lost the moment the brake is used.
+- **Named clients.** Eight recurring clients across the three lawful factions (an optics house that ships glass, a field medic in a hurry, a courier syndicate betting on no-brake runs, a demolitions firm, a sergeant hunting raiders, and others) post jobs of their own kind with their own condition. Each job done for one adds 4% to their pay, up to 20%; a failed or abandoned one takes a job back.
 - **Story.** After the Dreadmaw you decide Kess Varo's fate. Justice pays less and earns the Guard's trust; the deal pays well and costs it. Each leads to its own last missions and ending.
 
 ## Look and feel (0.96)

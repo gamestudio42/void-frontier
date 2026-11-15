@@ -31,6 +31,43 @@ export function objective(c: ContractView, t: Translate): string {
   return t('contract.bounty.objective').replace('{count}', String(c.units));
 }
 
+/** Who asked for the job and what makes it hard: a quote from the client, a condition badge. */
+function JobTerms({ c, t }: { c: ContractView; t: Translate }) {
+  if (!c.client && !c.modifier) return null;
+  return (
+    <div className="job-terms">
+      {c.client && (
+        <p className="client" data-testid={`client-${c.client}`}>
+          <strong>{t(`client.${c.client}` as MessageKey)}</strong>
+          {c.regular && <em className="regular">{t('client.regular')}</em>}
+          {c.loyalty > 0 && !c.regular && <em className="loyalty">{t('client.jobs').replace('{count}', String(c.loyalty))}</em>}
+          <q>{t(`client.${c.client}.line` as MessageKey)}</q>
+        </p>
+      )}
+      {c.modifier && (
+        <p className={`modifier ${c.modifier}`} data-testid={`modifier-${c.modifier}`}>
+          <span className="badge">{t(`modifier.${c.modifier}` as MessageKey)}</span> {t(`modifier.${c.modifier}.desc` as MessageKey).replace('{g}', String(c.maxG ?? ''))}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** The live state of a modified job in flight: crates intact and felt g, or the bonus. */
+function JobStatus({ c, t }: { c: ContractView; t: Translate }) {
+  if (c.modifier === 'fragile' && c.integrity !== null) {
+    const strained = c.g !== null && c.maxG !== null && c.g > c.maxG;
+    return (
+      <span className={`job-status ${strained ? 'strained' : ''}`} data-testid={`cargo-${c.id}`} data-integrity={c.integrity.toFixed(2)}>
+        {t('modifier.fragile')} {Math.round(c.integrity * 100)}% · {(c.g ?? 0).toFixed(1)} / {c.maxG} g
+      </span>
+    );
+  }
+  if (c.modifier === 'noBrake') return <span className={`job-status ${c.bonusLost ? 'lost' : ''}`}>{t(c.bonusLost ? 'modifier.noBrake.lost' : 'modifier.noBrake.kept')}</span>;
+  if (c.modifier === 'volatile') return <span className="job-status volatile">{t('modifier.volatile.status')}</span>;
+  return null;
+}
+
 export function ContractsTab({ view, actions, t, locale }: { view: ContractsView; actions: ContractActions; t: Translate; locale: string }) {
   const full = view.active.length >= view.maxActive;
   return (
@@ -59,9 +96,11 @@ export function ContractsTab({ view, actions, t, locale }: { view: ContractsView
               <div>
                 <span className="kind">{t(`contract.kind.${c.kind}` as MessageKey)}</span>
                 <p>{objective(c, t)}</p>
+                <JobTerms c={c} t={t} />
                 <span className="meta">
                   {c.current}/{c.target} · {clock(c.timeLeft)}
                 </span>
+                <JobStatus c={c} t={t} />
               </div>
               <div className="contract-actions">
                 <strong>{formatNumber(locale, c.reward)} cr</strong>
@@ -88,6 +127,7 @@ export function ContractsTab({ view, actions, t, locale }: { view: ContractsView
               {c.elite && <em>{t('contract.elite')}</em>}
             </span>
             <p>{objective(c, t)}</p>
+            <JobTerms c={c} t={t} />
             <span className="meta">
               {t('contract.timeLimit')} {clock(c.seconds)}
             </span>
@@ -131,6 +171,7 @@ export function ContractTracker({ active, t }: { active: ActiveContractView[]; t
             {c.current}/{c.target} · {clock(c.timeLeft)}
             {c.kind !== 'delivery' && c.current >= c.target ? ` · ${t('contract.returnToStation')}` : ''}
           </span>
+          <JobStatus c={c} t={t} />
         </div>
       ))}
     </aside>
@@ -208,6 +249,8 @@ export function Notices({ notices, t, locale }: { notices: { id: number; kind: s
             <strong>
               {t(`system.${n.kind.slice(7)}` as MessageKey)} {n.outcome === 'failed' ? t('system.offline') : t('system.damaged')}
             </strong>
+          ) : n.kind.startsWith('cargo:') ? (
+            <strong>{t(`notice.cargo.${n.kind.slice(6)}` as MessageKey)}</strong>
           ) : n.kind.startsWith('poi:') ? (
             <>
               <strong>{t(`poi.${n.kind.slice(4)}` as MessageKey)}</strong>

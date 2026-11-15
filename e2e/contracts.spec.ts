@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test';
 interface Contract {
   id: number;
   delivery?: { drop?: string; sector: string };
+  modifier?: string;
 }
 interface DevGame {
   sim: {
@@ -24,7 +25,7 @@ test('takes a delivery contract, flies the crates to the relay and gets paid', a
     const game = (window as unknown as { voidFrontier: DevGame }).voidFrontier;
     const board = game.sim.missions;
     const local = () => board.offers.outpost_alpha_station;
-    const pick = () => local().find((c) => c.delivery?.drop && c.delivery.sector === 'outpost_alpha');
+    const pick = () => local().find((c) => c.delivery?.drop && c.delivery.sector === 'outpost_alpha' && !c.modifier);
     for (let i = 0; i < 400 && !pick(); i++) {
       local().shift();
       board.refreshTick = 0;

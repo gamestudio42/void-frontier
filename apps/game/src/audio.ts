@@ -430,6 +430,23 @@ export class AudioEngine {
         case 'boarded':
           if (e.ransom) this.chime([523, 784, 1047], 0.07);
           break;
+        case 'cargo':
+          if (e.state === 'strain') {
+            // Crates groaning in the hold, no more than four times a second.
+            if (now - this.lastCreak < 0.25) break;
+            this.lastCreak = now;
+            this.metal(220 + Math.random() * 80, 0.25, 0.12, 0);
+          } else if (e.state === 'shattered') {
+            this.burst({ duration: 0.5, freq: 7000, type: 'highpass', gain: 0.35, pan: 0, send: 0.4 });
+            for (let i = 0; i < 4; i++) this.metal(1800 + i * 450, 0.4, 0.08, (i - 1.5) * 0.3, i * 0.04);
+            this.chime([392, 311], 0.06, 0.3);
+          } else if (e.state === 'detonated') {
+            this.explosion(1, 0, true);
+            this.duck(0.7, 1.5);
+          } else {
+            this.chime([660, 440], 0.05);
+          }
+          break;
         case 'ability': {
           const where = at(e.position);
           const level = e.ship === sim.playerId ? 1 : where.gain;
@@ -458,6 +475,8 @@ export class AudioEngine {
       }
     }
   }
+
+  private lastCreak = 0;
 
   private admit(priority: Priority, gain: number, duration: number, kind: string): boolean {
     return gain >= 0.01 && this.voices.admit({ priority, gain, duration, kind }, this.ctx!.currentTime);
