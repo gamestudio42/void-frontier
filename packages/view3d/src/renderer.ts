@@ -1,4 +1,4 @@
-import type { SectorDefinition } from '@void-frontier/content';
+import type { AbilityKind, SectorDefinition } from '@void-frontier/content';
 import type { Vec2 } from '@void-frontier/kernel';
 import { readTelemetry, type EntityId, type SimEvent, type Simulation, type ThrusterOutput } from '@void-frontier/simulation';
 import {
@@ -38,6 +38,7 @@ import { FlightOverlay } from './overlay.ts';
 import { PALETTE } from './palette.ts';
 import { ParticleSystem } from './particles.ts';
 import { buildShipModel, type ShipModel, type ThrusterGroup } from './shipModel.ts';
+import { buildModuleKit, type ModuleKit } from './moduleKit.ts';
 import { buildStationModel, type StationModel } from './station.ts';
 
 export interface RenderOptions {
@@ -112,6 +113,8 @@ export class SpaceRenderer {
   private readonly pickups: PickupRenderer;
   private readonly beams: BeamRenderer;
   private readonly shields = new Map<EntityId, ShieldBubble>();
+  /** Verb modules drawn on each hull, rebuilt when the fit changes. */
+  private readonly kits = new Map<EntityId, { fit: string; kit: ModuleKit }>();
   private readonly projected = new Vector3();
   private readonly sun: DirectionalLight;
   private readonly starfield;
@@ -269,6 +272,8 @@ export class SpaceRenderer {
           if (mine && mine.hull > 0) this.ring(toScene(event.point, 0.5), 6 + Math.min(28, event.speed * 0.45), 0.35, 0xff6b5a, null);
           else if (mine && mine.shield > 0) this.ring(toScene(event.point, 0.5), 6 + Math.min(20, event.speed * 0.35), 0.3, 0x6fd3ff, null);
         }
+      } else if (event.type === 'ability') {
+        this.abilityFx(event, event.ship === sim.playerId, sim.world.bodies.get(event.ship)?.velocity ?? { x: 0, y: 0 });
       } else if (event.type === 'scan') {
         this.ring(toScene(event.position, 0.6), event.range, 1.3, 0x6fd3ff, null);
       } else if (event.type === 'asteroidFractured') {
@@ -466,6 +471,20 @@ export class SpaceRenderer {
       toScene(lerp2(body.previousPosition, body.position, alpha), 0, model.root.position);
       model.root.rotation.y = lerpAngle(body.previousAngle, body.angle, alpha);
       model.update(ship.output, this.time);
+      this.fitKit(id, model, ship.upgrades);
+      const kit = this.kits.get(id)?.kit;
+      if (kit) {
+        const ready = new Set<AbilityKind>();
+        for (const kind of ['dash', 'chaff', 'emp'] as const) if (sim.world.tick >= (ship.moduleReady?.[kind] ?? 0)) ready.add(kind);
+        kit.update(ready, this.time);
+      }
+      // A jammed ship crackles: blue sparks off its hull until the pulse wears off.
+      if (sim.world.tick < (ship.jammedUntil ?? 0) && Math.random() < frameDt * 14) {
+        const half = model.length / 2;
+        this.emitPosition.set((Math.random() - 0.5) * 2 * half, 1 + Math.random() * 2, (Math.random() - 0.5) * half).applyMatrix4(model.root.matrixWorld);
+        const p = this.emitPosition;
+        this.particles.emit(p.x, p.y, p.z, (Math.random() - 0.5) * 16, Math.random() * 6, (Math.random() - 0.5) * 16, SHIELD_SPARK, SHIELD_SPARK_END, 0.9, 0.25 + Math.random() * 0.25, 1);
+      }
       this.damageSmoke(model, ship.subsystems, toScene(body.velocity), frameDt);
       this.shields.get(id)?.update(ship.shield / Math.max(1, ship.definition.shield.capacity), frameDt);
       model.root.updateMatrixWorld();
@@ -478,8 +497,19 @@ export class SpaceRenderer {
         this.ships.delete(id);
         this.shields.get(id)?.dispose();
         this.shields.delete(id);
+        this.kits.get(id)?.kit.dispose();
+        this.kits.delete(id);
       }
     }
+  }
+
+  /** Rebuilds the hull's verb modules when the ship's fit changes (a purchase, a new tier). */
+  private fitKit(id: EntityId, model: ShipModel, upgrades: readonly string[]): void {
+    const fit = upgrades.join(',');
+    const current = this.kits.get(id);
+    if (current?.fit === fit) return;
+    current?.kit.dispose();
+    this.kits.set(id, { fit, kit: buildModuleKit(model.root, model.length, upgrades) });
   }
 
   /** Smoke from damaged sections and sparks from wrecked ones, emitted where the system sits. */
@@ -597,6 +627,45 @@ export class SpaceRenderer {
   }
 
   /** Expanding flat ring: explosion shockwave or scanner pulse. */
+  /** The look of a module verb: a burner flash, a cloud of decoys, an EMP shock ring. */
+  private abilityFx(event: Extract<SimEvent, { type: 'ability' }>, mine: boolean, shipVelocity: Vec2): void {
+    const p = toScene(event.position, 0.5);
+    const model = this.ships.get(event.ship);
+    const velocity = toScene(shipVelocity);
+    if (event.kind === 'dash') {
+      // A hard burn: hot exhaust thrown back against the kick, and a short flare ring.
+      const back = toScene({ x: -event.direction.x, y: -event.direction.y });
+      const reach = model ? model.length * 0.5 : 8;
+      for (let i = 0; i < 70; i++) {
+        const s = 30 + Math.random() * 60;
+        const spread = (Math.random() - 0.5) * 0.6;
+        const vx = back.x * s + back.z * spread * s;
+        const vz = back.z * s - back.x * spread * s;
+        this.particles.emit(p.x + back.x * reach, p.y, p.z + back.z * reach, velocity.x + vx, (Math.random() - 0.5) * 4, velocity.z + vz, BOOST, BOOST_END, 2 + Math.random() * 3, 0.4 + Math.random() * 0.4, 0.6);
+      }
+      this.ring(new Vector3(p.x + back.x * reach, p.y, p.z + back.z * reach), 18, 0.25, 0xffb347, null);
+      if (mine) this.rig.shake(0.25);
+    } else if (event.kind === 'chaff') {
+      // Foil and flares fanned out around the ship, drifting with it, and the cloud's edge.
+      for (let i = 0; i < 90; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const s = 8 + Math.random() * 40;
+        this.particles.emit(p.x, p.y + (Math.random() - 0.5) * 6, p.z, velocity.x + Math.cos(a) * s, (Math.random() - 0.5) * 6, velocity.z + Math.sin(a) * s, i % 3 ? HIT_FLASH : SPARK, SPARK_END, 1.2 + Math.random() * 1.5, 1.5 + Math.random() * 1.5, 0.8);
+      }
+      this.ring(p, event.radius, 0.9, 0xffd27a, null);
+    } else {
+      // The EMP: a fast shock ring out to its reach, a second slower one, a hard flash.
+      this.ring(p, event.radius, 0.45, 0x9fe7ff, null);
+      this.ring(p, event.radius * 0.7, 0.9, 0x6fd3ff, null);
+      for (let i = 0; i < 60; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const s = event.radius * (0.8 + Math.random() * 0.6);
+        this.particles.emit(p.x, p.y, p.z, Math.cos(a) * s, 0, Math.sin(a) * s, SHIELD_SPARK, SHIELD_SPARK_END, 1.5, 0.45, 1);
+      }
+      if (mine) this.rig.shake(0.4);
+    }
+  }
+
   private ring(position: Vector3, reach: number, duration: number, color: number, light: PointLight | null): void {
     const ring = new Mesh(
       new RingGeometry(0.97, 1, 96),

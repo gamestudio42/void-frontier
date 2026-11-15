@@ -19,6 +19,10 @@ export interface InputActions {
   cycleTarget(): void;
   zoom(factor: number): void;
   toggleCruise(): void;
+  /** Fires a module verb: the afterburner dash, chaff or the EMP pulse. */
+  useAbility(kind: 'dash' | 'chaff' | 'emp'): void;
+  /** Gamepad d-pad up and down: module verbs when fitted, zoom otherwise. */
+  padVerb(direction: 'up' | 'down'): void;
   /** Gamepad B over a menu or panel: close or go back. */
   uiBack(): void;
   /** The player switched between keyboard and mouse and a gamepad. */
@@ -66,6 +70,9 @@ export const DEFAULT_BINDINGS = {
   aimSystem: 'KeyT',
   details: 'KeyI',
   cruise: 'KeyJ',
+  dash: 'Digit1',
+  chaff: 'Digit2',
+  emp: 'Digit3',
 } as const;
 
 export type BindingAction = keyof typeof DEFAULT_BINDINGS;
@@ -105,6 +112,9 @@ export class InputController {
     else if (event.code === bound.aimSystem) this.actions.cycleAimedSystem();
     else if (event.code === bound.details) this.actions.toggleDetails();
     else if (event.code === bound.cruise) this.actions.toggleCruise();
+    else if (event.code === bound.dash) this.actions.useAbility('dash');
+    else if (event.code === bound.chaff) this.actions.useAbility('chaff');
+    else if (event.code === bound.emp) this.actions.useAbility('emp');
     switch (event.code) {
       case 'KeyH': this.actions.toggleHelp(); break;
       case 'F3':
@@ -222,8 +232,7 @@ export class InputController {
     for (const b of down) {
       const action = PAD_ACTIONS[b];
       if (action) (this.actions[action] as () => void)();
-      else if (b === 'up') this.actions.zoom(1 / 1.15);
-      else if (b === 'down') this.actions.zoom(1.15);
+      else if (b === 'up' || b === 'down') this.actions.padVerb(b);
     }
   }
 

@@ -1,7 +1,7 @@
-import { CAMPAIGN, CREW_RULES, MINING_RULES, OUTPOST_ALPHA, TUTORIAL_RULES, STATION_PLACEMENTS, getFaction, getSector } from '@void-frontier/content';
+import { CAMPAIGN, CREW_RULES, MINING_RULES, OUTPOST_ALPHA, TUTORIAL_RULES, STATION_PLACEMENTS, getFaction, getSector, type AbilityKind } from '@void-frontier/content';
 import { FIXED_DT, FixedStepper, type Vec2 } from '@void-frontier/kernel';
 import { getUpgrade, getWeapon, weaponGroup } from '@void-frontier/content';
-import { Simulation, WEAPON_RESALE, boardDisabled, boardingStatus, campaignStep, campaignTarget, fleetEntities, hireFee, isParkedAt, orderProblem, payroll, shipValue, shipyardOffers, type FleetOrder, slotUsage, applySectorSnapshot, captureSector, gateStatus, gravityAt, jump, markDiscovered, nextGate, dockedStationKey, type SectorSnapshot, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, bayEntryPoint, type CruiseOrder, installUpgrades, hostilesNear, nearestObstacle, sensorRange, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
+import { Simulation, WEAPON_RESALE, abilityBlock, abilityStatus, upgradeFit, boardDisabled, boardingStatus, campaignStep, campaignTarget, fleetEntities, hireFee, isParkedAt, orderProblem, payroll, shipValue, shipyardOffers, type FleetOrder, slotUsage, applySectorSnapshot, captureSector, gateStatus, gravityAt, jump, markDiscovered, nextGate, dockedStationKey, type SectorSnapshot, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, bayEntryPoint, type CruiseOrder, installUpgrades, hostilesNear, nearestObstacle, sensorRange, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
 import { SpaceRenderer, type Quality } from '@void-frontier/view3d';
 import { AudioEngine } from './audio.ts';
 import { DEFAULT_BINDINGS, InputController } from './input.ts';
@@ -9,6 +9,7 @@ import { saveStore, type SlotId } from './saves.ts';
 import type { Settings } from './settings.ts';
 import { TUTORIAL } from './tutorial.ts';
 import { TipCoach, type TipHistory } from './tips.ts';
+import { padVerb } from './verbs.ts';
 import { drawRadar } from './radar.ts';
 import { drawTargeting } from './targeting.ts';
 import type { DeathCause, HudStore } from './store.ts';
@@ -196,6 +197,13 @@ export class Game {
         else this.sim.scan(this.sim.playerId);
       },
       zoom: (factor) => this.renderer.rig.zoomBy(factor),
+      useAbility: (kind) => this.useAbility(kind),
+      padVerb: (direction) => {
+        const fitted = new Set(abilityStatus(this.sim.world, this.sim.playerId, this.sim.dt).map((a) => a.kind));
+        const verb = padVerb(direction, fitted, readTelemetry(this.sim.world, this.sim.playerId)?.missilesInbound ?? 0);
+        if (verb) this.useAbility(verb);
+        else this.renderer.rig.zoomBy(direction === 'up' ? 1 / 1.15 : 1.15);
+      },
       uiBack: () => {
         const { menu, mapOpen, fleetOpen, help } = this.store.getSnapshot();
         if (mapOpen || fleetOpen) this.store.update({ mapOpen: false, fleetOpen: false });
@@ -216,6 +224,15 @@ export class Game {
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(canvas);
     this.resize();
+  }
+
+  /** A module verb on its key; a refusal says why (cooldown, no fuel), once. */
+  private useAbility(kind: AbilityKind): void {
+    const ship = this.sim.world.ships.get(this.sim.playerId);
+    if (!ship || ship.destroyed || this.store.getSnapshot().paused) return;
+    if (this.sim.useAbility(this.sim.playerId, kind)) return;
+    const block = abilityBlock(this.sim.world, this.sim.playerId, kind);
+    if (block && block !== 'docked') this.audio.deny();
   }
 
   attachRadar(canvas: HTMLCanvasElement | null): void {
@@ -1126,11 +1143,16 @@ export class Game {
       refuelCost: serviceCost(world, this.sim.playerId, 'refuel'),
       faction: station.definition.faction,
       standing: world.standing[station.definition.faction] ?? 0,
-      upgrades: [...new Set([...station.definition.upgrades, ...ship.upgrades])].map((id) => {
-        const u = getUpgrade(id);
-        const locked = u.requires && (world.standing[u.requires.faction] ?? 0) < u.requires.reputation ? u.requires : null;
-        return { id, slot: u.slot, cost: u.cost, installed: ship.upgrades.includes(id), offered: station.definition.upgrades.includes(id), locked };
-      }),
+      upgrades: [...new Set([...station.definition.upgrades, ...ship.upgrades])]
+        .map((id) => {
+          const u = getUpgrade(id);
+          const locked = u.requires && (world.standing[u.requires.faction] ?? 0) < u.requires.reputation ? u.requires : null;
+          const fit = upgradeFit(ship, id);
+          const installed = ship.upgrades.includes(id);
+          return { id, slot: u.slot, cost: u.cost, price: fit.price, tier: u.tier ?? null, replaces: fit.replaces, needs: fit.needs, superseded: fit.fitted && !installed, installed, offered: station.definition.upgrades.includes(id), locked };
+        })
+        // A tier below the one fitted is not for sale to this ship.
+        .filter((u) => !u.superseded),
       slots: slotUsage(ship),
       shipyard: shipyardOffers(world, this.sim.playerId),
       hangar: this.sim.fleet.ships.map((owned) => ({

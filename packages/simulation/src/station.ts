@@ -1,4 +1,4 @@
-import { getFaction, getResource, getUpgrade, getWeapon, weaponGroup, type ShipDefinition } from '@void-frontier/content';
+import { getFaction, getResource, getUpgrade, getWeapon, previousTier, upgradeFamily, upgradeTier, weaponGroup, type ShipDefinition } from '@void-frontier/content';
 import { PI, atan2, cos, length, sin, toDegrees, wrapAngle, type Vec2 } from '@void-frontier/kernel';
 import { hostilesNear } from './combat.ts';
 import { holdSpaceFor, shipCollider } from './ship.ts';
@@ -329,21 +329,49 @@ export function buyWeapon(world: World, shipId: EntityId, index: number, weaponI
   return { ok: true };
 }
 
-export type UpgradeResult = { ok: true } | { ok: false; reason: 'notDocked' | 'notOffered' | 'installed' | 'noCredits' | 'noSlot' | 'reputation' };
+export type UpgradeResult =
+  | { ok: true }
+  | { ok: false; reason: 'notDocked' | 'notOffered' | 'installed' | 'noCredits' | 'noSlot' | 'reputation' | 'needsTier' };
+
+/**
+ * How a module would go in: `replaces` is the lower tier of its family it trades in
+ * (which also frees the slot it takes), `price` what the pilot pays after the trade-in,
+ * `fitted` true when this tier or a higher one of the family is already on the ship.
+ */
+export function upgradeFit(ship: Ship, upgradeId: string): { price: number; replaces: string | null; needs: string | null; fitted: boolean } {
+  const family = upgradeFamily(upgradeId);
+  const tier = upgradeTier(upgradeId);
+  const sameFamily = ship.upgrades.find((id) => upgradeFamily(id) === family) ?? null;
+  const fitted = sameFamily !== null && upgradeTier(sameFamily) >= tier;
+  const below = previousTier(upgradeId);
+  const replaces = below !== null && sameFamily === below ? below : null;
+  const needs = below !== null && replaces === null && !fitted ? below : null;
+  const tradeIn = replaces ? Math.round(getUpgrade(replaces).cost * RESALE) : 0;
+  return { price: getUpgrade(upgradeId).cost - tradeIn, replaces, needs, fitted };
+}
 
 export function buyUpgrade(world: World, shipId: EntityId, upgradeId: string): UpgradeResult {
   const ship = world.ships.get(shipId);
   if (!ship || ship.docked === null) return { ok: false, reason: 'notDocked' };
   const station = world.stations.get(ship.docked)!;
   if (!station.definition.upgrades.includes(upgradeId)) return { ok: false, reason: 'notOffered' };
-  if (ship.upgrades.includes(upgradeId)) return { ok: false, reason: 'installed' };
+  const fit = upgradeFit(ship, upgradeId);
+  if (fit.fitted) return { ok: false, reason: 'installed' };
+  // A higher tier is bought over the one below it, never straight onto a bare slot.
+  if (fit.needs) return { ok: false, reason: 'needsTier' };
   const upgrade = getUpgrade(upgradeId);
   const slots = slotUsage(ship)[upgrade.slot];
-  if (slots.used >= slots.total) return { ok: false, reason: 'noSlot' };
+  if (!fit.replaces && slots.used >= slots.total) return { ok: false, reason: 'noSlot' };
   if (upgrade.requires && (world.standing[upgrade.requires.faction] ?? 0) < upgrade.requires.reputation) return { ok: false, reason: 'reputation' };
-  if (world.credits < upgrade.cost) return { ok: false, reason: 'noCredits' };
-  world.credits -= upgrade.cost;
-  ship.upgrades.push(upgradeId);
+  if (world.credits < fit.price) return { ok: false, reason: 'noCredits' };
+  world.credits -= fit.price;
+  if (fit.replaces) {
+    const old = fit.replaces;
+    ship.upgrades = ship.upgrades.map((id) => (id === old ? upgradeId : id));
+    ship.equipmentMass = Math.max(0, ship.equipmentMass - getUpgrade(old).equipmentMass);
+  } else {
+    ship.upgrades.push(upgradeId);
+  }
   ship.equipmentMass += upgrade.equipmentMass;
   ship.definition = applyUpgrades(ship.baseDefinition, ship.upgrades);
   // New capacity arrives charged and repaired.

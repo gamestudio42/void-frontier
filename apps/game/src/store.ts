@@ -32,7 +32,22 @@ export interface StationView {
   faction: string;
   standing: number;
   /** Modules on offer here plus any already installed, with whether they can be fitted. */
-  upgrades: { id: string; slot: 'engine' | 'utility' | 'defense'; cost: number; installed: boolean; offered: boolean; locked: { faction: string; reputation: number } | null }[];
+  upgrades: {
+    id: string;
+    slot: 'engine' | 'utility' | 'defense';
+    cost: number;
+    /** What the pilot pays: the cost less the trade-in of the tier it replaces. */
+    price: number;
+    /** Mk I..III for modules that come in tiers, else null. */
+    tier: number | null;
+    replaces: string | null;
+    /** The lower tier that must be fitted first. */
+    needs: string | null;
+    superseded: boolean;
+    installed: boolean;
+    offered: boolean;
+    locked: { faction: string; reputation: number } | null;
+  }[];
   slots: Record<'engine' | 'utility' | 'defense', { used: number; total: number }>;
   shipyard: { ship: string; price: number; locked: { faction: string; reputation: number } | null }[];
   /** Every parked ship, here or elsewhere. */

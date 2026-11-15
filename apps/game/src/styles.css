@@ -2388,6 +2388,7 @@ body.gamepad :focus {
 
 /* The target's pilot: how it fights and whether its nerve holds. */
 .target-pilot {
+  gap: 8px;
   font-size: 11px;
   color: var(--muted);
 }
@@ -2402,4 +2403,140 @@ body.gamepad :focus {
 
 .target-pilot .nerve.fleeing {
   color: var(--green);
+}
+
+/* Module verbs: a row of charges above the scanner line, one per fitted verb. */
+.verbs {
+  position: absolute;
+  left: 50%;
+  bottom: 40px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+  pointer-events: none;
+}
+
+.verb {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 6px;
+  align-items: center;
+  min-width: 132px;
+  padding: 5px 8px;
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: 4px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.verb kbd {
+  grid-row: span 2;
+}
+
+.verb-name {
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.verb-name small {
+  font-family: var(--mono);
+  font-size: 10px;
+}
+
+.verb-charge {
+  display: block;
+  height: 3px;
+  margin-top: 3px;
+  background: rgba(138, 160, 180, 0.18);
+}
+
+.verb-charge b {
+  display: block;
+  height: 100%;
+  background: var(--muted);
+}
+
+.verb em {
+  grid-column: 2;
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 10.5px;
+}
+
+.verb.ready {
+  border-color: rgba(111, 211, 255, 0.55);
+}
+
+.verb.ready .verb-charge b {
+  background: var(--blue);
+}
+
+.verb.ready em {
+  color: var(--blue);
+}
+
+.verb.fuel em,
+.verb.damaged em {
+  color: var(--red);
+}
+
+.verbs .jammed {
+  align-self: center;
+  color: var(--amber);
+  font-family: var(--mono);
+  letter-spacing: 0.08em;
+}
+
+.tier {
+  display: inline-block;
+  white-space: nowrap;
+  vertical-align: 2px;
+  margin-left: 6px;
+  padding: 0 4px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--blue);
+}
+
+.tier-1 {
+  color: var(--blue);
+}
+
+.tier-2 {
+  color: var(--green);
+}
+
+.tier-3 {
+  color: var(--amber);
+}
+
+.trade-in {
+  display: block;
+  color: var(--green);
+  font-style: normal;
+  font-size: 11.5px;
+}
+
+@media (max-width: 760px) {
+  .verbs {
+    bottom: 64px;
+    gap: 6px;
+  }
+
+  .verb {
+    min-width: 0;
+  }
+}
+
+.target-jammed {
+  display: block;
+  color: var(--amber);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
 }

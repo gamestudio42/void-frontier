@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased: module verbs and tiers
+
+- The afterburner now dashes on 1: an instant kick along the stick, or straight ahead.
+- Countermeasures throw chaff on 2: every missile homing on you loses its lock.
+- New EMP projector, on 3: strips nearby pirate shields and jams their guns for a few seconds, at the cost of half your own shield.
+- Each comes in Mk I, II and III. A higher tier goes in over the lower one and trades it in; Mk III needs standing with the faction that sells it.
+- Fitted modules show on your ship, bigger with each tier, and glow while they are ready. A bar above the scanner shows each verb recharging.
+- Outpost Alpha now sells the afterburner. On a gamepad the d-pad fires the verbs.
+
 ## Unreleased: pirate archetypes and morale
 
 - Pirates fight in different ways: skirmishers circle, brawlers try to ram you, kiters fire missiles from long range. The target panel says which one you face.

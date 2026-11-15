@@ -387,10 +387,49 @@ export const campaignSchema = z.object({
 export type CampaignDefinition = z.infer<typeof campaignSchema>;
 export type CampaignStep = CampaignDefinition['steps'][number];
 
+/**
+ * A verb a module gives the pilot, fired on its own key. Each kind has its own numbers;
+ * `cooldown` is seconds before it can fire again.
+ */
+export const abilitySchema = z.discriminatedUnion('kind', [
+  /** An instant kick along the stick (or the nose): `deltaV` m/s for `fuel` kg. */
+  z.object({ kind: z.literal('dash'), cooldown: positive, deltaV: positive, fuel: z.number().min(0) }),
+  /**
+   * A cloud of decoys: missiles homing on the ship inside `radius` lose their lock, and
+   * for `seconds` none can lock on again there.
+   */
+  z.object({ kind: z.literal('chaff'), cooldown: positive, radius: positive, seconds: positive }),
+  /**
+   * A pulse that strips `shieldDamage` from every hostile inside `radius`, jams their
+   * guns for `jamSeconds` and breaks missile locks; it drains `selfShield` of the
+   * ship's own shield.
+   */
+  z.object({
+    kind: z.literal('emp'),
+    cooldown: positive,
+    radius: positive,
+    shieldDamage: positive,
+    jamSeconds: positive,
+    selfShield: z.number().min(0).max(1),
+  }),
+]);
+
+export type AbilityDefinition = z.infer<typeof abilitySchema>;
+export type AbilityKind = AbilityDefinition['kind'];
+export const ABILITY_KINDS: readonly AbilityKind[] = ['dash', 'chaff', 'emp'];
+
 export const upgradeSchema = z.object({
   id: z.string().regex(/^[a-z][a-z0-9_]*$/),
   /** Which kind of slot the module occupies. */
   slot: z.enum(['engine', 'utility', 'defense']),
+  /**
+   * Modules of one family replace each other: Mk II needs Mk I fitted and takes its
+   * slot, trading it in. Defaults to the module's own id, tier 1.
+   */
+  family: z.string().optional(),
+  tier: z.number().int().min(1).max(3).optional(),
+  /** The verb the module gives, if any. */
+  ability: abilitySchema.optional(),
   cost: positive,
   /** Sold only to pilots in good standing with a faction. */
   requires: z.object({ faction: z.string(), reputation: z.number() }).optional(),

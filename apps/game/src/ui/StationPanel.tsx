@@ -52,6 +52,14 @@ function effectLines(id: string, t: Translate, locale: string): string[] {
   if (e.salvageBonus) lines.push(`${t('upgrade.effect.salvage')} +${e.salvageBonus}`);
   if (e.fuelEfficiency) lines.push(`${t('upgrade.effect.fuel')} ×${e.fuelEfficiency}`);
   if (e.repairRate) lines.push(`${t('upgrade.effect.repair')} ${formatNumber(locale, e.repairRate * 100, 1)}%/s`);
+  const a = getUpgrade(id).ability;
+  if (a?.kind === 'dash') lines.push(`${t('upgrade.effect.dash')} ${a.deltaV} m/s · ${a.fuel} kg`);
+  if (a?.kind === 'chaff') lines.push(`${t('upgrade.effect.chaff')} ${a.radius} m · ${formatNumber(locale, a.seconds)} s`);
+  if (a?.kind === 'emp') {
+    lines.push(`${t('upgrade.effect.emp')} ${a.radius} m · −${a.shieldDamage} ${t('hud.shield')}`);
+    lines.push(`${t('upgrade.effect.jam')} ${formatNumber(locale, a.jamSeconds, 1)} s · ${t('upgrade.effect.selfShield')} −${formatNumber(locale, a.selfShield * 100)}%`);
+  }
+  if (a) lines.push(`${t('upgrade.effect.cooldown')} ${formatNumber(locale, a.cooldown, 1)} s`);
   lines.push(`${t('hud.mass')} +${formatNumber(locale, getUpgrade(id).equipmentMass / 1000, 2)} ${t('unit.mass')}`);
   return lines;
 }
@@ -185,17 +193,34 @@ export function StationPanel({ view, contracts, fleet, news, events, hull, fuel,
             <h3>{t('station.modules')}</h3>
             <div className="upgrades">
               {view.upgrades.map((u) => {
-                const noSlot = !u.installed && view.slots[u.slot].used >= view.slots[u.slot].total;
+                const noSlot = !u.installed && !u.replaces && view.slots[u.slot].used >= view.slots[u.slot].total;
                 return (
                   <article key={u.id} className={u.installed ? 'installed' : u.locked ? 'locked' : ''} data-testid={`upgrade-${u.id}`}>
                     <span className="slot-tag">{t(`slot.${u.slot}` as MessageKey)}</span>
-                    <strong>{t(`upgrade.${u.id}` as MessageKey)}</strong>
+                    <strong>
+                      {t(`upgrade.${u.id}` as MessageKey)}
+                      {u.tier !== null && (
+                        <span className={`tier tier-${u.tier}`} data-testid={`tier-${u.id}`}>
+                          {t(`upgrade.tier.${u.tier}` as MessageKey)}
+                        </span>
+                      )}
+                    </strong>
                     <p>{t(`upgrade.${u.id}.desc` as MessageKey)}</p>
                     <ul>
                       {effectLines(u.id, t, locale).map((line) => (
                         <li key={line}>{line}</li>
                       ))}
                     </ul>
+                    {u.needs && !u.installed && (
+                      <em className="requires">
+                        {t('station.needsTier')} {t(`upgrade.${u.needs}` as MessageKey)}
+                      </em>
+                    )}
+                    {u.replaces && !u.installed && (
+                      <em className="trade-in">
+                        {t('station.tradeIn')} {t(`upgrade.${u.replaces}` as MessageKey)} · −{cr(u.cost - u.price)}
+                      </em>
+                    )}
                     {u.locked && !u.installed && (
                       <em className="requires">
                         {t('station.requires')} {t(`faction.${u.locked.faction}` as MessageKey)} +{u.locked.reputation}
@@ -206,8 +231,12 @@ export function StationPanel({ view, contracts, fleet, news, events, hull, fuel,
                         {t('station.remove')} · +{cr(Math.round(u.cost / 2))}
                       </button>
                     ) : (
-                      <button disabled={!u.offered || !!u.locked || noSlot || view.credits < u.cost} onClick={() => actions.buyUpgrade(u.id)}>
-                        {noSlot ? t('station.noSlot') : cr(u.cost)}
+                      <button
+                        disabled={!u.offered || !!u.locked || !!u.needs || noSlot || view.credits < u.price}
+                        onClick={() => actions.buyUpgrade(u.id)}
+                        data-testid={`buy-${u.id}`}
+                      >
+                        {noSlot ? t('station.noSlot') : u.replaces ? `${t('station.upgradeTo')} · ${cr(u.price)}` : cr(u.price)}
                       </button>
                     )}
                   </article>

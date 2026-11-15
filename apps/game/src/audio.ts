@@ -430,6 +430,27 @@ export class AudioEngine {
         case 'boarded':
           if (e.ransom) this.chime([523, 784, 1047], 0.07);
           break;
+        case 'ability': {
+          const where = at(e.position);
+          const level = e.ship === sim.playerId ? 1 : where.gain;
+          if (!this.admit(e.ship === sim.playerId ? PRIORITY.player : PRIORITY.weapon, level, 0.8, `ability:${e.kind}`)) break;
+          if (e.kind === 'dash') {
+            // A hard kick: a low thump under a rising roar.
+            this.thump(55, 0.5, 0.45 * level, where.pan);
+            this.burst({ duration: 0.7, freq: 300, type: 'bandpass', gain: 0.4 * level, pan: where.pan, sweepTo: 2200, send: 0.2 });
+          } else if (e.kind === 'chaff') {
+            // Decoys popping out of their tubes, then a hiss of foil.
+            for (let i = 0; i < 4; i++) this.thump(180 + i * 40, 0.12, 0.18 * level, where.pan, 0);
+            this.burst({ duration: 1.1, freq: 6000, type: 'highpass', gain: 0.18 * level, pan: where.pan, send: 0.4, delay: 0.1 });
+          } else {
+            // The EMP: a deep drop and an electric crackle.
+            this.sweep(900, 60, 0.9, 0.22 * level, where.pan, 'sawtooth', 0, 'sfx', 0.5);
+            this.thump(40, 1.1, 0.5 * level, where.pan);
+            this.burst({ duration: 0.6, freq: 3000, type: 'bandpass', gain: 0.2 * level, pan: where.pan, sweepTo: 800, send: 0.3 });
+            if (e.ship === sim.playerId) this.duck(0.35, 0.8);
+          }
+          break;
+        }
         case 'contract':
           this.chime(e.outcome === 'completed' ? [523, 659, 784, 1047] : [440, 349, 294], 0.07);
           this.duck(0.3, 1.2);
@@ -536,6 +557,11 @@ export class AudioEngine {
     this.sweep(80, 900, 1.0, 0.18, 0, 'sawtooth');
     this.thump(45, 1.4, 0.5, 0);
     this.duck(0.7, 2);
+  }
+
+  /** A verb that cannot fire yet: a short low buzz. */
+  deny(): void {
+    if (this.ctx) this.sweep(180, 140, 0.15, 0.08, 0, 'square', 0, 'ui');
   }
 
   /** Soft interface click. */
