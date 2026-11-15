@@ -1,8 +1,9 @@
-import { COLLISION_RULES, getShip, type CollisionRules, type SectorDefinition } from '@void-frontier/content';
+import { COLLISION_RULES, getShip, type AbilityKind, type CollisionRules, type SectorDefinition } from '@void-frontier/content';
 import { FIXED_DT, Rng, toRadians } from '@void-frontier/kernel';
 import { forwardOf, spawnShip } from './ship.ts';
 import { aiSystem, encounterSystem, spawnEncounter } from './ai.ts';
 import { moraleSystem } from './morale.ts';
+import { useAbility } from './abilities.ts';
 import { projectileSystem, weaponSystem } from './combat.ts';
 import { jettison, pickupSystem, rockCoolingSystem, scan, scanExpirySystem } from './mining.ts';
 import { createEconomy, detachTraders, economySystem, setContractCloser, type Economy } from './economy.ts';
@@ -287,6 +288,11 @@ export class Simulation {
   }
 
   /** Scanner pulse for a ship; false while it recharges. */
+  /** Fires a module verb (dash, chaff, EMP); false when it is not fitted or not ready. */
+  useAbility(id: EntityId, kind: AbilityKind): boolean {
+    return useAbility(this.world, id, kind, this.dt);
+  }
+
   scan(id: EntityId): boolean {
     return scan(this.world, id, this.dt);
   }

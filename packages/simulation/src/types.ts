@@ -1,5 +1,5 @@
 import type { FleetNote } from './fleet.ts';
-import type { AsteroidType, EncounterDefinition, ShipDefinition, StationDefinition, WeaponDefinition } from '@void-frontier/content';
+import type { AbilityKind, AsteroidType, EncounterDefinition, ShipDefinition, StationDefinition, WeaponDefinition } from '@void-frontier/content';
 import type { Vec2 } from '@void-frontier/kernel';
 
 export type EntityId = number;
@@ -120,6 +120,13 @@ export interface Ship {
   lastDamageTick: number;
   /** A pirate that gave up: engines cut, guns cold, waiting to be boarded. */
   surrendered?: boolean;
+  /** Tick each module verb can fire again. */
+  moduleReady?: Partial<Record<AbilityKind, number>>;
+  /** A chaff cloud: missiles inside `chaffRadius` cannot lock until this tick. */
+  chaffUntil?: number;
+  chaffRadius?: number;
+  /** An EMP hit: guns and missiles stay cold until this tick. */
+  jammedUntil?: number;
   weapons: WeaponMount[];
   kills: number;
   /** Hull integrity points; the ship is destroyed at 0. */
@@ -224,6 +231,8 @@ export type SimEvent =
   | { type: 'boarded'; ship: EntityId; credits: number; salvage: number; ransom: boolean }
   /** A pirate's nerve broke (it runs, or gives up) or came back. */
   | { type: 'morale'; ship: EntityId; state: 'fleeing' | 'surrendered' | 'rallied' }
+  /** A module verb fired: `radius` of chaff or EMP (0 for a dash), `hits` locks broken or ships jammed. */
+  | { type: 'ability'; ship: EntityId; kind: AbilityKind; position: { x: number; y: number }; direction: { x: number; y: number }; radius: number; hits: number }
   | { type: 'campaign'; step: string; credits: number; finished: boolean }
   | { type: 'subsystemDamaged'; ship: EntityId; system: SubsystemId | 'weapon'; health: number }
   | { type: 'discovered'; id: string; kind: 'derelict' | 'deposit' | 'cache'; credits: number }

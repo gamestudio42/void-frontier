@@ -42,6 +42,9 @@ export interface Tip {
 
 const share = (value: number, max: number) => (max > 0 ? value / max : 1);
 
+/** A module verb is fitted and could fire now. */
+const ready = (c: TipContext, kind: 'dash' | 'chaff' | 'emp') => c.telemetry.abilities.some((a) => a.kind === kind && a.block === null);
+
 /** In priority order: what can kill the ship comes first. */
 export const TIPS: Tip[] = [
   {
@@ -70,6 +73,14 @@ export const TIPS: Tip[] = [
     when: (c) => c.telemetry.miningTarget?.onVein === false,
     solved: (c) => c.telemetry.miningTarget?.onVein === true,
   },
+  {
+    id: 'chaff',
+    text: 'tip.chaff',
+    urgent: true,
+    when: (c) => c.telemetry.missilesInbound > 0 && ready(c, 'chaff'),
+    solved: (c) => c.telemetry.chaff,
+  },
+  { id: 'dash', text: 'tip.dash', when: (c) => c.hunted && ready(c, 'dash') && !c.telemetry.docked, solved: (c) => !ready(c, 'dash') },
   { id: 'surrender', text: 'tip.surrender', when: (c) => c.surrenderNear, solved: (c) => !c.surrenderNear },
   { id: 'heat', text: 'tip.heat', when: (c) => c.telemetry.weapons.some((w) => w.overheated) },
   {

@@ -1,6 +1,7 @@
 import { atan2, clamp, cos, sin, toRadians, wrapAngle, type Vec2 } from '@void-frontier/kernel';
 import { applyWeaponDamage } from './damage.ts';
 import { moduleModifiers } from './station.ts';
+import { hiddenByChaff, isJammed } from './abilities.ts';
 import { sensorRange, shieldCapacity } from './ship.ts';
 import { cutRock } from './mining.ts';
 import { raycast } from './spatial.ts';
@@ -107,6 +108,8 @@ export function weaponSystem(world: World, dt: number): void {
       mount.beam = null;
       if (ship.destroyed || ship.docked !== null) continue;
       const group = mount.hardpoint.group;
+      // An EMP leaves guns and racks cold; the mining laser still cuts.
+      if (group !== 'mining' && isJammed(world, ship)) continue;
       const triggered = group === 'primary' ? ship.command.firePrimary : group === 'secondary' ? ship.command.fireSecondary : ship.command.fireMining;
       if (!triggered || mount.overheated || mount.health <= 0.05) continue;
 
@@ -192,7 +195,8 @@ function steer(world: World, round: Projectile, dt: number): void {
   if (homing.target === null) return;
   const target = world.ships.get(homing.target);
   const place = world.bodies.get(homing.target)?.position;
-  if (!target || target.destroyed || !place) {
+  // A chaff cloud around the target swallows the lock for good.
+  if (!target || target.destroyed || !place || hiddenByChaff(world, target, place, round.position)) {
     homing.target = null;
     return;
   }

@@ -1,6 +1,7 @@
 import { atan2, length, toDegrees, worldToLocal } from '@void-frontier/kernel';
 import { MINING_RULES, PIRATE_RULES, getArchetype } from '@void-frontier/content';
 import { onVein } from './mining.ts';
+import { abilityStatus, isJammed, type AbilityStatus } from './abilities.ts';
 import { forwardOf, holdMass, holdVolume, shipMass } from './ship.ts';
 import { leadPoint, muzzlePosition } from './combat.ts';
 import type { EntityId, FlightMode, SubsystemId, ThrusterOutput } from './types.ts';
@@ -60,6 +61,14 @@ export interface FlightTelemetry {
   docked: boolean;
   credits: number;
   upgrades: string[];
+  /** Module verbs fitted, with how ready each one is. */
+  abilities: AbilityStatus[];
+  /** An EMP has the guns cold. */
+  jammed: boolean;
+  /** A chaff cloud is out around the ship. */
+  chaff: boolean;
+  /** Missiles homing on the ship right now. */
+  missilesInbound: number;
   /** kg */
   mass: number;
   cargoMass: number;
@@ -156,6 +165,10 @@ export function readTelemetry(world: World, id: EntityId): FlightTelemetry | nul
     docked: ship.docked !== null,
     credits: world.credits,
     upgrades: [...ship.upgrades],
+    abilities: abilityStatus(world, id, 1 / 60),
+    jammed: isJammed(world, ship),
+    chaff: world.tick < (ship.chaffUntil ?? 0),
+    missilesInbound: [...world.projectiles.values()].filter((p) => p.homing?.target === id).length,
     mass,
     cargoMass: ship.cargoMass,
     mainAcceleration: movement.mainThrust / mass,
@@ -173,6 +186,8 @@ export interface TargetInfo {
   archetype: string | null;
   /** A pirate's nerve as the HUD names it, or null for other ships. */
   nerve: 'steady' | 'wavering' | 'fleeing' | null;
+  /** An EMP has its guns cold. */
+  jammed: boolean;
   faction: string;
   position: { x: number; y: number };
   distance: number;
@@ -213,6 +228,7 @@ export function readTarget(world: World, viewer: EntityId, target: EntityId | nu
     shipId: ship.definition.id,
     archetype: pilot?.morale === undefined ? null : getArchetype(pilot.archetype, ship.baseDefinition.id).id,
     nerve,
+    jammed: isJammed(world, ship),
     faction: ship.faction,
     position: { ...body.position },
     distance,

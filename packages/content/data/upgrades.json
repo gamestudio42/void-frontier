@@ -45,6 +45,52 @@
     "equipmentMass": 250,
     "effects": {
       "boostBonus": 0.5
+    },
+    "family": "afterburner",
+    "tier": 1,
+    "ability": {
+      "kind": "dash",
+      "cooldown": 8,
+      "deltaV": 45,
+      "fuel": 6
+    }
+  },
+  {
+    "id": "afterburner_mk2",
+    "slot": "engine",
+    "family": "afterburner",
+    "tier": 2,
+    "cost": 3400,
+    "equipmentMass": 300,
+    "effects": {
+      "boostBonus": 0.6
+    },
+    "ability": {
+      "kind": "dash",
+      "cooldown": 6,
+      "deltaV": 60,
+      "fuel": 6
+    }
+  },
+  {
+    "id": "afterburner_mk3",
+    "slot": "engine",
+    "family": "afterburner",
+    "tier": 3,
+    "cost": 6800,
+    "equipmentMass": 340,
+    "effects": {
+      "boostBonus": 0.75
+    },
+    "ability": {
+      "kind": "dash",
+      "cooldown": 4.5,
+      "deltaV": 75,
+      "fuel": 7
+    },
+    "requires": {
+      "faction": "ferrum_combine",
+      "reputation": 25
     }
   },
   {
@@ -114,6 +160,107 @@
     "equipmentMass": 150,
     "effects": {
       "missileEvasion": 0.6
+    },
+    "family": "countermeasures",
+    "tier": 1,
+    "ability": {
+      "kind": "chaff",
+      "cooldown": 14,
+      "radius": 400,
+      "seconds": 3
+    }
+  },
+  {
+    "id": "countermeasures_mk2",
+    "slot": "defense",
+    "family": "countermeasures",
+    "tier": 2,
+    "cost": 4200,
+    "equipmentMass": 180,
+    "effects": {
+      "missileEvasion": 0.7
+    },
+    "ability": {
+      "kind": "chaff",
+      "cooldown": 11,
+      "radius": 500,
+      "seconds": 4
+    }
+  },
+  {
+    "id": "countermeasures_mk3",
+    "slot": "defense",
+    "family": "countermeasures",
+    "tier": 3,
+    "cost": 7600,
+    "equipmentMass": 210,
+    "effects": {
+      "missileEvasion": 0.8
+    },
+    "ability": {
+      "kind": "chaff",
+      "cooldown": 8,
+      "radius": 600,
+      "seconds": 5
+    },
+    "requires": {
+      "faction": "frontier_guard",
+      "reputation": 25
+    }
+  },
+  {
+    "id": "emp_projector",
+    "slot": "defense",
+    "family": "emp_projector",
+    "tier": 1,
+    "cost": 2800,
+    "equipmentMass": 300,
+    "effects": {},
+    "ability": {
+      "kind": "emp",
+      "cooldown": 20,
+      "radius": 280,
+      "shieldDamage": 150,
+      "jamSeconds": 2.5,
+      "selfShield": 0.5
+    }
+  },
+  {
+    "id": "emp_projector_mk2",
+    "slot": "defense",
+    "family": "emp_projector",
+    "tier": 2,
+    "cost": 5200,
+    "equipmentMass": 340,
+    "effects": {},
+    "ability": {
+      "kind": "emp",
+      "cooldown": 17,
+      "radius": 330,
+      "shieldDamage": 220,
+      "jamSeconds": 3.5,
+      "selfShield": 0.45
+    }
+  },
+  {
+    "id": "emp_projector_mk3",
+    "slot": "defense",
+    "family": "emp_projector",
+    "tier": 3,
+    "cost": 8800,
+    "equipmentMass": 380,
+    "effects": {},
+    "ability": {
+      "kind": "emp",
+      "cooldown": 14,
+      "radius": 380,
+      "shieldDamage": 300,
+      "jamSeconds": 4.5,
+      "selfShield": 0.35
+    },
+    "requires": {
+      "faction": "frontier_guard",
+      "reputation": 25
     }
   },
   {

@@ -42,10 +42,11 @@ describe('content', () => {
     expect(RESOURCES.has('salvage')).toBe(true);
   });
 
-  it('offers six modules and a market that trades every slice resource', () => {
+  it('offers seven modules, one of them a verb, and a market that trades every slice resource', () => {
     const station = STATIONS.get('outpost')!;
     expect(station.upgrades.map((u) => getUpgrade(u).cost).every((c) => c > 0)).toBe(true);
-    expect(station.upgrades).toHaveLength(6);
+    expect(station.upgrades).toHaveLength(7);
+    expect(station.upgrades.filter((u) => getUpgrade(u).ability)).toEqual(['afterburner']);
     expect(station.market.map((m) => m.resource).sort()).toEqual(['copper_ore', 'iron_ore', 'machine_parts', 'salvage', 'titanium_ore']);
   });
 
@@ -59,7 +60,11 @@ describe('content', () => {
     const slots = getShip('kestrel').slots;
     for (const upgrade of UPGRADES.values()) expect(slots[upgrade.slot]).toBeGreaterThan(0);
     for (const ship of SHIPS.values()) for (const h of ship.hardpoints) expect(getWeapon(h.weapon)).toBeDefined();
-    expect(UPGRADES.size).toBe(14);
+    expect(UPGRADES.size).toBe(21);
+    // Three verb families, Mk I to Mk III.
+    expect([...UPGRADES.values()].filter((u) => u.ability).map((u) => `${u.ability!.kind}${u.tier}`).sort()).toEqual(
+      ['chaff1', 'chaff2', 'chaff3', 'dash1', 'dash2', 'dash3', 'emp1', 'emp2', 'emp3'],
+    );
   });
 
   it('gives every station a docking bay', () => {

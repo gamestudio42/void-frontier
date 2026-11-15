@@ -92,4 +92,18 @@ describe('contextual tips', () => {
     expect(coach.update(ctx(0, { hunted: true }))?.id).toBe('target');
     expect(coach.update(ctx(0.3, { hunted: true, targetLocked: true }))).toBeNull();
   });
+  it('shouts for chaff when a missile homes on a ship that carries it, and stops once it is out', () => {
+    const coach = new TipCoach(rules, {});
+    const chaff = { kind: 'chaff' as const, module: 'countermeasures', tier: 1, ready: 1, readyIn: 0, block: null };
+    expect(coach.update(ctx(0, {}, { missilesInbound: 1 }))).toBeNull();
+    expect(coach.update(ctx(0.2, {}, { missilesInbound: 1, abilities: [chaff] }))?.id).toBe('chaff');
+    expect(coach.update(ctx(0.4, {}, { missilesInbound: 1, abilities: [{ ...chaff, block: 'cooldown' }], chaff: true }))).toBeNull();
+  });
+
+  it('suggests the dash when hunted with an afterburner ready', () => {
+    const coach = new TipCoach(rules, {});
+    const dash = { kind: 'dash' as const, module: 'afterburner', tier: 1, ready: 1, readyIn: 0, block: null };
+    // Locked on already, so the target tip is quiet and the dash tip can speak.
+    expect(coach.update(ctx(0, { hunted: true, targetLocked: true }, { abilities: [dash] }))?.id).toBe('dash');
+  });
 });

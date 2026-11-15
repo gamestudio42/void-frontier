@@ -61,6 +61,11 @@ function TargetPanel({ hud, t, locale }: FlightHudProps) {
           {t('hud.closing')} {formatNumber(locale, target.closingSpeed)} {t('unit.speed')}
         </span>
       </div>
+      {target.jammed && (
+        <strong className="jammed target-jammed" data-testid="target-jammed">
+          {t('verb.jammed')}
+        </strong>
+      )}
       <Bar value={target.shield} max={target.shieldMax} className="shield" />
       <Bar value={target.hull} max={target.hullMax} className="hull" />
       {hud.aimedSystem && (
@@ -258,6 +263,8 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
       )}
       {hud.docking && <DockingPanel docking={hud.docking} refused={hud.dockRefused} t={t} locale={locale} />}
 
+      {tel.abilities.length > 0 && <Verbs abilities={tel.abilities} jammed={tel.jammed} t={t} locale={locale} />}
+
       <section className="mining-status">
         <span>
           <kbd>{t('hud.key.scan')}</kbd> {t('hud.scanner')}: <strong>{tel.scanCooldown > 0 ? `${formatNumber(locale, tel.scanCooldown, 1)} s` : t('hud.scanReady')}</strong>
@@ -316,5 +323,32 @@ function RockHeat({ target, t }: { target: NonNullable<FlightTelemetry['miningTa
       </span>
       <strong>{t(`hud.heat.${zone}` as MessageKey)}</strong> · <em className={`vein ${vein}`}>{t(`hud.vein.${vein}` as MessageKey)}</em>
     </span>
+  );
+}
+
+/** The module verbs fitted: key, name and tier, a fill that climbs back while one recharges. */
+function Verbs({ abilities, jammed, t, locale }: { abilities: FlightTelemetry['abilities']; jammed: boolean; t: Translate; locale: string }) {
+  return (
+    <section className="verbs" data-testid="verbs">
+      {abilities.map((a) => (
+        <div
+          key={a.kind}
+          className={`verb ${a.block === null ? 'ready' : a.block}`}
+          data-testid={`verb-${a.kind}`}
+          data-ready={a.block === null ? 'yes' : 'no'}
+          data-block={a.block ?? ''}
+        >
+          <kbd>{t(`hud.key.${a.kind}` as MessageKey)}</kbd>
+          <span className="verb-name">
+            {t(`verb.${a.kind}` as MessageKey)} <small className={`tier-${a.tier}`}>{t(`upgrade.tier.${a.tier}` as MessageKey)}</small>
+          </span>
+          <span className="verb-charge" aria-hidden="true">
+            <b style={{ width: `${a.ready * 100}%` }} />
+          </span>
+          <em>{a.block === 'cooldown' ? `${formatNumber(locale, a.readyIn, 1)} s` : a.block === null ? t('verb.ready') : t(`verb.block.${a.block}` as MessageKey)}</em>
+        </div>
+      ))}
+      {jammed && <strong className="jammed" data-testid="jammed">{t('verb.jammed')}</strong>}
+    </section>
   );
 }

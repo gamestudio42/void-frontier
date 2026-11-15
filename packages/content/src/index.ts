@@ -115,6 +115,28 @@ export const getWeapon = (id: string): WeaponDefinition => lookup(WEAPONS, 'weap
 for (const ship of SHIPS.values()) for (const hardpoint of ship.hardpoints) getWeapon(hardpoint.weapon);
 for (const type of ASTEROID_TYPES.values()) getResource(type.resource);
 for (const upgrade of UPGRADES.values()) if (upgrade.requires) getFaction(upgrade.requires.faction);
+
+/** The family a module belongs to and its rank in it (Mk I = 1). */
+export const upgradeFamily = (id: string): string => getUpgrade(id).family ?? id;
+export const upgradeTier = (id: string): number => getUpgrade(id).tier ?? 1;
+
+/** The module one tier below `id` in its family, or null for a Mk I. */
+export function previousTier(id: string): string | null {
+  const family = upgradeFamily(id);
+  const tier = upgradeTier(id);
+  if (tier === 1) return null;
+  for (const other of UPGRADES.values()) if (upgradeFamily(other.id) === family && upgradeTier(other.id) === tier - 1) return other.id;
+  throw new Error(`Upgrade ${id} has no tier ${tier - 1} in family ${family}`);
+}
+
+// A family climbs one tier at a time, in one slot, with one kind of verb.
+for (const upgrade of UPGRADES.values()) {
+  const below = previousTier(upgrade.id);
+  if (!below) continue;
+  const lower = getUpgrade(below);
+  if (lower.slot !== upgrade.slot) throw new Error(`Upgrade ${upgrade.id} changes slot from its lower tier`);
+  if (lower.ability?.kind !== upgrade.ability?.kind) throw new Error(`Upgrade ${upgrade.id} changes verb from its lower tier`);
+}
 for (const station of STATIONS.values()) {
   getFaction(station.faction);
   for (const offer of station.shipyard) {
