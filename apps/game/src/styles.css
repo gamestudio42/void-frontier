@@ -2615,3 +2615,86 @@ body.gamepad :focus {
 .job-status.strained {
   color: var(--red);
 }
+
+/* Career tab: rank, licences, station stake */
+.career {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.career h3 {
+  margin: 6px 0 0;
+}
+
+.rank-card,
+.stake {
+  padding: 12px;
+  border: 1px solid var(--panel-edge);
+  border-radius: 6px;
+}
+
+.rank-card h3 {
+  margin: 2px 0 8px;
+  font-size: 1.3em;
+  color: #ffd27a;
+}
+
+.rank-card p {
+  margin: 6px 0 0;
+}
+
+.merit-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.merit-bar span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #ffb347, #ffd27a);
+}
+
+.licences {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.licence {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--panel-edge);
+  border-radius: 6px;
+}
+
+.licence.owned {
+  border-color: rgba(125, 255, 178, 0.45);
+}
+
+.licence ul,
+.stake ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.9em;
+  opacity: 0.85;
+}
+
+.licence button {
+  margin-top: auto;
+}
+
+.stake > p {
+  margin: 0 0 6px;
+}
+
+.stake-next {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}

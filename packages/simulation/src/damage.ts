@@ -1,4 +1,5 @@
 import { FACTIONS, PIRATE_RULES } from '@void-frontier/content';
+import { notePirateKill } from './career.ts';
 import { dropSalvage } from './mining.ts';
 import { shaken, squadLost } from './morale.ts';
 import { damageChosenSystem, damageSubsystems } from './subsystems.ts';
@@ -29,6 +30,7 @@ export function destroyShip(world: World, id: EntityId, by: EntityId | null): vo
     if (killer) killer.kills++;
     // Lawful factions thank whoever thins out the pirates, and more when it saves one of their haulers.
     if (killer?.faction === 'player' && ship.faction === 'pirate') {
+      notePirateKill(world);
       for (const faction of FACTIONS.values()) {
         if (faction.hostile || faction.killReward <= 0) continue;
         world.standing[faction.id] = Math.min(100, (world.standing[faction.id] ?? 0) + faction.killReward);

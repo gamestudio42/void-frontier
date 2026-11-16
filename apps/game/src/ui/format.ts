@@ -16,3 +16,6 @@ export const formatBearing = (degrees: number): string => `${String(Math.round(d
 export function formatDistance(locale: string, metres: number): string {
   return metres >= 1000 ? `${formatNumber(locale, metres / 1000, 2)} km` : `${formatNumber(locale, metres)} m`;
 }
+
+/** Puts values into a translated line's `{name}` holes. */
+export const fill = (line: string, values: Record<string, string | number>): string => line.replace(/\{(\w+)\}/g, (hole, name: string) => (name in values ? String(values[name]) : hole));

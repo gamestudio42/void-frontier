@@ -1,6 +1,7 @@
 import { CAMPAIGN, CREW_RULES, MINING_RULES, OUTPOST_ALPHA, TUTORIAL_RULES, STATION_PLACEMENTS, getFaction, getSector, type AbilityKind } from '@void-frontier/content';
 import { FIXED_DT, FixedStepper, type Vec2 } from '@void-frontier/kernel';
 import { getUpgrade, getWeapon, weaponGroup } from '@void-frontier/content';
+import { CAREER_RULES } from '@void-frontier/content';
 import { Simulation, WEAPON_RESALE, abilityBlock, abilityStatus, upgradeFit, boardDisabled, boardingStatus, campaignStep, campaignTarget, fleetEntities, hireFee, isParkedAt, orderProblem, payroll, shipValue, shipyardOffers, type FleetOrder, slotUsage, applySectorSnapshot, captureSector, gateStatus, gravityAt, jump, markDiscovered, nextGate, dockedStationKey, type SectorSnapshot, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, bayEntryPoint, type CruiseOrder, installUpgrades, hostilesNear, nearestObstacle, sensorRange, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
 import { SpaceRenderer, type Quality } from '@void-frontier/view3d';
 import { AudioEngine } from './audio.ts';
@@ -268,6 +269,16 @@ export class Game {
 
   abandonContract(id: number): void {
     this.sim.abandonContract(id);
+    this.publish();
+  }
+
+  buyLicence(id: string): void {
+    if (!this.sim.buyLicence(id).ok) this.audio.deny();
+    this.publish();
+  }
+
+  invest(): void {
+    if (!this.sim.invest().ok) this.audio.deny();
     this.publish();
   }
 
@@ -630,6 +641,13 @@ export class Game {
               this.store.update({ campaignEnding: { branch: c.branch, minutes: Math.round((this.sim.world.tick - c.stats.startTick) / 3600), deaths: c.stats.deaths } });
             }
             this.notices.push({ text: `campaign:${event.step}`, kind: 'completed', reward: event.credits, at: this.clock, id: -7000 - this.sim.campaign!.step });
+          }
+          if (event.type === 'rank') {
+            this.notices.push({ text: `rank:${event.rank}`, kind: 'completed', reward: event.credits, at: this.clock, id: -30000 - event.rank });
+            this.rumble(0.4, 250);
+          }
+          if (event.type === 'dividend') {
+            this.notices.push({ text: `dividend:${event.station}`, kind: 'completed', reward: event.credits, at: this.clock, id: -31000 - Math.round(this.clock) });
           }
           if (event.type === 'contract') {
             this.notices.push({ text: event.kind, kind: event.outcome, reward: event.reward, at: this.clock, id: event.id });
@@ -1141,12 +1159,36 @@ export class Game {
     };
   }
 
+  private careerView(key: string) {
+    const career = this.sim.world.career;
+    const ranks = CAREER_RULES.ranks;
+    const levels = CAREER_RULES.investment.levels;
+    const level = career.stakes[key] ?? 0;
+    const pick = (l: (typeof levels)[number] | undefined) => (l ? { serviceDiscount: l.serviceDiscount, offerSlots: l.offerSlots, eliteOffers: l.eliteOffers, dividendPerHour: l.dividendPerHour } : null);
+    return {
+      rank: career.rank,
+      merit: career.merit,
+      rankMerit: ranks[career.rank].merit,
+      nextMerit: ranks[career.rank + 1]?.merit ?? null,
+      activeBonus: ranks[career.rank].activeBonus,
+      offerBonus: ranks[career.rank].offerBonus,
+      licences: CAREER_RULES.licences.map((l) => ({ id: l.id, price: l.price, rank: l.rank, kinds: [...l.kinds], rewardBonus: l.rewardBonus, killBounty: l.killBounty, owned: career.licences.includes(l.id) })),
+      stake: {
+        level,
+        max: levels.length,
+        current: pick(levels[level - 1]),
+        next: levels[level] ? { cost: levels[level].cost, rank: levels[level].rank, ...pick(levels[level])! } : null,
+      },
+    };
+  }
+
   private stationView() {
     const world = this.sim.world;
     const ship = world.ships.get(this.sim.playerId);
     if (!ship || ship.docked === null) return null;
     const station = world.stations.get(ship.docked)!;
     return {
+      career: this.careerView(station.name),
       name: station.name,
       credits: world.credits,
       market: station.market.map((item) => ({

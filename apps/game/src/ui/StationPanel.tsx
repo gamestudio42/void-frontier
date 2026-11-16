@@ -2,12 +2,13 @@ import { getUpgrade } from '@void-frontier/content';
 import { useState } from 'react';
 import type { MessageKey, Translate } from '../i18n.ts';
 import type { ContractsView, FleetView, StationView } from '../store.ts';
+import { CareerTab, type CareerActions } from './Career.tsx';
 import { ContractsTab, NewsFeed, type ContractActions } from './contracts.tsx';
 import { CrewTab, type FleetActions } from './Fleet.tsx';
 import { ShipyardTab, type ShipyardActions } from './Shipyard.tsx';
 import { formatNumber } from './format.ts';
 
-export interface StationActions extends ContractActions, ShipyardActions, FleetActions {
+export interface StationActions extends ContractActions, ShipyardActions, FleetActions, CareerActions {
   sellUpgrade(id: string): void;
   undock(): void;
   trade(resource: string, units: number, side: 'buy' | 'sell'): void;
@@ -30,7 +31,7 @@ interface StationPanelProps {
   locale: string;
 }
 
-type Tab = 'contracts' | 'market' | 'services' | 'upgrades' | 'shipyard' | 'crew';
+type Tab = 'contracts' | 'market' | 'services' | 'upgrades' | 'shipyard' | 'crew' | 'career';
 
 /** Upgrade effects as short, translated lines. */
 function effectLines(id: string, t: Translate, locale: string): string[] {
@@ -74,7 +75,7 @@ export function StationPanel({ view, contracts, fleet, news, events, hull, fuel,
           <div>
             <span className="label">
               {t('station.docked')} · {t(`faction.${view.faction}` as MessageKey)} ({view.standing > 0 ? '+' : ''}
-              {Math.round(view.standing)})
+              {Math.round(view.standing)}) · <span data-testid="header-rank">{t(`rank.${view.career.rank}` as MessageKey)}</span>
             </span>
             <h2>{t(`station.${view.name}` as MessageKey)}</h2>
           </div>
@@ -83,7 +84,7 @@ export function StationPanel({ view, contracts, fleet, news, events, hull, fuel,
           </div>
         </header>
         <nav className="tabs" role="tablist">
-          {(['contracts', 'market', 'services', 'upgrades', 'shipyard', 'crew'] as Tab[]).map((id) => (
+          {(['contracts', 'market', 'services', 'upgrades', 'shipyard', 'crew', 'career'] as Tab[]).map((id) => (
             <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? 'active' : ''} onClick={() => setTab(id)} data-testid={`tab-${id}`}>
               {t(`station.tab.${id}` as MessageKey)}
             </button>
@@ -247,6 +248,7 @@ export function StationPanel({ view, contracts, fleet, news, events, hull, fuel,
         )}
 
         {tab === 'shipyard' && <ShipyardTab view={view} fleet={fleet} actions={actions} t={t} locale={locale} />}
+        {tab === 'career' && <CareerTab view={view} actions={actions} t={t} locale={locale} />}
         {tab === 'crew' && fleet && <CrewTab fleet={fleet} actions={actions} t={t} locale={locale} />}
 
         <footer>

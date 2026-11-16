@@ -22,7 +22,28 @@ export interface DockingView {
   limits: { maxDistance: number; maxRelativeSpeed: number; maxAngle: number };
 }
 
+/** The goal ladder as the station's career tab shows it. */
+export interface CareerView {
+  rank: number;
+  merit: number;
+  /** Merit the current rank started at, and the next rank's threshold (null at the top). */
+  rankMerit: number;
+  nextMerit: number | null;
+  activeBonus: number;
+  offerBonus: number;
+  licences: { id: string; price: number; rank: number; kinds: string[]; rewardBonus: number; killBounty: number; owned: boolean }[];
+  /** This station's stake: level now, the level on sale (null when maxed) and what is owed. */
+  stake: {
+    level: number;
+    max: number;
+    current: { serviceDiscount: number; offerSlots: number; eliteOffers: boolean; dividendPerHour: number } | null;
+    next: { cost: number; rank: number; serviceDiscount: number; offerSlots: number; eliteOffers: boolean; dividendPerHour: number } | null;
+  };
+}
+
 export interface StationView {
+  /** Rank, licences and this station's stake. */
+  career: CareerView;
   name: string;
   credits: number;
   market: { resource: string; stock: number; held: number; buy: number | null; sell: number | null }[];

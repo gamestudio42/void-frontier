@@ -468,6 +468,15 @@ export class AudioEngine {
           }
           break;
         }
+        case 'rank':
+          // A promotion: a brass-like climb and a low thump under it.
+          this.chime([392, 523, 659, 784, 1047, 1568], 0.07);
+          this.thump(60, 0.6, 0.3, 0);
+          this.duck(0.5, 2.2);
+          break;
+        case 'dividend':
+          this.chime([784, 1047], 0.04);
+          break;
         case 'contract':
           this.chime(e.outcome === 'completed' ? [523, 659, 784, 1047] : [440, 349, 294], 0.07);
           this.duck(0.3, 1.2);
