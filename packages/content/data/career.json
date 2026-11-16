@@ -1,0 +1,32 @@
+{
+  "merit": {
+    "contract": 10,
+    "eliteContract": 18,
+    "kill": 3,
+    "discovery": 6,
+    "campaignStep": 12,
+    "salesPer1000": 2
+  },
+  "ranks": [
+    { "id": "drifter", "merit": 0, "credits": 0, "activeBonus": 0, "offerBonus": 0 },
+    { "id": "licensed", "merit": 40, "credits": 500, "activeBonus": 0, "offerBonus": 0 },
+    { "id": "contractor", "merit": 120, "credits": 1500, "activeBonus": 1, "offerBonus": 0 },
+    { "id": "veteran", "merit": 260, "credits": 3000, "activeBonus": 1, "offerBonus": 1 },
+    { "id": "ace", "merit": 480, "credits": 6000, "activeBonus": 2, "offerBonus": 1 },
+    { "id": "legend", "merit": 800, "credits": 12000, "activeBonus": 2, "offerBonus": 2 }
+  ],
+  "licences": [
+    { "id": "freight", "rank": 1, "price": 2500, "kinds": ["delivery", "escort"], "rewardBonus": 0.2, "killBounty": 0 },
+    { "id": "mining", "rank": 1, "price": 2500, "kinds": ["mining"], "rewardBonus": 0.2, "killBounty": 0 },
+    { "id": "salvage", "rank": 2, "price": 4000, "kinds": ["salvage", "recon"], "rewardBonus": 0.2, "killBounty": 0 },
+    { "id": "combat", "rank": 2, "price": 6000, "kinds": ["bounty", "patrol"], "rewardBonus": 0.2, "killBounty": 80 }
+  ],
+  "investment": {
+    "levels": [
+      { "cost": 4000, "rank": 1, "serviceDiscount": 0.15, "offerSlots": 1, "eliteOffers": false, "dividendPerHour": 300 },
+      { "cost": 10000, "rank": 2, "serviceDiscount": 0.25, "offerSlots": 1, "eliteOffers": true, "dividendPerHour": 900 },
+      { "cost": 22000, "rank": 3, "serviceDiscount": 0.35, "offerSlots": 2, "eliteOffers": true, "dividendPerHour": 2000 }
+    ],
+    "maxDividendHours": 4
+  }
+}

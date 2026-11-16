@@ -236,6 +236,10 @@ export type SimEvent =
   /** A module verb fired: `radius` of chaff or EMP (0 for a dash), `hits` locks broken or ships jammed. */
   | { type: 'ability'; ship: EntityId; kind: AbilityKind; position: { x: number; y: number }; direction: { x: number; y: number }; radius: number; hits: number }
   | { type: 'campaign'; step: string; credits: number; finished: boolean }
+  /** The pilot reached a new rank, which paid `credits`. */
+  | { type: 'rank'; rank: number; id: string; credits: number }
+  /** A station the player holds a stake in paid out on docking. */
+  | { type: 'dividend'; station: string; credits: number }
   | { type: 'subsystemDamaged'; ship: EntityId; system: SubsystemId | 'weapon'; health: number }
   | { type: 'discovered'; id: string; kind: 'derelict' | 'deposit' | 'cache'; credits: number }
   | { type: 'docked'; ship: EntityId; station: EntityId }

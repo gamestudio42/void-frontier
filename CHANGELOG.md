@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased: pilot rank, licences and station stakes
+
+- A new Career tab at every station. Finished jobs, pirates destroyed, discoveries, story missions and sales earn merit, which raises your rank from Drifter to Frontier Legend. Each rank pays a bonus, and some let you hold more contracts or see more jobs.
+- Licences for freight, mining, salvage and combat pay 20% more on their kinds of job; the combat licence also pays a bounty on every pirate. Each needs a rank.
+- Invest in a station for cheaper repairs and fuel there, more jobs on its board, elite jobs whatever your standing, and dividends paid when you dock.
+
 ## Unreleased: job conditions and named clients
 
 - Some contracts now come with a condition and pay more for it: fragile cargo (keep it under 2 g: no boosting, no dashes, no bumps; you are paid for what arrives intact), volatile cargo (one hard bump or hull hit and it blows up in your hold), rush jobs with half the time, and no-brake runs with a bonus if you never touch the brake.

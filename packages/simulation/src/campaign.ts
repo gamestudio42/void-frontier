@@ -1,4 +1,5 @@
-import { CAMPAIGN, getShip, STATION_PLACEMENTS, type CampaignStep } from '@void-frontier/content';
+import { CAREER_RULES, CAMPAIGN, getShip, STATION_PLACEMENTS, type CampaignStep } from '@void-frontier/content';
+import { earnMerit } from './career.ts';
 import { spawnEncounter } from './ai.ts';
 import { dockedStationKey } from './missions.ts';
 import type { Simulation } from './simulation.ts';
@@ -105,6 +106,7 @@ function finishStep(sim: Simulation, campaign: Campaign, step: CampaignStep, rew
   while (CAMPAIGN.steps[campaign.step]?.when && CAMPAIGN.steps[campaign.step].when !== campaign.branch) campaign.step++;
   campaign.progress = 0;
   sim.world.events.push({ type: 'campaign', step: step.id, credits: reward.credits, finished: campaignStep(campaign) === null });
+  earnMerit(sim.world, CAREER_RULES.merit.campaignStep);
 }
 
 /** The player's answer to a choice step: pays that option and sets the branch for the rest of the story. */

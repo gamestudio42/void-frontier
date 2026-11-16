@@ -1,4 +1,5 @@
-import { CARGO_MODIFIERS, CONTRACT_RULES, FACTIONS, SECTORS, getFaction, getResource, getStation, type ContractModifier, type ContractRules } from '@void-frontier/content';
+import { activeBonus, createCareer, earnMerit, eliteOffersAt, licenceBonus, offerBonus, type Career } from './career.ts';
+import { CAREER_RULES as careerRules, CARGO_MODIFIERS, CONTRACT_RULES, FACTIONS, SECTORS, getFaction, getResource, getStation, type ContractModifier, type ContractRules } from '@void-frontier/content';
 import { applyWeaponDamage } from './damage.ts';
 import { gravityAt } from './exploration.ts';
 import { holdSpaceFor } from './ship.ts';
@@ -76,6 +77,8 @@ export interface MissionBoard {
   refreshTick: number;
   /** Jobs done for each named client, net of failures: their loyalty. */
   clients: Record<string, number>;
+  /** Rank, licences and stakes; the world holds the same object. */
+  career: Career;
 }
 
 /** A board covering every sector: drops from all of them, and every friendly station. */
@@ -93,7 +96,7 @@ export function createBoard(rules: ContractRules = CONTRACT_RULES): MissionBoard
     }
   }
   const reputation = Object.fromEntries([...FACTIONS.values()].map((f) => [f.id, f.hostile ? rules.reputation.min : 0]));
-  return { rules, drops, stations, offers: {}, active: [], history: [], reputation, nextId: 1, refreshTick: 0, clients: {} };
+  return { rules, drops, stations, offers: {}, active: [], history: [], reputation, nextId: 1, refreshTick: 0, clients: {}, career: createCareer() };
 }
 
 /** Jumps between two sectors along the gate network (breadth-first). */
@@ -181,7 +184,8 @@ export function applyModifier(rules: ContractRules, contract: Contract, modifier
 
 function baseOffer(world: World, board: MissionBoard, issuer: ContractStation): Contract {
   const rules = board.rules;
-  const elite = standing(board, issuer.faction) >= rules.reputation.eliteThreshold && world.rng.next() < 0.5;
+  // A stake can open elite work before standing does; with neither the dice are not rolled.
+  const elite = (standing(board, issuer.faction) >= rules.reputation.eliteThreshold || eliteOffersAt(board.career, issuer.key)) && world.rng.next() < 0.5;
   const unitsScale = elite ? rules.elite.unitsMultiplier : 1;
   const rewardMultiplier = elite ? rules.elite.rewardMultiplier : 1;
   const roll = world.rng.next();
@@ -247,7 +251,10 @@ export function fillOffers(world: World, board: MissionBoard): void {
   for (const station of board.stations) {
     if (station.sector !== world.sectorId) continue;
     const offers = (board.offers[station.key] ??= []);
-    while (offers.length < board.rules.offerSlots) offers.push(generateOffer(world, board, station));
+    // Escorts are posted by the haulers on top of the slots, so they do not take one.
+    const slots = board.rules.offerSlots + offerBonus(board.career, station.key);
+    let posted = offers.filter((o) => !o.escort).length;
+    for (; posted < slots; posted++) offers.push(generateOffer(world, board, station));
   }
 }
 
@@ -264,7 +271,7 @@ export function loyaltyBonus(board: MissionBoard, client: string | undefined): n
  * brake was used.
  */
 export function payout(board: MissionBoard, contract: Contract): number {
-  let reward = contract.reward * rewardScale(board, contract.faction) * (1 + loyaltyBonus(board, contract.client));
+  let reward = contract.reward * rewardScale(board, contract.faction) * (1 + loyaltyBonus(board, contract.client)) * (1 + licenceBonus(board.career, contract.kind));
   if (contract.cargo) reward *= contract.cargo.integrity;
   if (contract.bonusLost) reward /= board.rules.modifiers.noBrake.reward;
   return Math.round(reward);
@@ -282,6 +289,7 @@ function close(world: World, board: MissionBoard, contract: Contract, outcome: C
     reward = payout(board, contract);
     world.credits += reward;
     adjustReputation(board, contract.faction, contract.repGain);
+    earnMerit(world, contract.elite ? careerRules.merit.eliteContract : careerRules.merit.contract);
   } else {
     adjustReputation(board, contract.faction, -(outcome === 'failed' ? board.rules.penalty.failed : board.rules.penalty.abandoned));
   }
@@ -300,6 +308,9 @@ export function closeContractById(world: World, board: MissionBoard, id: number,
   if (contract) close(world, board, contract, outcome);
 }
 
+/** Contracts the pilot may hold at once: the board's limit plus the rank's. */
+export const activeLimit = (board: MissionBoard): number => board.rules.maxActive + activeBonus(board.career);
+
 /** Key of the station a ship is docked at, or null. */
 export function dockedStationKey(world: World, shipId: EntityId): string | null {
   const ship = world.ships.get(shipId);
@@ -317,7 +328,7 @@ export function acceptContract(world: World, board: MissionBoard, shipId: Entity
   const offers = board.offers[key] ?? [];
   const offer = offers.find((o) => o.id === offerId);
   if (!offer) return { ok: false, reason: 'unknown' };
-  if (board.active.length >= board.rules.maxActive) return { ok: false, reason: 'tooMany' };
+  if (board.active.length >= activeLimit(board)) return { ok: false, reason: 'tooMany' };
   if (offer.delivery) {
     const cargo = board.rules.delivery.cargo;
     if (holdSpaceFor(ship, cargo) < offer.delivery.units) return { ok: false, reason: 'noSpace' };

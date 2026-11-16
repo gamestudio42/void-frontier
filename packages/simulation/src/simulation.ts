@@ -7,6 +7,7 @@ import { useAbility } from './abilities.ts';
 import { projectileSystem, weaponSystem } from './combat.ts';
 import { jettison, pickupSystem, rockCoolingSystem, scan, scanExpirySystem } from './mining.ts';
 import { createEconomy, detachTraders, economySystem, setContractCloser, type Economy } from './economy.ts';
+import { buyLicence, createCareer, invest } from './career.ts';
 import { campaignSystem, chooseCampaign, createCampaign, type Campaign } from './campaign.ts';
 import { assignPilot, crewOffers, crewSystem, dismissPilot, hirePilot } from './crew.ts';
 import { boardShip, buyShip, createFleet, sellShip, type Fleet, type FleetOrder } from './fleet.ts';
@@ -106,6 +107,8 @@ export class Simulation {
     sim.missions = options.board ?? createBoard();
     // Standing lives on the board (it survives jumps); the world reads the same object.
     sim.world.standing = sim.missions.reputation;
+    sim.missions.career ??= createCareer();
+    sim.world.career = sim.missions.career;
     fillOffers(sim.world, sim.missions);
     if (options.startDocked ?? sector.startDocked) {
       const first = [...sim.world.stations.keys()][0];
@@ -245,6 +248,18 @@ export class Simulation {
 
   abandonContract(contractId: number): boolean {
     return this.missions ? abandonContract(this.world, this.missions, contractId) : false;
+  }
+
+  /** Buys a licence at the station the player is docked at. */
+  buyLicence(licenceId: string) {
+    return buyLicence(this.world, this.playerId, licenceId);
+  }
+
+  /** Buys the next stake in the station the player is docked at; its board fills out at once. */
+  invest() {
+    const result = invest(this.world, this.playerId);
+    if (result.ok && this.missions) fillOffers(this.world, this.missions);
+    return result;
   }
 
   buyShip(shipId: string) {

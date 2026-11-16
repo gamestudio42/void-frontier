@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { MessageKey, Translate } from '../i18n.ts';
 import type { ActiveContractView, CampaignView, ContractView, ContractsView } from '../store.ts';
-import { formatNumber } from './format.ts';
+import { fill, formatNumber } from './format.ts';
 import { fleetNotice } from './Fleet.tsx';
 import { Portrait } from './Portrait.tsx';
 
@@ -249,6 +249,16 @@ export function Notices({ notices, t, locale }: { notices: { id: number; kind: s
             <strong>
               {t(`system.${n.kind.slice(7)}` as MessageKey)} {n.outcome === 'failed' ? t('system.offline') : t('system.damaged')}
             </strong>
+          ) : n.kind.startsWith('rank:') ? (
+            <>
+              <strong>{fill(t('notice.rank'), { rank: t(`rank.${n.kind.slice(5)}` as MessageKey) })}</strong>
+              {n.reward > 0 && <span> +{formatNumber(locale, n.reward)} cr</span>}
+            </>
+          ) : n.kind.startsWith('dividend:') ? (
+            <>
+              <strong>{fill(t('notice.dividend'), { station: t(`station.${n.kind.slice(9)}` as MessageKey) })}</strong>
+              {n.reward > 0 && <span> +{formatNumber(locale, n.reward)} cr</span>}
+            </>
           ) : n.kind.startsWith('cargo:') ? (
             <strong>{t(`notice.cargo.${n.kind.slice(6)}` as MessageKey)}</strong>
           ) : n.kind.startsWith('poi:') ? (

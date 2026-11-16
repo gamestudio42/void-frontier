@@ -1,5 +1,6 @@
 import { getFaction, getResource, getUpgrade, getWeapon, previousTier, upgradeFamily, upgradeTier, weaponGroup, type ShipDefinition } from '@void-frontier/content';
 import { PI, atan2, cos, length, sin, toDegrees, wrapAngle, type Vec2 } from '@void-frontier/kernel';
+import { collectDividend, noteSale, serviceDiscount } from './career.ts';
 import { hostilesNear } from './combat.ts';
 import { holdSpaceFor, shipCollider } from './ship.ts';
 import { SUBSYSTEMS, idleCommand, type EntityId, type MarketItem, type Ship } from './types.ts';
@@ -113,6 +114,7 @@ export function dockShip(world: World, shipId: EntityId, stationId: EntityId): v
   body.angularVelocity = 0;
   world.colliders.delete(shipId);
   world.events.push({ type: 'docked', ship: shipId, station: stationId });
+  if (world.stations.get(stationId)) collectDividend(world, world.stations.get(stationId)!.name);
 }
 
 /** Docks if every condition holds; otherwise returns the reasons it was refused. */
@@ -186,6 +188,7 @@ export function trade(world: World, shipId: EntityId, resource: string, units: n
     const credits = quote(item, 'sell', count);
     item.stock += count;
     world.credits += credits;
+    noteSale(world, credits);
     if (held - count > 0) ship.cargo.set(resource, held - count);
     else ship.cargo.delete(resource);
     return { ok: true, units: count, credits };
@@ -207,6 +210,13 @@ export function trade(world: World, shipId: EntityId, resource: string, units: n
 const SUBSYSTEM_REPAIR = 250;
 const MOUNT_REPAIR = 120;
 
+/** A station's service prices after the player's stake discount; `factor` scales a whole repair bill. */
+function servicePrices(world: World, stationId: EntityId) {
+  const station = world.stations.get(stationId)!;
+  const factor = 1 - serviceDiscount(world.career, station.name);
+  return { fuelPerKg: station.definition.services.fuelPerKg * factor, repairPerHull: station.definition.services.repairPerHull, factor };
+}
+
 function repairBill(ship: Ship, perHull: number) {
   const hull = Math.max(0, ship.definition.hull.integrity - ship.hull);
   const systems = SUBSYSTEMS.reduce((sum, id) => sum + (1 - ship.subsystems[id]), 0);
@@ -221,7 +231,7 @@ function repairBill(ship: Ship, perHull: number) {
 export function service(world: World, shipId: EntityId, kind: 'repair' | 'refuel'): number {
   const ship = world.ships.get(shipId);
   if (!ship || ship.docked === null) return 0;
-  const prices = world.stations.get(ship.docked)!.definition.services;
+  const prices = servicePrices(world, ship.docked);
   if (kind === 'refuel') {
     const amount = Math.min(ship.definition.fuel.capacity - ship.fuel, world.credits / prices.fuelPerKg);
     if (amount <= 0) return 0;
@@ -231,12 +241,13 @@ export function service(world: World, shipId: EntityId, kind: 'repair' | 'refuel
     return cost;
   }
   const bill = repairBill(ship, prices.repairPerHull);
-  if (bill.total <= 0 || world.credits <= 0) return 0;
-  const share = Math.min(1, world.credits / bill.total);
+  const total = bill.total * prices.factor;
+  if (total <= 0 || world.credits <= 0) return 0;
+  const share = Math.min(1, world.credits / total);
   ship.hull += bill.hull * share;
   for (const id of SUBSYSTEMS) ship.subsystems[id] += (1 - ship.subsystems[id]) * share;
   for (const mount of ship.weapons) mount.health += (1 - mount.health) * share;
-  const cost = Math.ceil(bill.total * share);
+  const cost = Math.ceil(total * share);
   world.credits = Math.max(0, world.credits - cost);
   return cost;
 }
@@ -244,9 +255,9 @@ export function service(world: World, shipId: EntityId, kind: 'repair' | 'refuel
 export function serviceCost(world: World, shipId: EntityId, kind: 'repair' | 'refuel'): number {
   const ship = world.ships.get(shipId);
   if (!ship || ship.docked === null) return 0;
-  const prices = world.stations.get(ship.docked)!.definition.services;
+  const prices = servicePrices(world, ship.docked);
   if (kind === 'refuel') return Math.ceil(Math.max(0, ship.definition.fuel.capacity - ship.fuel) * prices.fuelPerKg);
-  return Math.ceil(repairBill(ship, prices.repairPerHull).total);
+  return Math.ceil(repairBill(ship, prices.repairPerHull).total * prices.factor);
 }
 
 // --- Upgrades -----------------------------------------------------------------

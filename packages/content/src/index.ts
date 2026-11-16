@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import asteroidData from '../data/asteroids.json';
 import campaignData from '../data/campaign.json';
+import careerData from '../data/career.json';
 import contractData from '../data/contracts.json';
 import crewData from '../data/crew.json';
 import cruiseData from '../data/cruise.json';
@@ -24,6 +25,8 @@ import upgradeData from '../data/upgrades.json';
 import weaponData from '../data/weapons.json';
 import {
   CARGO_MODIFIERS,
+  careerRulesSchema,
+  type CareerRules,
   asteroidTypeSchema,
   collisionRulesSchema,
   contractRulesSchema,
@@ -79,6 +82,7 @@ export const EVENT_RULES: EventRules = eventRulesSchema.parse(eventData);
 export const CREW_RULES: CrewRules = crewRulesSchema.parse(crewData);
 export const CAMPAIGN: CampaignDefinition = campaignSchema.parse(campaignData);
 export const CONTRACT_RULES: ContractRules = contractRulesSchema.parse(contractData);
+export const CAREER_RULES: CareerRules = careerRulesSchema.parse(careerData);
 export const COLLISION_RULES: CollisionRules = collisionRulesSchema.parse(physicsData);
 export const CRUISE_RULES: CruiseRules = cruiseRulesSchema.parse(cruiseData);
 export const TUTORIAL_RULES: TutorialRules = tutorialRulesSchema.parse(tutorialData);
@@ -233,3 +237,14 @@ for (const site of CREW_RULES.sites) {
   }
 }
 for (const station of STATIONS.values()) for (const r of [...Object.keys(station.economy.produces), ...Object.keys(station.economy.consumes)]) getResource(r);
+
+{
+  const { ranks, licences, investment } = CAREER_RULES;
+  for (let i = 1; i < ranks.length; i++) {
+    if (ranks[i].merit <= ranks[i - 1].merit) throw new Error(`Rank ${ranks[i].id} needs more merit than ${ranks[i - 1].id}`);
+    if (ranks[i].activeBonus < ranks[i - 1].activeBonus || ranks[i].offerBonus < ranks[i - 1].offerBonus) throw new Error(`Rank ${ranks[i].id} takes a bonus away`);
+  }
+  if (ranks[0].merit !== 0) throw new Error('The first rank must need no merit');
+  for (const licence of licences) if (licence.rank >= ranks.length) throw new Error(`Licence ${licence.id} needs an unknown rank`);
+  for (const level of investment.levels) if (level.rank >= ranks.length) throw new Error('A stake level needs an unknown rank');
+}

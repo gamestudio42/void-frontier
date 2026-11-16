@@ -841,3 +841,70 @@ export type ContractModifier = 'fragile' | 'volatile' | 'rush' | 'noBrake';
 export const CARGO_MODIFIERS: readonly ContractModifier[] = ['fragile', 'volatile', 'noBrake'];
 
 export type ContractRules = z.infer<typeof contractRulesSchema>;
+
+const contractKind = z.enum(['delivery', 'mining', 'bounty', 'escort', 'salvage', 'patrol', 'recon']);
+
+/** The goal ladder: pilot rank earned by merit, licences bought with it, and stakes in stations. */
+export const careerRulesSchema = z.object({
+  /** Merit for each kind of deed; sales earn it per 1,000 credits. */
+  merit: z.object({
+    contract: z.number().min(0),
+    eliteContract: z.number().min(0),
+    kill: z.number().min(0),
+    discovery: z.number().min(0),
+    campaignStep: z.number().min(0),
+    salesPer1000: z.number().min(0),
+  }),
+  /** In order; the first is where every pilot starts. Bonuses are totals, not increments. */
+  ranks: z
+    .array(
+      z.object({
+        id: z.string().regex(/^[a-z][a-z0-9_]*$/),
+        merit: z.number().int().min(0),
+        /** paid once on reaching the rank */
+        credits: z.number().int().min(0),
+        /** extra contracts the pilot may hold at once */
+        activeBonus: z.number().int().min(0),
+        /** extra offers on every board */
+        offerBonus: z.number().int().min(0),
+      }),
+    )
+    .min(2),
+  licences: z
+    .array(
+      z.object({
+        id: z.string().regex(/^[a-z][a-z0-9_]*$/),
+        /** rank index needed to buy it */
+        rank: z.number().int().min(0),
+        price: z.number().int().positive(),
+        /** contract kinds the licence pays more on */
+        kinds: z.array(contractKind).min(1),
+        rewardBonus: z.number().min(0).max(1),
+        /** credits paid for each pirate the player's ships destroy */
+        killBounty: z.number().int().min(0),
+      }),
+    )
+    .min(1),
+  investment: z.object({
+    /** Each stake level in order; costs are per level, not cumulative. */
+    levels: z
+      .array(
+        z.object({
+          cost: z.number().int().positive(),
+          rank: z.number().int().min(0),
+          /** share off repairs and fuel at this station */
+          serviceDiscount: z.number().min(0).max(0.9),
+          /** extra offers on this station's board (total at this level) */
+          offerSlots: z.number().int().min(0),
+          /** elite jobs turn up here whatever the pilot's standing */
+          eliteOffers: z.boolean(),
+          dividendPerHour: z.number().min(0),
+        }),
+      )
+      .min(1),
+    /** Dividends stop accruing after this many game hours away. */
+    maxDividendHours: positive,
+  }),
+});
+
+export type CareerRules = z.infer<typeof careerRulesSchema>;

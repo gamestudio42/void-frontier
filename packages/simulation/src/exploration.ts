@@ -1,3 +1,5 @@
+import { CAREER_RULES } from '@void-frontier/content';
+import { earnMerit } from './career.ts';
 import { spawnPickup } from './mining.ts';
 import type { EntityId } from './types.ts';
 import type { World } from './world.ts';
@@ -53,6 +55,7 @@ export function discover(world: World, poiId: string): void {
     spawnPickup(world, poi.reward.resource, chunk, { x: poi.position.x, y: poi.position.y }, { x: Math.sqrt(9) * (a < 3.14 ? 1 : -1) * world.rng.range(0.5, 1), y: world.rng.range(-3, 3) });
   }
   world.events.push({ type: 'discovered', id: poiId, kind: poi.kind, credits: poi.reward.credits });
+  earnMerit(world, CAREER_RULES.merit.discovery);
 }
 
 /** Derelicts and caches are found by flying close; deposits need a scanner pulse in range. */
