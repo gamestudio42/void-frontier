@@ -1,6 +1,7 @@
 import { MINING_RULES, getArchetype, getShip, getWeapon, type EncounterDefinition, type PirateArchetype } from '@void-frontier/content';
 import { atan2, clamp, cos, length, sin, toRadians, worldToLocal, wrapAngle, type Vec2 } from '@void-frontier/kernel';
 import { hostilesNear, leadPoint, muzzlePosition } from './combat.ts';
+import { promoteLeader } from './elites.ts';
 import { nearestObstacle } from './proximity.ts';
 import { forwardOf, sensorRange, spawnShip } from './ship.ts';
 import { raycast } from './spatial.ts';
@@ -346,6 +347,7 @@ export function encounterSystem(world: World, dt: number): void {
     } else if (world.tick >= encounter.respawnAt) {
       for (const id of encounter.members) world.destroyEntity(id);
       encounter.members = spawnEncounter(world, encounter.definition);
+      promoteLeader(world, encounter.members, encounter.definition.id);
       encounter.respawnAt = null;
     }
   }

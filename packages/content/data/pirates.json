@@ -18,5 +18,24 @@
     "surrenderHull": 0.45,
     "surrenderChance": 0.6,
     "ransom": 1.6
+  },
+  "elites": {
+    "sectors": {
+      "outpost_alpha": { "chance": 0, "affixes": 1 },
+      "industrial_belt": { "chance": 0.12, "affixes": 1 },
+      "pirate_territory": { "chance": 0.3, "affixes": 1 },
+      "anomaly_zone": { "chance": 0.25, "affixes": 1 },
+      "graveyard": { "chance": 0.3, "affixes": 2 },
+      "ember_reach": { "chance": 0.4, "affixes": 2 }
+    },
+    "reward": { "creditsPerAffix": 300, "merit": 6, "salvageDrops": 2 },
+    "affixes": [
+      { "id": "armored", "hull": 1.7, "armor": 0.15, "mass": 1.25 },
+      { "id": "swift", "thrust": 1.4, "turn": 1.3 },
+      { "id": "regenerating", "shieldRecharge": 3, "shieldDelay": 0.35 },
+      { "id": "overcharged", "damage": 1.35, "heat": 0.8 },
+      { "id": "volatile", "blast": { "radius": 220, "damage": 180 } },
+      { "id": "relentless", "fearless": true, "shield": 1.4 }
+    ]
   }
 }

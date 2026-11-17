@@ -579,6 +579,37 @@ export const pirateRulesSchema = z.object({
     /** boarding a ship that surrendered pays this times the usual strongbox */
     ransom: z.number().min(1),
   }),
+  /**
+   * Elite pirates: a group leader may roll affixes when it spawns, by sector. Each affix
+   * multiplies some of the hull's stats (1 when absent) or adds a death blast.
+   */
+  elites: z.object({
+    sectors: z.record(z.string(), z.object({ chance: z.number().min(0).max(1), affixes: z.number().int().min(1) })),
+    /** paid when the player's side destroys an elite: credits per affix, merit, extra salvage drops */
+    reward: z.object({ creditsPerAffix: z.number().int().min(0), merit: z.number().min(0), salvageDrops: z.number().int().min(0) }),
+    affixes: z
+      .array(
+        z.object({
+          id: z.string().regex(/^[a-z][a-z0-9_]*$/),
+          hull: positive.optional(),
+          /** added to the hull's armour share */
+          armor: z.number().min(0).max(0.5).optional(),
+          mass: positive.optional(),
+          thrust: positive.optional(),
+          turn: positive.optional(),
+          shield: positive.optional(),
+          shieldRecharge: positive.optional(),
+          shieldDelay: positive.optional(),
+          damage: positive.optional(),
+          heat: positive.optional(),
+          /** never flees or surrenders */
+          fearless: z.boolean().optional(),
+          /** goes up when destroyed, hurting every ship in reach */
+          blast: z.object({ radius: positive, damage: positive }).optional(),
+        }),
+      )
+      .min(1),
+  }),
 });
 
 export type PirateRules = z.infer<typeof pirateRulesSchema>;

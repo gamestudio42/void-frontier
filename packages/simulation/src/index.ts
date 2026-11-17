@@ -33,3 +33,4 @@ export * from './morale.ts';
 export * from './abilities.ts';
 export * from './career.ts';
 export * from './director.ts';
+export * from './elites.ts';

@@ -48,7 +48,19 @@ function TargetPanel({ hud, t, locale }: FlightHudProps) {
         <span className="label">{t('hud.target')}</span>
         <span className="hostile">{t(`faction.${target.faction}` as MessageKey)}</span>
       </div>
-      <strong className="target-name">{t(`ship.${target.shipId}` as MessageKey)}</strong>
+      <strong className="target-name">
+        {target.elite && <span className="elite-tag">{t('elite.tag')} </span>}
+        {t(`ship.${target.shipId}` as MessageKey)}
+      </strong>
+      {target.elite && (
+        <ul className="elite-affixes" data-testid="target-elite" data-affixes={target.elite.join(' ')}>
+          {target.elite.map((id) => (
+            <li key={id} title={t(`affix.${id}.hint` as MessageKey)}>
+              {t(`affix.${id}` as MessageKey)}
+            </li>
+          ))}
+        </ul>
+      )}
       {target.archetype && (
         <div className="row target-pilot" data-testid="target-pilot" data-nerve={target.nerve ?? ''}>
           <span>{t(`archetype.${target.archetype}` as MessageKey)}</span>

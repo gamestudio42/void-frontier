@@ -478,10 +478,13 @@ export class SpaceRenderer {
       let model = this.ships.get(id);
       if (!model) {
         model = buildShipModel(ship.definition, ship.faction);
+        // An elite reads bigger and wears a violet shield, so it stands out in a pack.
+        if (ship.elite) model.root.scale.setScalar(1.18);
         this.ships.set(id, model);
         this.scene.add(model.root);
         if (ship.definition.shield.capacity > 0) {
-          const bubble = new ShieldBubble(ship.definition.hull.length, ship.faction === 'pirate' ? new Color(1.6, 0.5, 0.35) : new Color(0.35, 0.9, 1.6));
+          const colour = ship.elite ? new Color(1.6, 0.35, 1.4) : ship.faction === 'pirate' ? new Color(1.6, 0.5, 0.35) : new Color(0.35, 0.9, 1.6);
+          const bubble = new ShieldBubble(ship.definition.hull.length, colour);
           model.root.add(bubble.mesh);
           this.shields.set(id, bubble);
         }

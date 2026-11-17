@@ -1,5 +1,6 @@
 import { FACTIONS, PIRATE_RULES } from '@void-frontier/content';
-import { notePirateKill } from './career.ts';
+import { earnMerit, notePirateKill } from './career.ts';
+import { eliteDestroyed } from './elites.ts';
 import { dropSalvage } from './mining.ts';
 import { shaken, squadLost } from './morale.ts';
 import { damageChosenSystem, damageSubsystems } from './subsystems.ts';
@@ -24,6 +25,16 @@ export function destroyShip(world: World, id: EntityId, by: EntityId | null): vo
   if (ship.faction === 'pirate') {
     dropSalvage(world, body.position, body.velocity);
     squadLost(world, id);
+  }
+  if (ship.elite) {
+    const byPlayer = by !== null && world.ships.get(by)?.faction === 'player';
+    const credits = eliteDestroyed(world, id, byPlayer);
+    if (byPlayer) {
+      world.credits += credits;
+      earnMerit(world, PIRATE_RULES.elites.reward.merit);
+      for (let i = 0; i < PIRATE_RULES.elites.reward.salvageDrops; i++) dropSalvage(world, body.position, body.velocity);
+    }
+    world.events.push({ type: 'eliteDown', ship: id, affixes: [...ship.elite.affixes], position: { x: body.position.x, y: body.position.y }, credits });
   }
   if (by !== null) {
     const killer = world.ships.get(by);

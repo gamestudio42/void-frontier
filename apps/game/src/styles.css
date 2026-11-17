@@ -2761,3 +2761,27 @@ body.gamepad :focus {
     animation: none;
   }
 }
+
+.elite-tag {
+  color: #ff5fd2;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.elite-affixes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 2px 0 4px;
+  padding: 0;
+  list-style: none;
+}
+
+.elite-affixes li {
+  padding: 1px 6px;
+  border: 1px solid rgb(255 95 210 / 55%);
+  border-radius: 3px;
+  color: #ffb3ea;
+  font-size: 11px;
+}
