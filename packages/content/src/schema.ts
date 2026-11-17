@@ -737,7 +737,19 @@ export const sectorDefinitionSchema = z.object({
   mapPosition: z.object({ x: z.number(), y: z.number() }),
   environment: z.object({
     nebulaSeed: z.number().int(),
-    planet: z.object({ hue: z.number().min(0).max(1), x: z.number(), y: z.number(), z: z.number(), radius: positive }),
+    planet: z.object({
+      hue: z.number().min(0).max(1),
+      x: z.number(),
+      y: z.number(),
+      z: z.number(),
+      radius: positive,
+      /** rim colour of the atmosphere; derived from the hue when absent */
+      atmosphere: z.string().optional(),
+      /** 0..1 share of the planet under cloud */
+      clouds: z.number().min(0).max(1).optional(),
+      /** a ring system, in planet radii */
+      rings: z.object({ inner: positive, outer: positive, color: z.string() }).optional(),
+    }),
     /** The sector's own colour: a sky tint, sunlight, a nearby star, and giant structures below the flight plane. */
     look: z
       .object({
@@ -747,6 +759,19 @@ export const sectorDefinitionSchema = z.object({
         sunIntensity: positive,
         star: z.object({ x: z.number(), y: z.number(), z: z.number(), radius: positive, color: z.string() }).optional(),
         giants: z.array(z.object({ kind: z.enum(['hulk', 'ring', 'spindle']), x: z.number(), y: z.number(), scale: positive, angle: z.number() })).default([]),
+        /**
+         * Colour grade after tone mapping (docs/ART_BIBLE.md): lift raises the shadows
+         * toward a colour, gain tints the highlights, then saturation, contrast and a vignette.
+         */
+        grade: z
+          .object({
+            lift: z.tuple([z.number(), z.number(), z.number()]),
+            gain: z.tuple([z.number(), z.number(), z.number()]),
+            saturation: z.number().min(0).max(2),
+            contrast: z.number().min(0.5).max(1.5),
+            vignette: z.number().min(0).max(1),
+          })
+          .optional(),
       })
       .optional(),
   }),

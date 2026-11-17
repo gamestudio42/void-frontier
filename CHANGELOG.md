@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased: art pass, part one
+
+- Planets have stormy, turbulent bands, a drifting cloud deck and an atmosphere that glows on the sunlit side; the Industrial Belt and Anomaly Zone planets have rings.
+- Each sector has its own colour grade: clear blue at Outpost Alpha, smoggy amber in the Industrial Belt, red haze in Pirate Territory, violet in the Anomaly Zone, cold and grey in the Graveyard, harsh orange in Ember Reach.
+- A new art bible (`docs/ART_BIBLE.md`) sets the palette, shapes and materials for the rest of the art pass.
+
 ## Unreleased: sector bosses
 
 - Every sector past Outpost Alpha now has a boss in its lair, marked on screen: the Quarry Ram in the Industrial Belt, the Gravewell Hound in the Anomaly Zone, the Scrap Leviathan in the Graveyard and the Furnace in Ember Reach.

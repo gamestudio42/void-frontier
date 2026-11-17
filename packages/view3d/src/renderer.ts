@@ -32,7 +32,9 @@ import { BeamRenderer, ShieldBubble, TracerRenderer } from './combatFx.ts';
 import { PickupRenderer } from './mining.ts';
 import { CameraRig } from './camera.ts';
 import { fromScene, toScene } from './coords.ts';
-import { DustField, PlaneGrid, createBeacon, createPlanet, createStarfield, type PlanetLook } from './environment.ts';
+import { DustField, PlaneGrid, createBeacon, createStarfield } from './environment.ts';
+import { createGradePass, NEUTRAL_GRADE } from './grade.ts';
+import { createPlanet, type PlanetLook } from './planet.ts';
 import { createNebula } from './nebula.ts';
 import { FlightOverlay } from './overlay.ts';
 import { PALETTE } from './palette.ts';
@@ -160,7 +162,10 @@ export class SpaceRenderer {
     this.nebula = createNebula(seed, look?.tint, look?.tintStrength);
     this.starfield = createStarfield(seed);
     this.dust = new DustField(seed + 1);
-    this.scene.add(this.nebula, this.starfield, this.dust.points, this.grid.lines, createPlanet(seed + 2, planet), this.overlay.root, this.particles.points);
+    this.scene.add(this.nebula, this.starfield, this.dust.points, this.grid.lines, this.overlay.root, this.particles.points);
+    const world = createPlanet(seed + 2, planet, SUN_DIRECTION);
+    this.scene.add(world.root);
+    this.landmarks.push(world);
 
     for (const beacon of sim.world.beacons.values()) {
       const model = createBeacon();
@@ -208,6 +213,7 @@ export class SpaceRenderer {
     this.bloom = new UnrealBloomPass(new Vector2(1, 1), 0.6, 0.45, 0.72);
     this.composer.addPass(this.bloom);
     this.composer.addPass(new OutputPass());
+    this.composer.addPass(createGradePass(look?.grade ?? NEUTRAL_GRADE));
   }
 
   get currentQuality(): Quality {

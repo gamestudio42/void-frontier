@@ -201,13 +201,7 @@
   },
   "environment": {
     "nebulaSeed": 1337,
-    "planet": {
-      "hue": 0.58,
-      "x": 9000,
-      "y": -12000,
-      "z": -9500,
-      "radius": 2300
-    },
+    "planet": {"hue": 0.58, "x": 9000, "y": -12000, "z": -9500, "radius": 2300, "atmosphere": "#7fc8ff", "clouds": 0.4},
     "look": {
       "tint": [
         0.05,
@@ -215,6 +209,7 @@
         0.2
       ],
       "tintStrength": 0.5,
+      "grade": {"lift": [0.0, 0.01, 0.025], "gain": [1.0, 1.0, 1.02], "saturation": 1.05, "contrast": 1.03, "vignette": 0.25},
       "sun": "#fff1dc",
       "sunIntensity": 3.2,
       "giants": [
