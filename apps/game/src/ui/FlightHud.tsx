@@ -247,6 +247,8 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
           <em>{t('cruise.hint')}</em>
         </section>
       )}
+      {hud.incident?.kind === 'solarFlare' && hud.incident.stage === 'active' && <div className="flare-wash" aria-hidden="true" />}
+      {hud.incident && !hud.docking && <IncidentPanel incident={hud.incident} t={t} locale={locale} />}
       {hud.gravity > 0.2 && (
         <div className="gravity" data-testid="gravity">
           {t('hud.gravity')}: <strong>{formatNumber(locale, hud.gravity, 1)} {t('unit.accel')}</strong>
@@ -349,6 +351,21 @@ function Verbs({ abilities, jammed, t, locale }: { abilities: FlightTelemetry['a
         </div>
       ))}
       {jammed && <strong className="jammed" data-testid="jammed">{t('verb.jammed')}</strong>}
+    </section>
+  );
+}
+
+/** The director's incident: what it is, what to do, and how long is left. */
+function IncidentPanel({ incident, t, locale }: { incident: NonNullable<HudState['incident']>; t: Translate; locale: string }) {
+  const { kind, stage, seconds, distance, covered } = incident;
+  return (
+    <section className={`panel incident-panel incident-${kind} ${stage}`} data-testid="incident" data-kind={kind} data-stage={stage} role="status">
+      <span className="label">{t(`incident.${kind}.title` as MessageKey)}</span>
+      <strong>{t(`incident.${kind}.${stage}` as MessageKey)}</strong>
+      <span>
+        {formatNumber(locale, Math.ceil(seconds))} s{distance !== null && ` · ${formatDistance(locale, distance)}`}
+      </span>
+      {covered !== null && stage === 'active' && <em className={covered ? 'covered' : 'exposed'}>{t(covered ? 'incident.covered' : 'incident.exposed')}</em>}
     </section>
   );
 }

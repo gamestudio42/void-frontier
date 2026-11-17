@@ -1,5 +1,6 @@
 import { Rng } from '@void-frontier/kernel';
 import { createCareer, type Career } from './career.ts';
+import { createDirector, type Director } from './director.ts';
 import type { SpatialIndex } from './spatial.ts';
 import type { AiPilot, Asteroid, Body, Collider, EncounterState, EntityId, Pickup, Projectile, Ship, SimEvent, Station } from './types.ts';
 
@@ -39,6 +40,8 @@ export class World {
   standing: Record<string, number> = {};
   /** Rank, licences and stakes; shared with the contract board like `standing`. */
   career: Career = createCareer();
+  /** Pacing of the sector's incidents; fresh in each sector and not saved. */
+  director: Director = createDirector();
   /** What makes this sector different: multipliers on shield recharge and weapon cooling. */
   rules = { shieldFactor: 1, coolingFactor: 1 };
   /** The player's money. */

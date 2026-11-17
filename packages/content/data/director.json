@@ -1,0 +1,109 @@
+{
+  "intensity": {
+    "decayPerSecond": 0.03,
+    "hostileRange": 1400,
+    "hostilePerSecond": 0.04,
+    "maxHostiles": 3,
+    "damageTaken": 0.0025,
+    "damageDealt": 0.001,
+    "kill": 0.12
+  },
+  "pacing": {
+    "calmBelow": 0.2,
+    "peakAbove": 0.7,
+    "relaxSeconds": 40,
+    "firstIncident": 75,
+    "gap": [110, 210]
+  },
+  "sectors": {
+    "outpost_alpha": {
+      "danger": 0,
+      "weights": {
+        "distress": 3,
+        "meteorStorm": 1,
+        "solarFlare": 1,
+        "unstableWreck": 2
+      }
+    },
+    "industrial_belt": {
+      "danger": 0.15,
+      "weights": {
+        "distress": 2,
+        "meteorStorm": 3,
+        "solarFlare": 1,
+        "unstableWreck": 2
+      }
+    },
+    "pirate_territory": {
+      "danger": 0.6,
+      "weights": {
+        "distress": 4,
+        "meteorStorm": 1,
+        "solarFlare": 1,
+        "unstableWreck": 1
+      }
+    },
+    "anomaly_zone": {
+      "danger": 0.3,
+      "weights": {
+        "distress": 1,
+        "meteorStorm": 2,
+        "solarFlare": 3,
+        "unstableWreck": 1
+      }
+    },
+    "graveyard": {
+      "danger": 0.35,
+      "weights": {
+        "distress": 2,
+        "meteorStorm": 1,
+        "solarFlare": 1,
+        "unstableWreck": 4
+      }
+    },
+    "ember_reach": {
+      "danger": 0.45,
+      "weights": {
+        "distress": 2,
+        "meteorStorm": 1,
+        "solarFlare": 4,
+        "unstableWreck": 1
+      }
+    }
+  },
+  "distress": {
+    "distance": [1300, 2200],
+    "lifetime": 150,
+    "reachRadius": 140,
+    "credits": 700,
+    "resource": "machine_parts",
+    "units": 6,
+    "ambush": { "ship": "jackal", "count": 2, "distance": 650 }
+  },
+  "meteorStorm": {
+    "warning": 8,
+    "duration": 25,
+    "perSecond": 30,
+    "speed": [180, 260],
+    "upstream": 1000,
+    "width": 800,
+    "damage": 24,
+    "multipliers": { "shield": 1, "hull": 1 }
+  },
+  "solarFlare": {
+    "warning": 12,
+    "duration": 18,
+    "coverRange": 900,
+    "minCoverRadius": 18
+  },
+  "unstableWreck": {
+    "distance": [800, 1500],
+    "fuse": 50,
+    "resource": "salvage",
+    "pickups": 4,
+    "units": 6,
+    "scatter": 70,
+    "blastRadius": 320,
+    "blastDamage": 260
+  }
+}

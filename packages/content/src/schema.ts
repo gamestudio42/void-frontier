@@ -908,3 +908,96 @@ export const careerRulesSchema = z.object({
 });
 
 export type CareerRules = z.infer<typeof careerRulesSchema>;
+
+const range = z.tuple([z.number().min(0), z.number().min(0)]).refine(([a, b]) => a <= b, 'range must be [min, max]');
+
+/** Things that happen in flight, and what kind of incident each one is. */
+export const INCIDENT_KINDS = ['distress', 'meteorStorm', 'solarFlare', 'unstableWreck'] as const;
+export type IncidentKind = (typeof INCIDENT_KINDS)[number];
+
+/**
+ * The encounter director: it reads how hot the fight around the player is, lets a peak
+ * cool off, and only drops an incident into a quiet stretch.
+ */
+export const directorRulesSchema = z.object({
+  intensity: z.object({
+    /** fall per second while no hostile is near */
+    decayPerSecond: positive,
+    /** metres from the player that a hostile counts as near */
+    hostileRange: positive,
+    /** rise per second per near hostile, up to `maxHostiles` */
+    hostilePerSecond: z.number().min(0),
+    maxHostiles: z.number().int().min(1),
+    /** rise per point of damage the player takes, and deals */
+    damageTaken: z.number().min(0),
+    damageDealt: z.number().min(0),
+    /** rise per pirate the player destroys */
+    kill: z.number().min(0),
+  }),
+  pacing: z.object({
+    /** below this the sector is calm; incidents only start in calm */
+    calmBelow: z.number().min(0).max(1),
+    /** above this the fight is at its peak */
+    peakAbove: z.number().min(0).max(1),
+    /** seconds of breathing room after a peak, with no incidents */
+    relaxSeconds: z.number().min(0),
+    /** calm seconds in a sector before its first incident */
+    firstIncident: positive,
+    /** calm seconds between incidents, drawn in this range */
+    gap: range,
+  }),
+  /** Sectors with incidents; the rest have none. */
+  sectors: z.record(
+    z.string(),
+    z.object({
+      /** chance a distress call is a pirate trap */
+      danger: z.number().min(0).max(1),
+      weights: z.record(z.enum(INCIDENT_KINDS), z.number().min(0)),
+    }),
+  ),
+  distress: z.object({
+    /** metres from the player the call comes from */
+    distance: range,
+    /** seconds before the call goes silent */
+    lifetime: positive,
+    reachRadius: positive,
+    credits: z.number().int().min(0),
+    resource: z.string(),
+    units: z.number().int().min(0),
+    ambush: z.object({ ship: z.string(), count: z.number().int().min(1), distance: positive }),
+  }),
+  meteorStorm: z.object({
+    warning: z.number().min(0),
+    duration: positive,
+    /** rocks per second */
+    perSecond: positive,
+    speed: range,
+    /** metres upstream of the player the stream starts */
+    upstream: positive,
+    /** width of the stream across its direction */
+    width: positive,
+    damage: positive,
+    multipliers: z.object({ shield: positive, hull: positive }),
+  }),
+  solarFlare: z.object({
+    warning: z.number().min(0),
+    duration: positive,
+    /** a rock or station within this many metres sunward shades a ship */
+    coverRange: positive,
+    /** smaller rocks give no cover */
+    minCoverRadius: z.number().min(0),
+  }),
+  unstableWreck: z.object({
+    distance: range,
+    /** seconds from the call to the blast */
+    fuse: positive,
+    resource: z.string(),
+    pickups: z.number().int().min(1),
+    units: z.number().int().min(1),
+    scatter: z.number().min(0),
+    blastRadius: positive,
+    blastDamage: positive,
+  }),
+});
+
+export type DirectorRules = z.infer<typeof directorRulesSchema>;

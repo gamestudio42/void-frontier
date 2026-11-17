@@ -2698,3 +2698,66 @@ body.gamepad :focus {
   gap: 6px;
   margin-top: 8px;
 }
+
+.incident-panel {
+  top: 244px;
+  right: 16px;
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border-top: 2px solid var(--amber);
+}
+
+.incident-panel strong {
+  font-size: 15px;
+}
+
+.incident-panel span {
+  font-family: var(--mono);
+  color: var(--muted);
+}
+
+.incident-panel em {
+  font-style: normal;
+  font-weight: 700;
+}
+
+.incident-panel em.covered {
+  color: var(--green);
+}
+
+.incident-panel em.exposed,
+.incident-panel.warning strong {
+  color: var(--red);
+}
+
+.incident-panel.warning {
+  animation: incident-pulse 1s ease-in-out infinite;
+}
+
+.incident-unstableWreck,
+.incident-meteorStorm {
+  border-top-color: var(--red);
+}
+
+/* The flare itself: the whole view washes out while it burns. */
+.flare-wash {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 40%, rgb(255 236 190 / 26%), rgb(255 170 80 / 14%) 70%);
+  mix-blend-mode: screen;
+}
+
+@keyframes incident-pulse {
+  50% {
+    border-top-color: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .incident-panel.warning {
+    animation: none;
+  }
+}

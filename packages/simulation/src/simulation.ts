@@ -1,7 +1,8 @@
-import { COLLISION_RULES, getShip, type AbilityKind, type CollisionRules, type SectorDefinition } from '@void-frontier/content';
+import { COLLISION_RULES, getShip, type AbilityKind, type IncidentKind, type CollisionRules, type SectorDefinition } from '@void-frontier/content';
 import { FIXED_DT, Rng, toRadians } from '@void-frontier/kernel';
 import { forwardOf, spawnShip } from './ship.ts';
 import { aiSystem, encounterSystem, spawnEncounter } from './ai.ts';
+import { directorSystem, startIncident } from './director.ts';
 import { moraleSystem } from './morale.ts';
 import { useAbility } from './abilities.ts';
 import { projectileSystem, weaponSystem } from './combat.ts';
@@ -120,6 +121,7 @@ export class Simulation {
 
   /** Systems run in a fixed order; see docs/ARCHITECTURE.md. */
   step(): void {
+    const mark = this.world.events.length;
     massSystem(this.world);
     moraleSystem(this.world, this.dt);
     aiSystem(this.world);
@@ -135,6 +137,7 @@ export class Simulation {
     rockCoolingSystem(this.world, this.dt);
     scanExpirySystem(this.world);
     encounterSystem(this.world, this.dt);
+    directorSystem(this.world, this.playerId, this.world.events.slice(mark), this.dt);
     marketSystem(this.world, this.dt);
     explorationSystem(this.world, this.playerId);
     if (this.economy) economySystem(this.world, this.economy, this.missions, this.playerId, this.dt);
@@ -188,6 +191,11 @@ export class Simulation {
         encounter.respawnAt = world.tick + Math.round(releaseSeconds / this.dt);
       }
     }
+  }
+
+  /** Starts an incident of `kind` around the player now, whatever the director's pacing. */
+  startIncident(kind: IncidentKind) {
+    return startIncident(this.world, this.playerId, kind, this.dt);
   }
 
   /** One pirate `distance` metres ahead of the player, already hunting it: the fight lesson. */

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased: in-flight incidents
+
+- Space is less quiet between fights. After a calm spell the sector throws something at you: a distress call (survivors to rescue for credits and cargo, or a pirate trap), a micrometeor storm crossing your path, a solar flare that knocks out shields unless you hide behind a big rock or a station, or a wreck with a failing reactor spilling salvage before it blows.
+- A panel under the radar names the incident, says what to do and counts down; calls and wrecks get a marker. Incidents never start during a fight, and a peak is followed by a breather.
+- Dying to a storm or a blast now says so on the wreck screen.
+
 ## Unreleased: pilot rank, licences and station stakes
 
 - A new Career tab at every station. Finished jobs, pirates destroyed, discoveries, story missions and sales earn merit, which raises your rank from Drifter to Frontier Legend. Each rank pays a bonus, and some let you hold more contracts or see more jobs.

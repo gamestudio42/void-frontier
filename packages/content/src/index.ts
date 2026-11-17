@@ -5,6 +5,7 @@ import careerData from '../data/career.json';
 import contractData from '../data/contracts.json';
 import crewData from '../data/crew.json';
 import cruiseData from '../data/cruise.json';
+import directorData from '../data/director.json';
 import eventData from '../data/events.json';
 import factionData from '../data/factions.json';
 import traderData from '../data/traders.json';
@@ -27,6 +28,8 @@ import {
   CARGO_MODIFIERS,
   careerRulesSchema,
   type CareerRules,
+  directorRulesSchema,
+  type DirectorRules,
   asteroidTypeSchema,
   collisionRulesSchema,
   contractRulesSchema,
@@ -83,6 +86,7 @@ export const CREW_RULES: CrewRules = crewRulesSchema.parse(crewData);
 export const CAMPAIGN: CampaignDefinition = campaignSchema.parse(campaignData);
 export const CONTRACT_RULES: ContractRules = contractRulesSchema.parse(contractData);
 export const CAREER_RULES: CareerRules = careerRulesSchema.parse(careerData);
+export const DIRECTOR_RULES: DirectorRules = directorRulesSchema.parse(directorData);
 export const COLLISION_RULES: CollisionRules = collisionRulesSchema.parse(physicsData);
 export const CRUISE_RULES: CruiseRules = cruiseRulesSchema.parse(cruiseData);
 export const TUTORIAL_RULES: TutorialRules = tutorialRulesSchema.parse(tutorialData);
@@ -247,4 +251,13 @@ for (const station of STATIONS.values()) for (const r of [...Object.keys(station
   if (ranks[0].merit !== 0) throw new Error('The first rank must need no merit');
   for (const licence of licences) if (licence.rank >= ranks.length) throw new Error(`Licence ${licence.id} needs an unknown rank`);
   for (const level of investment.levels) if (level.rank >= ranks.length) throw new Error('A stake level needs an unknown rank');
+}
+
+{
+  const { pacing, sectors, distress, unstableWreck } = DIRECTOR_RULES;
+  if (pacing.calmBelow >= pacing.peakAbove) throw new Error('Director: calm must sit below the peak');
+  for (const id of Object.keys(sectors)) getSector(id);
+  getResource(distress.resource);
+  getResource(unstableWreck.resource);
+  getShip(distress.ambush.ship);
 }

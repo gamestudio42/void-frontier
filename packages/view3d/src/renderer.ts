@@ -287,6 +287,11 @@ export class SpaceRenderer {
           }
           this.rig.shake(0.3);
         }
+      } else if (event.type === 'incident' && event.stage === 'detonated') {
+        // A reactor going: the biggest blast in the game, and a shock ring out to its reach.
+        this.explode(event.position);
+        this.ring(toScene(event.position, 0.5), 320, 0.9, 0xff8a4a, null);
+        this.rig.shake(0.6);
       } else if (event.type === 'ability') {
         this.abilityFx(event, event.ship === sim.playerId, sim.world.bodies.get(event.ship)?.velocity ?? { x: 0, y: 0 });
       } else if (event.type === 'scan') {
