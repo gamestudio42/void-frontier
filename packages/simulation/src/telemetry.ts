@@ -186,6 +186,8 @@ export interface TargetInfo {
   archetype: string | null;
   /** A pirate's nerve as the HUD names it, or null for other ships. */
   nerve: 'steady' | 'wavering' | 'fleeing' | null;
+  /** An elite pirate's affixes, or null for an ordinary ship. */
+  elite: string[] | null;
   /** An EMP has its guns cold. */
   jammed: boolean;
   faction: string;
@@ -228,6 +230,7 @@ export function readTarget(world: World, viewer: EntityId, target: EntityId | nu
     shipId: ship.definition.id,
     archetype: pilot?.morale === undefined ? null : getArchetype(pilot.archetype, ship.baseDefinition.id).id,
     nerve,
+    elite: ship.elite ? [...ship.elite.affixes] : null,
     jammed: isJammed(world, ship),
     faction: ship.faction,
     position: { ...body.position },

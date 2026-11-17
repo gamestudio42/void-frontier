@@ -477,6 +477,12 @@ export class AudioEngine {
         case 'dividend':
           this.chime([784, 1047], 0.04);
           break;
+        case 'eliteDown':
+          if (e.credits > 0) {
+            this.chime([523, 784, 1047, 1319], 0.06);
+            this.duck(0.3, 1.2);
+          }
+          break;
         case 'incident':
           if (e.stage === 'warning' || (e.stage === 'started' && e.kind !== 'meteorStorm' && e.kind !== 'solarFlare')) {
             // An alert: two falling tones, then a hiss for weather or a ping for a signal.

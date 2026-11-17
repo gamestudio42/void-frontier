@@ -261,3 +261,11 @@ for (const station of STATIONS.values()) for (const r of [...Object.keys(station
   getResource(unstableWreck.resource);
   getShip(distress.ambush.ship);
 }
+
+{
+  const { sectors, affixes } = PIRATE_RULES.elites;
+  for (const [id, sector] of Object.entries(sectors)) {
+    getSector(id);
+    if (sector.affixes > affixes.length) throw new Error(`Elites in ${id} roll more affixes than exist`);
+  }
+}

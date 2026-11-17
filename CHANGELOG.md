@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased: elite pirates
+
+- Pirate leaders can now be elites, more often in the dangerous sectors: armored, swift, regenerating, overcharged, volatile (it blows up when it dies) or relentless (never runs). In the Graveyard and Ember Reach they have two.
+- An elite is bigger, has a violet shield, shows a ◆ marker on screen once your sensors see it, and the target panel lists what makes it dangerous.
+- Bringing one down pays a bounty for each affix, extra merit and extra salvage.
+
 ## Unreleased: in-flight incidents
 
 - Space is less quiet between fights. After a calm spell the sector throws something at you: a distress call (survivors to rescue for credits and cargo, or a pirate trap), a micrometeor storm crossing your path, a solar flare that knocks out shields unless you hide behind a big rock or a station, or a wreck with a failing reactor spilling salvage before it blows.

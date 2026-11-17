@@ -1,3 +1,4 @@
+import type { Elite } from './elites.ts';
 import type { FleetNote } from './fleet.ts';
 import type { AbilityKind, AsteroidType, IncidentKind, EncounterDefinition, ShipDefinition, StationDefinition, WeaponDefinition } from '@void-frontier/content';
 import type { Vec2 } from '@void-frontier/kernel';
@@ -102,6 +103,8 @@ export type SubsystemId = 'engines' | 'reactor' | 'sensors' | 'shieldGenerator' 
 export const SUBSYSTEMS: SubsystemId[] = ['engines', 'reactor', 'sensors', 'shieldGenerator', 'cargoHold'];
 
 export interface Ship {
+  /** An elite pirate's affixes; its `definition` already carries them. */
+  elite?: Elite;
   /** Health of each internal system, 0..1. */
   subsystems: Record<SubsystemId, number>;
   /** Effective stats: the base definition with installed upgrades applied. */
@@ -238,6 +241,8 @@ export type SimEvent =
   | { type: 'campaign'; step: string; credits: number; finished: boolean }
   /** The pilot reached a new rank, which paid `credits`. */
   | { type: 'rank'; rank: number; id: string; credits: number }
+  /** An elite pirate went down; `credits` is the bounty the player's side was paid (0 otherwise). */
+  | { type: 'eliteDown'; ship: EntityId; affixes: string[]; position: { x: number; y: number }; credits: number }
   /**
    * The encounter director's incident: announced (`warning`), under way (`started`), then
    * settled one way or another. `credits` is what a rescue paid.

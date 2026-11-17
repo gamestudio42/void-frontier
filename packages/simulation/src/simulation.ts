@@ -3,6 +3,7 @@ import { FIXED_DT, Rng, toRadians } from '@void-frontier/kernel';
 import { forwardOf, spawnShip } from './ship.ts';
 import { aiSystem, encounterSystem, spawnEncounter } from './ai.ts';
 import { directorSystem, startIncident } from './director.ts';
+import { promoteLeader } from './elites.ts';
 import { moraleSystem } from './morale.ts';
 import { useAbility } from './abilities.ts';
 import { projectileSystem, weaponSystem } from './combat.ts';
@@ -83,7 +84,9 @@ export class Simulation {
     for (const field of sector.asteroidFields) generateAsteroidField(sim.world, field, rng, occupied);
     sim.world.rng = new Rng(sector.seed ^ 0x5bd1e995);
     for (const encounter of sector.encounters) {
-      sim.world.encounters.push({ definition: encounter, members: spawnEncounter(sim.world, encounter), respawnAt: null });
+      const members = spawnEncounter(sim.world, encounter);
+      promoteLeader(sim.world, members, encounter.id);
+      sim.world.encounters.push({ definition: encounter, members, respawnAt: null });
     }
     // The sector heading is a compass bearing; the sim angle is counter-clockwise from +X.
     sim.playerId = spawnShip(sim.world, getShip(options.playerShip ?? sector.playerShip), {

@@ -6,6 +6,7 @@ import {
 } from "@void-frontier/content";
 import { TAU, cos, sin } from "@void-frontier/kernel";
 import { spawnEncounter } from "./ai.ts";
+import { promoteLeader } from "./elites.ts";
 import { hostilesNear } from "./combat.ts";
 import { applyWeaponDamage } from "./damage.ts";
 import { spawnPickup } from "./mining.ts";
@@ -376,6 +377,7 @@ function runIncident(
             pilot.mode = "engage";
           }
         }
+        promoteLeader(world, members, `ambush_${incident.id}`);
         finish(world, director, "ambush");
       } else {
         world.credits += r.credits;

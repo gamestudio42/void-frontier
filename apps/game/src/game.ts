@@ -647,6 +647,9 @@ export class Game {
             this.rumble(0.4, 250);
           }
           if (event.type === 'incident') this.incidentNotice(event);
+          if (event.type === 'eliteDown' && event.credits > 0) {
+            this.notices.push({ text: 'eliteDown', kind: 'completed', reward: event.credits, at: this.clock, id: -33000 - event.ship });
+          }
           if (event.type === 'dividend') {
             this.notices.push({ text: `dividend:${event.station}`, kind: 'completed', reward: event.credits, at: this.clock, id: -31000 - Math.round(this.clock) });
           }
@@ -1042,6 +1045,17 @@ export class Game {
     for (const [id, owned] of fleetEntities(this.sim)) {
       const b = this.sim.world.bodies.get(id);
       if (b) list.push({ label: owned.pilot?.name ?? '', position: b.position, colour: '#ffd166' });
+    }
+    // Elites stand out on the scope once the sensors can see them.
+    const me = this.sim.world.ships.get(this.sim.playerId);
+    const at = this.sim.world.bodies.get(this.sim.playerId)?.position;
+    if (me && at) {
+      const reach = sensorRange(me);
+      for (const [id, ship] of this.sim.world.ships) {
+        if (!ship.elite || ship.destroyed) continue;
+        const p = this.sim.world.bodies.get(id)?.position;
+        if (p && Math.hypot(p.x - at.x, p.y - at.y) <= reach) list.push({ label: '◆', position: p, colour: '#ff5fd2' });
+      }
     }
     const incident = this.sim.world.director.incident;
     if (incident && (incident.kind === 'distress' || incident.kind === 'unstableWreck')) {
