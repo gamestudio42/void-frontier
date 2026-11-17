@@ -21,6 +21,7 @@ const MAX_ROUNDS = 600;
 const PLAYER_TRACER = new Color(2.2, 1.5, 0.55);
 const PIRATE_TRACER = new Color(2.4, 0.45, 0.25);
 const MISSILE_GLOW = new Color(3, 1.6, 0.5);
+const METEOR_GLOW = new Color(1.25, 0.95, 0.7);
 
 /** Autocannon rounds as glowing streaks, one instanced draw call for all of them. */
 export class TracerRenderer {
@@ -56,13 +57,14 @@ export class TracerRenderer {
       this.rotation.setFromUnitVectors(this.axis, this.dir);
       // Missiles read as short, fat, hot streaks among the tracers. Rounds are long, thick
       // streaks so a burst reads as a line of fire from the camera's height.
-      const length = round.homing ? 9 : Math.min(26, speed * 0.045);
-      const girth = round.homing ? 3 : 2;
+      // Micrometeors: pale, thick and short, a pebble with a glowing wake rather than a round.
+      const length = round.homing ? 9 : round.meteor ? Math.min(16, speed * 0.06) : Math.min(26, speed * 0.045);
+      const girth = round.homing || round.meteor ? 3 : 2;
       this.scale.set(length, girth, girth);
       this.position.addScaledVector(this.dir, -length / 2);
       this.matrix.compose(this.position, this.rotation, this.scale);
       this.mesh.setMatrixAt(i, this.matrix);
-      this.mesh.setColorAt(i, round.homing ? MISSILE_GLOW : round.owner === playerId ? PLAYER_TRACER : PIRATE_TRACER);
+      this.mesh.setColorAt(i, round.homing ? MISSILE_GLOW : round.meteor ? METEOR_GLOW : round.owner === playerId ? PLAYER_TRACER : PIRATE_TRACER);
       i++;
     }
     this.mesh.count = i;

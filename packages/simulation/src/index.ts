@@ -32,3 +32,4 @@ export { fleetEntities, miningYield, orderProblem, roomFor, siteOf, sitePlace, s
 export * from './morale.ts';
 export * from './abilities.ts';
 export * from './career.ts';
+export * from './director.ts';

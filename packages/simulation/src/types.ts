@@ -1,5 +1,5 @@
 import type { FleetNote } from './fleet.ts';
-import type { AbilityKind, AsteroidType, EncounterDefinition, ShipDefinition, StationDefinition, WeaponDefinition } from '@void-frontier/content';
+import type { AbilityKind, AsteroidType, IncidentKind, EncounterDefinition, ShipDefinition, StationDefinition, WeaponDefinition } from '@void-frontier/content';
 import type { Vec2 } from '@void-frontier/kernel';
 
 export type EntityId = number;
@@ -238,6 +238,11 @@ export type SimEvent =
   | { type: 'campaign'; step: string; credits: number; finished: boolean }
   /** The pilot reached a new rank, which paid `credits`. */
   | { type: 'rank'; rank: number; id: string; credits: number }
+  /**
+   * The encounter director's incident: announced (`warning`), under way (`started`), then
+   * settled one way or another. `credits` is what a rescue paid.
+   */
+  | { type: 'incident'; id: number; kind: IncidentKind; stage: IncidentStage; position: { x: number; y: number }; credits: number }
   /** A station the player holds a stake in paid out on docking. */
   | { type: 'dividend'; station: string; credits: number }
   | { type: 'subsystemDamaged'; ship: EntityId; system: SubsystemId | 'weapon'; health: number }
@@ -270,6 +275,8 @@ export interface Projectile {
   life: number;
   damage: number;
   multipliers: { shield: number; hull: number };
+  /** A micrometeor from a storm: no owner (owner -1), drawn as a rock streak. */
+  meteor?: boolean;
   /** Missiles steer toward their target; with none, or once it is gone, they fly straight. */
   homing?: { target: EntityId | null; turnRate: number };
 }
@@ -333,3 +340,5 @@ export interface NewsItem {
   sector?: string;
   resource?: string;
 }
+
+export type IncidentStage = 'warning' | 'started' | 'resolved' | 'ambush' | 'expired' | 'ended' | 'detonated';

@@ -12,6 +12,9 @@ export interface DebugStats {
   zoom: number;
   quality: string;
   autoQuality: boolean;
+  /** Encounter director: how hot things are (0..1) and its pacing phase. */
+  intensity: number;
+  phase: string;
 }
 
 export interface DockingView {
@@ -168,7 +171,7 @@ export interface ContractsView {
 
 /** What destroyed the player's ship, for the death card. */
 export interface DeathCause {
-  kind: 'weapon' | 'ram' | 'rock' | 'station' | 'other';
+  kind: 'weapon' | 'ram' | 'rock' | 'station' | 'hazard' | 'other';
   /** Ship definition id of the shooter or the ship rammed. */
   ship: string | null;
   /** Closing speed of the fatal impact, m/s. */
@@ -233,6 +236,11 @@ export interface HudState {
   news: { tick: number; kind: string; subject: string; station?: string; sector?: string; resource?: string }[];
   /** Active economy events. */
   events: { id: string; secondsLeft: number }[];
+  /**
+   * The director's incident under way: `seconds` left in its stage, `distance` to it
+   * (calls and wrecks), and for a flare whether the ship is in cover.
+   */
+  incident: { kind: string; stage: 'warning' | 'active'; seconds: number; distance: number | null; covered: boolean | null } | null;
   /** Increments on every damaging hit, so the HUD can flash. */
   hits: number;
   stats: DebugStats;
@@ -288,6 +296,7 @@ export const initialHudState = (): HudState => ({
   cruise: null,
   device: 'keyboard',
   deathCause: null,
+  incident: null,
   discovered: [],
   visited: ['outpost_alpha'],
   mapOpen: false,
@@ -302,5 +311,5 @@ export const initialHudState = (): HudState => ({
   news: [],
   events: [],
   hits: 0,
-  stats: { fps: 0, frameMs: 0, tick: 0, stepsPerFrame: 0, droppedSeconds: 0, entities: 0, drawCalls: 0, triangles: 0, zoom: 1, quality: 'high', autoQuality: true },
+  stats: { fps: 0, frameMs: 0, tick: 0, stepsPerFrame: 0, droppedSeconds: 0, entities: 0, drawCalls: 0, triangles: 0, zoom: 1, quality: 'high', autoQuality: true, intensity: 0, phase: 'calm' },
 });

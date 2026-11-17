@@ -477,6 +477,26 @@ export class AudioEngine {
         case 'dividend':
           this.chime([784, 1047], 0.04);
           break;
+        case 'incident':
+          if (e.stage === 'warning' || (e.stage === 'started' && e.kind !== 'meteorStorm' && e.kind !== 'solarFlare')) {
+            // An alert: two falling tones, then a hiss for weather or a ping for a signal.
+            this.chime([880, 660, 880, 660], 0.09);
+            if (e.kind === 'meteorStorm' || e.kind === 'solarFlare') this.burst({ duration: 1.4, freq: 2500, type: 'bandpass', gain: 0.12, pan: 0, sweepTo: 600, send: 0.5 });
+          } else if (e.stage === 'started') {
+            this.burst({ duration: 2, freq: 4000, type: 'highpass', gain: 0.2, pan: 0, sweepTo: 1200, send: 0.6 });
+            this.duck(0.3, 1.5);
+          } else if (e.stage === 'ambush') {
+            this.sweep(700, 90, 1, 0.25, 0, 'sawtooth', 0, 'sfx', 0.5);
+            this.thump(50, 0.7, 0.45, 0);
+            this.duck(0.5, 2);
+          } else if (e.stage === 'detonated') {
+            const where = at(e.position);
+            this.explosion(Math.max(0.4, where.gain), where.pan, true);
+            this.duck(0.6, 1.5);
+          } else if (e.stage === 'resolved') {
+            this.chime([523, 659, 784], 0.06);
+          }
+          break;
         case 'contract':
           this.chime(e.outcome === 'completed' ? [523, 659, 784, 1047] : [440, 349, 294], 0.07);
           this.duck(0.3, 1.2);

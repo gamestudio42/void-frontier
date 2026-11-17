@@ -47,6 +47,7 @@ Dependencies point down only: `game → view3d → simulation → content, kerne
 | 9 | `pickupSystem` | pickups, tractors, holds | pickup motion, hold contents; collected and hold-full events |
 | 10 | `scanExpirySystem` | scan readings | expired readings removed |
 | 11 | `encounterSystem` | encounters | respawned pirate groups |
+| 11b | `directorSystem` | this step's events, hostiles near the player, the director | intensity and pacing phase; incidents (distress calls and ambushes, meteor rounds, flare shield loss, wreck blasts); incident events |
 | 12 | `marketSystem` | market stock (1 Hz) | stock drifting toward base |
 | 12b | `explorationSystem` | points of interest, player, scan events | discoveries, rewards |
 | 12c | `economySystem` | economy, haulers, events | markets, hauler ships and routes, raids, escort results; news events |

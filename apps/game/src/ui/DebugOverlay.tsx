@@ -15,6 +15,7 @@ export function DebugOverlay({ hud, t }: { hud: HudState; t: Translate }) {
     [t('debug.triangles'), `${(s.triangles / 1000).toFixed(0)}k`],
     [t('debug.zoom'), `${s.zoom.toFixed(2)}×`],
     [t('debug.quality'), `${s.quality}${s.autoQuality ? ' (auto)' : ''}`],
+    [t('debug.intensity'), `${(s.intensity * 100).toFixed(0)}% · ${s.phase}`],
     [t('debug.position'), p ? `${p.x.toFixed(0)}, ${p.y.toFixed(0)}` : '—'],
   ];
   return (

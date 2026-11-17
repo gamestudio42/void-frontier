@@ -2,7 +2,7 @@ import { CAMPAIGN, CREW_RULES, MINING_RULES, OUTPOST_ALPHA, TUTORIAL_RULES, STAT
 import { FIXED_DT, FixedStepper, type Vec2 } from '@void-frontier/kernel';
 import { getUpgrade, getWeapon, weaponGroup } from '@void-frontier/content';
 import { CAREER_RULES } from '@void-frontier/content';
-import { Simulation, WEAPON_RESALE, abilityBlock, abilityStatus, upgradeFit, boardDisabled, boardingStatus, campaignStep, campaignTarget, fleetEntities, hireFee, isParkedAt, orderProblem, payroll, shipValue, shipyardOffers, type FleetOrder, slotUsage, applySectorSnapshot, captureSector, gateStatus, gravityAt, jump, markDiscovered, nextGate, dockedStationKey, type SectorSnapshot, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, bayEntryPoint, type CruiseOrder, installUpgrades, hostilesNear, nearestObstacle, sensorRange, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal } from '@void-frontier/simulation';
+import { Simulation, WEAPON_RESALE, abilityBlock, abilityStatus, upgradeFit, boardDisabled, boardingStatus, campaignStep, campaignTarget, fleetEntities, hireFee, isParkedAt, orderProblem, payroll, shipValue, shipyardOffers, type FleetOrder, slotUsage, applySectorSnapshot, captureSector, gateStatus, gravityAt, jump, markDiscovered, nextGate, dockedStationKey, type SectorSnapshot, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, bayEntryPoint, type CruiseOrder, installUpgrades, hostilesNear, nearestObstacle, sensorRange, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal, inShadow, type SimEvent } from '@void-frontier/simulation';
 import { SpaceRenderer, type Quality } from '@void-frontier/view3d';
 import { AudioEngine } from './audio.ts';
 import { DEFAULT_BINDINGS, InputController } from './input.ts';
@@ -13,7 +13,7 @@ import { TipCoach, type TipHistory } from './tips.ts';
 import { padVerb } from './verbs.ts';
 import { drawRadar } from './radar.ts';
 import { drawTargeting } from './targeting.ts';
-import type { DeathCause, HudStore } from './store.ts';
+import type { DeathCause, HudState, HudStore } from './store.ts';
 
 /** When the docking checklist counts as an approach (metres, m/s, degrees). Presentation only. */
 const APPROACH = { near: 60, corridorLength: 400, corridorWidth: 60, facingAngle: 45, closingSpeed: 2, closingRange: 250 };
@@ -646,6 +646,7 @@ export class Game {
             this.notices.push({ text: `rank:${event.rank}`, kind: 'completed', reward: event.credits, at: this.clock, id: -30000 - event.rank });
             this.rumble(0.4, 250);
           }
+          if (event.type === 'incident') this.incidentNotice(event);
           if (event.type === 'dividend') {
             this.notices.push({ text: `dividend:${event.station}`, kind: 'completed', reward: event.credits, at: this.clock, id: -31000 - Math.round(this.clock) });
           }
@@ -807,6 +808,8 @@ export class Game {
   private causeOfDeath(by: number | null, events: ReturnType<Simulation['drainEvents']>): DeathCause {
     const world = this.sim.world;
     const me = this.sim.playerId;
+    // Rounds with no ship behind them: meteors and blasts the director set off.
+    if (by === -1) return { kind: 'hazard', ship: null, speed: 0 };
     if (by !== null) return { kind: 'weapon', ship: world.ships.get(by)?.baseDefinition.id ?? null, speed: 0 };
     for (const event of events) {
       if (event.type !== 'collision' || (event.a !== me && event.b !== me) || event.damage <= 0) continue;
@@ -1040,11 +1043,40 @@ export class Game {
       const b = this.sim.world.bodies.get(id);
       if (b) list.push({ label: owned.pilot?.name ?? '', position: b.position, colour: '#ffd166' });
     }
+    const incident = this.sim.world.director.incident;
+    if (incident && (incident.kind === 'distress' || incident.kind === 'unstableWreck')) {
+      list.push({ label: incident.kind === 'distress' ? 'SOS' : '☢', position: incident.position, colour: incident.kind === 'distress' ? '#ffd166' : '#ff6b5a' });
+    }
     for (const poi of this.sim.world.pointsOfInterest.values()) {
       if (poi.kind === 'deposit' && !poi.found) continue;
       list.push({ label: poi.found ? '✓' : '?', position: poi.position, colour: '#c77dff' });
     }
     return list;
+  }
+
+  private incidentNotice(event: Extract<SimEvent, { type: 'incident' }>): void {
+    // The HUD panel announces and follows the incident; the feed carries how it ended.
+    const shown: Record<string, 'completed' | 'failed' | 'abandoned'> = { resolved: 'completed', ambush: 'failed', expired: 'abandoned', detonated: 'failed' };
+    const outcome = shown[event.stage];
+    if (!outcome) return;
+    this.notices.push({ text: `incident:${event.kind}:${event.stage}`, kind: outcome, reward: event.credits, at: this.clock, id: -32000 - event.id * 8 - Object.keys(shown).indexOf(event.stage) });
+    if (event.stage === 'ambush' || event.stage === 'detonated') this.rumble(0.7, 260);
+  }
+
+  /** The incident the HUD panel shows, if any. */
+  private incidentView(): HudState['incident'] {
+    const world = this.sim.world;
+    const incident = world.director.incident;
+    if (!incident) return null;
+    const me = world.bodies.get(this.sim.playerId)?.position;
+    const placed = incident.kind === 'distress' || incident.kind === 'unstableWreck';
+    return {
+      kind: incident.kind,
+      stage: incident.stage,
+      seconds: Math.max(0, (incident.endTick - world.tick) * this.sim.dt),
+      distance: placed && me ? Math.hypot(incident.position.x - me.x, incident.position.y - me.y) : null,
+      covered: incident.kind === 'solarFlare' && me ? inShadow(world, me, incident.direction) : null,
+    };
   }
 
   /** Set by the UI so canvas labels follow the chosen language. */
@@ -1268,6 +1300,7 @@ export class Game {
       jumpedAt: this.jumpedAt,
       cruise: this.cruiseView(),
       deathCause: this.deathCause,
+      incident: this.incidentView(),
       discovered: [...this.discovered],
       news: (this.sim.economy?.news ?? []).slice(0, 8),
       events: (this.sim.economy?.events ?? []).map((e) => ({ id: e.id, secondsLeft: Math.max(0, (e.endsTick - this.sim.world.tick) / 60) })),
@@ -1303,6 +1336,8 @@ export class Game {
         zoom: this.renderer.rig.zoomLevel,
         quality: this.renderer.currentQuality,
         autoQuality: this.autoQuality,
+        intensity: this.sim.world.director.intensity,
+        phase: this.sim.world.director.phase,
       },
     });
   }
