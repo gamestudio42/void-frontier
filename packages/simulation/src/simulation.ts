@@ -2,6 +2,7 @@ import { COLLISION_RULES, getShip, type AbilityKind, type IncidentKind, type Col
 import { FIXED_DT, Rng, toRadians } from '@void-frontier/kernel';
 import { forwardOf, spawnShip } from './ship.ts';
 import { aiSystem, encounterSystem, spawnEncounter } from './ai.ts';
+import { bossSystem } from './bosses.ts';
 import { directorSystem, startIncident } from './director.ts';
 import { promoteLeader } from './elites.ts';
 import { moraleSystem } from './morale.ts';
@@ -113,6 +114,8 @@ export class Simulation {
     sim.world.standing = sim.missions.reputation;
     sim.missions.career ??= createCareer();
     sim.world.career = sim.missions.career;
+    sim.missions.bosses ??= {};
+    sim.world.bossLog = sim.missions.bosses;
     fillOffers(sim.world, sim.missions);
     if (options.startDocked ?? sector.startDocked) {
       const first = [...sim.world.stations.keys()][0];
@@ -141,6 +144,7 @@ export class Simulation {
     scanExpirySystem(this.world);
     encounterSystem(this.world, this.dt);
     directorSystem(this.world, this.playerId, this.world.events.slice(mark), this.dt);
+    bossSystem(this.world, this.playerId, this.world.events.slice(mark), this.dt);
     marketSystem(this.world, this.dt);
     explorationSystem(this.world, this.playerId);
     if (this.economy) economySystem(this.world, this.economy, this.missions, this.playerId, this.dt);

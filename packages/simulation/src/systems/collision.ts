@@ -1,4 +1,4 @@
-import type { CollisionRules } from '@void-frontier/content';
+import { BOSS_RULES, type CollisionRules } from '@void-frontier/content';
 import { cos, sin } from '@void-frontier/kernel';
 import type { Body, Collider, EntityId } from '../types.ts';
 import { destroyShip } from '../damage.ts';
@@ -218,7 +218,9 @@ function resolve(world: World, rules: CollisionRules, a: Entry, b: Entry, contac
       const ship = world.ships.get(id);
       if (!ship || ship.destroyed || damage <= 0) continue;
       // Fleet pilots graze rocks rather than ram them: off-screen they never crash at all.
-      const total = world.pilots.get(id)?.fleet !== undefined ? damage * FLEET_IMPACT_SHARE : damage;
+      // Bosses are built to ram: they shrug off most of a crash.
+      const share = world.pilots.get(id)?.fleet !== undefined ? FLEET_IMPACT_SHARE : ship.boss ? BOSS_RULES.collisionShare : 1;
+      const total = damage * share;
       // The shield takes the first share of the blow, as far as its charge goes.
       const absorbed = Math.min(ship.shield, total * rules.impactShieldShare);
       ship.shield -= absorbed;

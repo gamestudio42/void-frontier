@@ -103,6 +103,8 @@ export type SubsystemId = 'engines' | 'reactor' | 'sensors' | 'shieldGenerator' 
 export const SUBSYSTEMS: SubsystemId[] = ['engines', 'reactor', 'sensors', 'shieldGenerator', 'cargoHold'];
 
 export interface Ship {
+  /** A sector boss: which one, and whether its guard is open this step. */
+  boss?: { id: string; open: boolean };
   /** An elite pirate's affixes; its `definition` already carries them. */
   elite?: Elite;
   /** Health of each internal system, 0..1. */
@@ -241,6 +243,8 @@ export type SimEvent =
   | { type: 'campaign'; step: string; credits: number; finished: boolean }
   /** The pilot reached a new rank, which paid `credits`. */
   | { type: 'rank'; rank: number; id: string; credits: number }
+  /** A sector boss appeared, opened up, closed its guard, reached a phase, or was beaten (`credits` paid). */
+  | { type: 'boss'; boss: string; ship: EntityId; stage: 'spawned' | 'open' | 'guarded' | 'phase' | 'defeated'; phase: number; credits: number }
   /** An elite pirate went down; `credits` is the bounty the player's side was paid (0 otherwise). */
   | { type: 'eliteDown'; ship: EntityId; affixes: string[]; position: { x: number; y: number }; credits: number }
   /**
@@ -305,6 +309,8 @@ export interface AiPilot {
   mine?: { site: { x: number; y: number }; rock: EntityId | null; resting?: boolean };
   /** How a pirate fights (pirates.json); absent for the player's fleet and haulers. */
   archetype?: string;
+  /** A boss that flies straight through everything to reach its target. */
+  reckless?: boolean;
   /** A pirate's nerve, 0..1: it runs or gives up when this breaks. */
   morale?: number;
   /** Tick the current flight ends and the pilot regroups. */

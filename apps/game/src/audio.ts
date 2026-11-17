@@ -286,7 +286,7 @@ export class AudioEngine {
     const docked = ship?.docked != null;
     let hunting = 0;
     for (const pilot of sim.world.pilots.values()) if (pilot.target === sim.playerId) hunting++;
-    const boss = [...sim.world.ships.values()].some((s) => !s.destroyed && s.baseDefinition.id === 'dreadmaw');
+    const boss = [...sim.world.ships.keys()].some((id) => this.bossNear(sim, id));
     const target = musicIntensity({
       docked,
       destroyed: !ship || ship.destroyed,
@@ -335,7 +335,7 @@ export class AudioEngine {
           if (e.shieldDamage > 0) this.shieldHit(where.gain, where.pan, onMe);
           else if (e.hullDamage > 0) this.hullHit(where.gain, where.pan, where.cutoff, onMe);
           else this.burst({ duration: 0.08, freq: 600, type: 'lowpass', gain: 0.08 * where.gain, pan: where.pan });
-          if (sim.world.ships.get(e.target)?.baseDefinition.id === 'dreadmaw') this.thump(38, 0.5, 0.3 * where.gain, where.pan);
+          if (sim.world.ships.get(e.target)?.baseDefinition.id === 'dreadmaw' || sim.world.ships.get(e.target)?.boss) this.thump(38, 0.5, 0.3 * where.gain, where.pan);
           if (onMe && e.hullDamage > 0) this.duck(0.35, 0.4);
           break;
         }
@@ -477,6 +477,23 @@ export class AudioEngine {
         case 'dividend':
           this.chime([784, 1047], 0.04);
           break;
+        case 'boss':
+          if (e.stage === 'open') {
+            // The guard failing: a falling electric whine and a crack.
+            this.sweep(1400, 220, 0.6, 0.18, 0, 'sawtooth', 0, 'sfx', 0.4);
+            this.burst({ duration: 0.4, freq: 3000, type: 'bandpass', gain: 0.2, pan: 0, sweepTo: 900, send: 0.3 });
+          } else if (e.stage === 'guarded') {
+            this.sweep(220, 900, 0.5, 0.12, 0, 'triangle', 0, 'sfx', 0.3);
+          } else if (e.stage === 'phase') {
+            this.chime([330, 311, 330, 311], 0.1);
+            this.thump(40, 1, 0.4, 0);
+            this.duck(0.5, 1.5);
+          } else if (e.stage === 'defeated') {
+            this.chime([392, 523, 659, 784, 1047, 1319, 1568], 0.07);
+            this.thump(36, 1.2, 0.5, 0);
+            this.duck(0.7, 3);
+          }
+          break;
         case 'eliteDown':
           if (e.credits > 0) {
             this.chime([523, 784, 1047, 1319], 0.06);
@@ -587,11 +604,22 @@ export class AudioEngine {
     }
   }
 
-  /** A low horn the first time the flagship is in the sector, including when it returns repaired. */
+  /** The flagship anywhere in the sector, or a lair boss within 2.5 km of the player. */
+  private bossNear(sim: Simulation, id: number): boolean {
+    const ship = sim.world.ships.get(id);
+    if (!ship || ship.destroyed) return false;
+    if (ship.baseDefinition.id === 'dreadmaw' && !ship.boss) return true;
+    if (!ship.boss) return false;
+    const me = sim.world.bodies.get(sim.playerId)?.position;
+    const it = sim.world.bodies.get(id)?.position;
+    return !!me && !!it && Math.hypot(it.x - me.x, it.y - me.y) < 2500;
+  }
+
+  /** A low horn the first time a boss is near (the flagship: in the sector), including when it returns repaired. */
   private watchBoss(sim: Simulation): void {
     const alive = new Set<number>();
-    for (const [id, ship] of sim.world.ships) {
-      if (ship.destroyed || ship.baseDefinition.id !== 'dreadmaw') continue;
+    for (const id of sim.world.ships.keys()) {
+      if (!this.bossNear(sim, id)) continue;
       alive.add(id);
       if (!this.bossHeard.has(id)) {
         this.bossHeard.add(id);

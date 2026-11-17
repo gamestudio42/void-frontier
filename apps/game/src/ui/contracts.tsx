@@ -259,6 +259,11 @@ export function Notices({ notices, t, locale }: { notices: { id: number; kind: s
               <strong>{fill(t('notice.dividend'), { station: t(`station.${n.kind.slice(9)}` as MessageKey) })}</strong>
               {n.reward > 0 && <span> +{formatNumber(locale, n.reward)} cr</span>}
             </>
+          ) : n.kind.startsWith('boss:') ? (
+            <>
+              <strong>{fill(t(`notice.boss.${n.kind.split(':')[2]}` as MessageKey), { boss: t(`boss.${n.kind.split(':')[1]}` as MessageKey) })}</strong>
+              {n.reward > 0 && <span> +{formatNumber(locale, n.reward)} cr</span>}
+            </>
           ) : n.kind === 'eliteDown' ? (
             <>
               <strong>{t('notice.eliteDown')}</strong>

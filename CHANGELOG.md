@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased: sector bosses
+
+- Every sector past Outpost Alpha now has a boss in its lair, marked on screen: the Quarry Ram in the Industrial Belt, the Gravewell Hound in the Anomaly Zone, the Scrap Leviathan in the Graveyard and the Furnace in Ember Reach.
+- Bosses shrug off most of your fire until you find their weak moment: make the Ram crash into a rock, lure the Hound near the gravity well's core, kill the Leviathan's escorts, or strike the Furnace while its guns cool down. A bar at the bottom of the screen shows its hull, its phases and a hint.
+- As they lose hull they call for help and fight harder. Beating one pays a big bounty, merit and salvage, and it comes back after a while.
+
 ## Unreleased: elite pirates
 
 - Pirate leaders can now be elites, more often in the dangerous sectors: armored, swift, regenerating, overcharged, volatile (it blows up when it dies) or relentless (never runs). In the Graveyard and Ember Reach they have two.

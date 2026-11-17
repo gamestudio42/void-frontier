@@ -79,6 +79,8 @@ export interface MissionBoard {
   clients: Record<string, number>;
   /** Rank, licences and stakes; the world holds the same object. */
   career: Career;
+  /** Tick each sector boss was last beaten. */
+  bosses: Record<string, number>;
 }
 
 /** A board covering every sector: drops from all of them, and every friendly station. */
@@ -96,7 +98,7 @@ export function createBoard(rules: ContractRules = CONTRACT_RULES): MissionBoard
     }
   }
   const reputation = Object.fromEntries([...FACTIONS.values()].map((f) => [f.id, f.hostile ? rules.reputation.min : 0]));
-  return { rules, drops, stations, offers: {}, active: [], history: [], reputation, nextId: 1, refreshTick: 0, clients: {}, career: createCareer() };
+  return { rules, drops, stations, offers: {}, active: [], history: [], reputation, nextId: 1, refreshTick: 0, clients: {}, career: createCareer(), bosses: {} };
 }
 
 /** Jumps between two sectors along the gate network (breadth-first). */

@@ -1,5 +1,6 @@
 import { FACTIONS, PIRATE_RULES } from '@void-frontier/content';
 import { earnMerit, notePirateKill } from './career.ts';
+import { bossDamageShare, bossDefeated } from './bosses.ts';
 import { eliteDestroyed } from './elites.ts';
 import { dropSalvage } from './mining.ts';
 import { shaken, squadLost } from './morale.ts';
@@ -26,6 +27,7 @@ export function destroyShip(world: World, id: EntityId, by: EntityId | null): vo
     dropSalvage(world, body.position, body.velocity);
     squadLost(world, id);
   }
+  if (ship.boss) bossDefeated(world, id, by !== null && world.ships.get(by)?.faction === 'player');
   if (ship.elite) {
     const byPlayer = by !== null && world.ships.get(by)?.faction === 'player';
     const credits = eliteDestroyed(world, id, byPlayer);
@@ -78,7 +80,8 @@ export function applyWeaponDamage(
   const ship = world.ships.get(targetId);
   if (!ship || ship.destroyed || ship.docked !== null || amount <= 0) return;
   ship.lastDamageTick = world.tick;
-  let raw = amount;
+  // A boss's guard turns most of it away until its trick opens it up.
+  let raw = amount * bossDamageShare(world, targetId);
   let shieldDamage = 0;
   if (ship.shield > 0) {
     const scaled = raw * multipliers.shield;

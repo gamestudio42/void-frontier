@@ -1,0 +1,159 @@
+{
+  "guardedShare": 0.1,
+  "collisionShare": 0.15,
+  "respawnHours": 2,
+  "scale": 1.5,
+  "bosses": [
+    {
+      "id": "quarry_ram",
+      "sector": "industrial_belt",
+      "ship": "marauder",
+      "archetype": "brawler",
+      "reckless": true,
+      "x": 200,
+      "y": 1950,
+      "stats": {
+        "hull": 3.5,
+        "shield": 2,
+        "thrust": 1.2,
+        "mass": 1.6
+      },
+      "trigger": {
+        "kind": "impact",
+        "speed": 10,
+        "seconds": 6
+      },
+      "phases": [
+        {
+          "below": 0.66,
+          "summon": {
+            "ship": "jackal",
+            "count": 2
+          },
+          "damage": 1.15,
+          "thrust": 1.1
+        },
+        {
+          "below": 0.33,
+          "summon": {
+            "ship": "jackal",
+            "count": 2
+          },
+          "damage": 1.3,
+          "thrust": 1.15
+        }
+      ],
+      "reward": {
+        "credits": 5000,
+        "merit": 40,
+        "salvage": 6
+      }
+    },
+    {
+      "id": "gravewell_hound",
+      "sector": "anomaly_zone",
+      "ship": "jackal",
+      "archetype": "skirmisher",
+      "x": 1250,
+      "y": 300,
+      "stats": {
+        "hull": 6,
+        "shield": 2.5,
+        "thrust": 1.3
+      },
+      "trigger": {
+        "kind": "well",
+        "margin": 500,
+        "seconds": 2
+      },
+      "phases": [
+        {
+          "below": 0.5,
+          "summon": {
+            "ship": "jackal",
+            "count": 2
+          },
+          "damage": 1.25,
+          "thrust": 1.15
+        }
+      ],
+      "reward": {
+        "credits": 6000,
+        "merit": 40,
+        "salvage": 6
+      }
+    },
+    {
+      "id": "scrap_leviathan",
+      "sector": "graveyard",
+      "ship": "dreadmaw",
+      "archetype": "boss",
+      "x": 900,
+      "y": 1100,
+      "stats": {
+        "hull": 1,
+        "shield": 1.5
+      },
+      "trigger": {
+        "kind": "guard",
+        "ship": "jackal",
+        "count": 3
+      },
+      "phases": [
+        {
+          "below": 0.66,
+          "summon": {
+            "ship": "jackal",
+            "count": 3
+          },
+          "damage": 1.1
+        },
+        {
+          "below": 0.33,
+          "summon": {
+            "ship": "marauder",
+            "count": 2
+          },
+          "damage": 1.25
+        }
+      ],
+      "reward": {
+        "credits": 8000,
+        "merit": 50,
+        "salvage": 10
+      }
+    },
+    {
+      "id": "furnace",
+      "sector": "ember_reach",
+      "ship": "marauder",
+      "archetype": "skirmisher",
+      "x": -1400,
+      "y": -1100,
+      "stats": {
+        "hull": 4,
+        "shield": 3,
+        "damage": 1.4
+      },
+      "trigger": {
+        "kind": "overheat",
+        "seconds": 1
+      },
+      "phases": [
+        {
+          "below": 0.5,
+          "summon": {
+            "ship": "jackal",
+            "count": 2
+          },
+          "damage": 1.2
+        }
+      ],
+      "reward": {
+        "credits": 7000,
+        "merit": 45,
+        "salvage": 8
+      }
+    }
+  ]
+}
