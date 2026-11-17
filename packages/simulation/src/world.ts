@@ -1,5 +1,6 @@
 import { Rng } from '@void-frontier/kernel';
 import { createCareer, type Career } from './career.ts';
+import type { BossState } from './bosses.ts';
 import { createDirector, type Director } from './director.ts';
 import type { SpatialIndex } from './spatial.ts';
 import type { AiPilot, Asteroid, Body, Collider, EncounterState, EntityId, Pickup, Projectile, Ship, SimEvent, Station } from './types.ts';
@@ -42,6 +43,10 @@ export class World {
   career: Career = createCareer();
   /** Pacing of the sector's incidents; fresh in each sector and not saved. */
   director: Director = createDirector();
+  /** Sector bosses alive in this world. */
+  readonly bosses: BossState[] = [];
+  /** Tick each boss was last beaten; shared with the contract board like `standing`. */
+  bossLog: Record<string, number> = {};
   /** What makes this sector different: multipliers on shield recharge and weapon cooling. */
   rules = { shieldFactor: 1, coolingFactor: 1 };
   /** The player's money. */

@@ -68,6 +68,7 @@ export function App() {
   useEffect(() => {
     if (game)
       game.labels = {
+        boss: (id) => t(`boss.${id}` as MessageKey),
         drop: (id) => t(`drop.${id}` as MessageKey),
         station: (id) => t(`station.${id}` as MessageKey),
         sector: (id) => t(`sector.${id}` as MessageKey),

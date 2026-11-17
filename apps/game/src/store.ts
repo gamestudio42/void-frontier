@@ -241,6 +241,11 @@ export interface HudState {
    * (calls and wrecks), and for a flare whether the ship is in cover.
    */
   incident: { kind: string; stage: 'warning' | 'active'; seconds: number; distance: number | null; covered: boolean | null } | null;
+  /**
+   * The sector boss nearby: hull and shield shares, the phase thresholds and how many are
+   * past, and whether its guard is open.
+   */
+  boss: { id: string; trigger: string; hull: number; shield: number; phase: number; phases: number[]; open: boolean; distance: number } | null;
   /** Increments on every damaging hit, so the HUD can flash. */
   hits: number;
   stats: DebugStats;
@@ -297,6 +302,7 @@ export const initialHudState = (): HudState => ({
   device: 'keyboard',
   deathCause: null,
   incident: null,
+  boss: null,
   discovered: [],
   visited: ['outpost_alpha'],
   mapOpen: false,

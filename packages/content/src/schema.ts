@@ -1032,3 +1032,65 @@ export const directorRulesSchema = z.object({
 });
 
 export type DirectorRules = z.infer<typeof directorRulesSchema>;
+
+const statMultipliers = z.object({
+  hull: positive.optional(),
+  shield: positive.optional(),
+  thrust: positive.optional(),
+  mass: positive.optional(),
+  damage: positive.optional(),
+});
+
+/**
+ * Sector bosses: one lair per sector, a hull made tougher, and a guard that turns most
+ * damage away until the fight's own trick opens it up: ramming rocks, the gravity well's
+ * core, its escorts dead, or its own guns overheated. Phases at hull thresholds call in
+ * help and push it harder.
+ */
+export const bossRulesSchema = z.object({
+  /** share of weapon damage that gets through while the boss is guarded */
+  guardedShare: z.number().min(0).max(1),
+  /** share of collision damage a boss takes; they are built to ram */
+  collisionShare: z.number().min(0).max(1),
+  /** game hours before a beaten boss is back in its lair */
+  respawnHours: positive,
+  /** how much bigger a boss is drawn than its hull */
+  scale: positive,
+  bosses: z
+    .array(
+      z.object({
+        id: z.string().regex(/^[a-z][a-z0-9_]*$/),
+        sector: z.string(),
+        ship: z.string(),
+        archetype: z.string(),
+        /** flies straight through everything to reach its target */
+        reckless: z.boolean().optional(),
+        x: z.number(),
+        y: z.number(),
+        loadout: z.array(z.string()).optional(),
+        stats: statMultipliers,
+        trigger: z.discriminatedUnion('kind', [
+          /** exposed for `seconds` after hitting a rock at `speed` m/s or more */
+          z.object({ kind: z.literal('impact'), speed: positive, seconds: positive }),
+          /** exposed while within `margin` metres of a gravity well's core, and `seconds` after */
+          z.object({ kind: z.literal('well'), margin: positive, seconds: positive }),
+          /** exposed while every ship of its guard is down */
+          z.object({ kind: z.literal('guard'), ship: z.string(), count: z.number().int().min(1) }),
+          /** exposed while one of its guns is overheated, and `seconds` after */
+          z.object({ kind: z.literal('overheat'), seconds: positive }),
+        ]),
+        phases: z.array(
+          statMultipliers.extend({
+            /** hull share the phase starts under */
+            below: z.number().gt(0).lt(1),
+            summon: z.object({ ship: z.string(), count: z.number().int().min(1) }).optional(),
+          }),
+        ),
+        reward: z.object({ credits: z.number().int().min(0), merit: z.number().min(0), salvage: z.number().int().min(0) }),
+      }),
+    )
+    .min(1),
+});
+
+export type BossRules = z.infer<typeof bossRulesSchema>;
+export type BossDefinition = BossRules['bosses'][number];

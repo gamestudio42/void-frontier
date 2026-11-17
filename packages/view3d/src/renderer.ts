@@ -1,4 +1,4 @@
-import type { AbilityKind, SectorDefinition } from '@void-frontier/content';
+import { BOSS_RULES, type AbilityKind, type SectorDefinition } from '@void-frontier/content';
 import type { Vec2 } from '@void-frontier/kernel';
 import { readTelemetry, type EntityId, type SimEvent, type Simulation, type ThrusterOutput } from '@void-frontier/simulation';
 import {
@@ -404,6 +404,15 @@ export class SpaceRenderer {
     }
 
     this.tracers.update(sim.world, sim.playerId, alpha, sim.dt);
+    // A boss with its guard open vents sparks: the moment to hit it.
+    for (const [id, ship] of sim.world.ships) {
+      if (!ship.boss?.open || ship.destroyed) continue;
+      const p = sim.world.bodies.get(id)?.position;
+      if (!p || Math.random() > 0.6) continue;
+      const a = Math.random() * Math.PI * 2;
+      const s = 8 + Math.random() * 20;
+      this.particles.emit(p.x, 2, -p.y, Math.cos(a) * s, 2 + Math.random() * 4, Math.sin(a) * s, SPARK, SPARK_END, 1.6, 0.5 + Math.random() * 0.4, 0.5);
+    }
     // Missiles leave a smoke trail that lingers after them.
     for (const round of sim.world.projectiles.values()) {
       if (round.homing) this.particles.emit(round.position.x, 1, -round.position.y, (Math.random() - 0.5) * 3, Math.random(), (Math.random() - 0.5) * 3, MISSILE_SMOKE, MISSILE_SMOKE_END, 2.4, 1.3, 0.3);
@@ -480,10 +489,11 @@ export class SpaceRenderer {
         model = buildShipModel(ship.definition, ship.faction);
         // An elite reads bigger and wears a violet shield, so it stands out in a pack.
         if (ship.elite) model.root.scale.setScalar(1.18);
+        if (ship.boss) model.root.scale.setScalar(BOSS_RULES.scale);
         this.ships.set(id, model);
         this.scene.add(model.root);
         if (ship.definition.shield.capacity > 0) {
-          const colour = ship.elite ? new Color(1.6, 0.35, 1.4) : ship.faction === 'pirate' ? new Color(1.6, 0.5, 0.35) : new Color(0.35, 0.9, 1.6);
+          const colour = ship.boss ? new Color(1.8, 1.2, 0.3) : ship.elite ? new Color(1.6, 0.35, 1.4) : ship.faction === 'pirate' ? new Color(1.6, 0.5, 0.35) : new Color(0.35, 0.9, 1.6);
           const bubble = new ShieldBubble(ship.definition.hull.length, colour);
           model.root.add(bubble.mesh);
           this.shields.set(id, bubble);

@@ -2,7 +2,7 @@ import { CAMPAIGN, CREW_RULES, MINING_RULES, OUTPOST_ALPHA, TUTORIAL_RULES, STAT
 import { FIXED_DT, FixedStepper, type Vec2 } from '@void-frontier/kernel';
 import { getUpgrade, getWeapon, weaponGroup } from '@void-frontier/content';
 import { CAREER_RULES } from '@void-frontier/content';
-import { Simulation, WEAPON_RESALE, abilityBlock, abilityStatus, upgradeFit, boardDisabled, boardingStatus, campaignStep, campaignTarget, fleetEntities, hireFee, isParkedAt, orderProblem, payroll, shipValue, shipyardOffers, type FleetOrder, slotUsage, applySectorSnapshot, captureSector, gateStatus, gravityAt, jump, markDiscovered, nextGate, dockedStationKey, type SectorSnapshot, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, bayEntryPoint, type CruiseOrder, installUpgrades, hostilesNear, nearestObstacle, sensorRange, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal, inShadow, type SimEvent } from '@void-frontier/simulation';
+import { Simulation, WEAPON_RESALE, abilityBlock, abilityStatus, upgradeFit, boardDisabled, boardingStatus, campaignStep, campaignTarget, fleetEntities, hireFee, isParkedAt, orderProblem, payroll, shipValue, shipyardOffers, type FleetOrder, slotUsage, applySectorSnapshot, captureSector, gateStatus, gravityAt, jump, markDiscovered, nextGate, dockedStationKey, type SectorSnapshot, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, bayEntryPoint, type CruiseOrder, installUpgrades, hostilesNear, nearestObstacle, sensorRange, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal, inShadow, getBoss, type SimEvent } from '@void-frontier/simulation';
 import { SpaceRenderer, type Quality } from '@void-frontier/view3d';
 import { AudioEngine } from './audio.ts';
 import { DEFAULT_BINDINGS, InputController } from './input.ts';
@@ -647,6 +647,10 @@ export class Game {
             this.rumble(0.4, 250);
           }
           if (event.type === 'incident') this.incidentNotice(event);
+          if (event.type === 'boss' && (event.stage === 'phase' || event.stage === 'defeated')) {
+            this.notices.push({ text: `boss:${event.boss}:${event.stage}`, kind: event.stage === 'defeated' ? 'completed' : 'failed', reward: event.credits, at: this.clock, id: -34000 - event.ship * 8 - event.phase });
+            this.rumble(event.stage === 'defeated' ? 0.9 : 0.6, 300);
+          }
           if (event.type === 'eliteDown' && event.credits > 0) {
             this.notices.push({ text: 'eliteDown', kind: 'completed', reward: event.credits, at: this.clock, id: -33000 - event.ship });
           }
@@ -669,7 +673,7 @@ export class Game {
     // Keep a nearby target in frame so dogfights stay on screen.
     const targetBody = this.target !== null ? this.sim.world.bodies.get(this.target) : undefined;
     const targetShip = this.target !== null ? this.sim.world.ships.get(this.target) : undefined;
-    const boss = targetShip?.baseDefinition.id === 'dreadmaw' && !targetShip.destroyed;
+    const boss = (targetShip?.baseDefinition.id === 'dreadmaw' || !!targetShip?.boss) && !targetShip?.destroyed;
     const me = this.sim.world.bodies.get(this.sim.playerId);
     const gap = targetBody && me ? Math.hypot(targetBody.position.x - me.position.x, targetBody.position.y - me.position.y) : Infinity;
     const frameTarget = targetBody && gap < (boss ? 1600 : 650) ? targetBody.position : null;
@@ -1046,6 +1050,11 @@ export class Game {
       const b = this.sim.world.bodies.get(id);
       if (b) list.push({ label: owned.pilot?.name ?? '', position: b.position, colour: '#ffd166' });
     }
+    // A boss lair is always on the map: it is somewhere to go.
+    for (const state of this.sim.world.bosses) {
+      const p = this.sim.world.bodies.get(state.ship)?.position;
+      if (p) list.push({ label: `☠ ${this.labels.boss(state.id)}`, position: p, colour: '#ffb347' });
+    }
     // Elites stand out on the scope once the sensors can see them.
     const me = this.sim.world.ships.get(this.sim.playerId);
     const at = this.sim.world.bodies.get(this.sim.playerId)?.position;
@@ -1077,6 +1086,32 @@ export class Game {
     if (event.stage === 'ambush' || event.stage === 'detonated') this.rumble(0.7, 260);
   }
 
+  /** The boss bar: shown once a boss is close or hunting the player. */
+  private bossView(): HudState['boss'] {
+    const world = this.sim.world;
+    const me = world.bodies.get(this.sim.playerId)?.position;
+    if (!me) return null;
+    for (const state of world.bosses) {
+      const ship = world.ships.get(state.ship);
+      const p = world.bodies.get(state.ship)?.position;
+      if (!ship || !p || ship.destroyed) continue;
+      const distance = Math.hypot(p.x - me.x, p.y - me.y);
+      if (distance > 2500 && world.pilots.get(state.ship)?.target !== this.sim.playerId) continue;
+      const definition = getBoss(state.id);
+      return {
+        id: state.id,
+        trigger: definition.trigger.kind,
+        hull: ship.hull / ship.definition.hull.integrity,
+        shield: ship.definition.shield.capacity > 0 ? ship.shield / ship.definition.shield.capacity : 0,
+        phase: state.phase,
+        phases: definition.phases.map((p) => p.below),
+        open: ship.boss?.open ?? false,
+        distance,
+      };
+    }
+    return null;
+  }
+
   /** The incident the HUD panel shows, if any. */
   private incidentView(): HudState['incident'] {
     const world = this.sim.world;
@@ -1094,7 +1129,7 @@ export class Game {
   }
 
   /** Set by the UI so canvas labels follow the chosen language. */
-  labels = { drop: (id: string) => id, station: (id: string) => id, sector: (id: string) => id, route: (id: string) => id, campaign: () => '', stop: () => 'Stop' };
+  labels = { boss: (id: string) => id, drop: (id: string) => id, station: (id: string) => id, sector: (id: string) => id, route: (id: string) => id, campaign: () => '', stop: () => 'Stop' };
 
   private contractsView() {
     const board = this.sim.missions;
@@ -1315,6 +1350,7 @@ export class Game {
       cruise: this.cruiseView(),
       deathCause: this.deathCause,
       incident: this.incidentView(),
+      boss: this.bossView(),
       discovered: [...this.discovered],
       news: (this.sim.economy?.news ?? []).slice(0, 8),
       events: (this.sim.economy?.events ?? []).map((e) => ({ id: e.id, secondsLeft: Math.max(0, (e.endsTick - this.sim.world.tick) / 60) })),

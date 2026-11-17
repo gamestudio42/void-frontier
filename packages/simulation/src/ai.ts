@@ -183,7 +183,8 @@ function think(world: World, id: EntityId, ship: Ship, body: Body, pilot: AiPilo
   }
 
   // A brawler means to hit its target: it only steers around everything else.
-  desired = avoid(world, id, body, desired, archetype.style === 'ram' ? pilot.target : null);
+  // A reckless boss does not even do that: it goes through, and pays for it on the rocks.
+  if (!(pilot.reckless && pilot.mode === 'engage')) desired = avoid(world, id, body, desired, archetype.style === 'ram' ? pilot.target : null);
   const error = worldToLocal(forwardOf(body.angle), { x: desired.x - body.velocity.x, y: desired.y - body.velocity.y });
   command.thrust = clamp(error.x * AI.steeringGain, -1, 1);
   command.strafe = clamp(error.y * AI.steeringGain, -1, 1);

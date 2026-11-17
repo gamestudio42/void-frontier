@@ -48,6 +48,7 @@ Dependencies point down only: `game → view3d → simulation → content, kerne
 | 10 | `scanExpirySystem` | scan readings | expired readings removed |
 | 11 | `encounterSystem` | encounters | respawned pirate groups |
 | 11b | `directorSystem` | this step's events, hostiles near the player, the director | intensity and pacing phase; incidents (distress calls and ambushes, meteor rounds, flare shield loss, wreck blasts); incident events |
+| 11c | `bossSystem` | this step's events, the sector's lair, boss ships | boss spawns and respawns, guard open or closed, phases and their reinforcements; boss events |
 | 12 | `marketSystem` | market stock (1 Hz) | stock drifting toward base |
 | 12b | `explorationSystem` | points of interest, player, scan events | discoveries, rewards |
 | 12c | `economySystem` | economy, haulers, events | markets, hauler ships and routes, raids, escort results; news events |
@@ -80,6 +81,7 @@ The collision system also publishes its grid as `world.spatial`; weapons, projec
 
 - `combat.ts`: weapon mounts (cooldown, heat, overheat, gimbal), projectile spawning with velocity inheritance and seeded spread, beam raycasts, `leadPoint` (intercept solver) and `hostilesNear`.
 - `damage.ts`: shield → armour → hull with per-weapon multipliers; `destroyShip` credits kills and removes the wreck's collider.
+- `bosses.ts`: sector lairs, boss stats, the guard that cuts weapon damage until the sector's trick opens it (rock impact, gravity well core, escorts down, guns overheated), phases, and the reward and respawn log kept on the contract board.
 - `elites.ts`: elite pirate rolls (a hash of sector, group and tick, so no world RNG is drawn), affixes applied to the effective ship definition and weapons, the volatile death blast and the bounty paid in `destroyShip`.
 - `ai.ts`: pirate pilots (patrol, engage, retreat, avoidance) that only write ShipCommands, plus encounter spawning and respawn.
 - `mining.ts`: ore extraction, rock resizing and break-up, pickups, tractor, scanner, jettison and pirate salvage. Ship mass includes the hold, so mining feeds straight into flight.

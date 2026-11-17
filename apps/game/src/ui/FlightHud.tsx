@@ -259,6 +259,7 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
           <em>{t('cruise.hint')}</em>
         </section>
       )}
+      {hud.boss && !hud.docking && <BossBar boss={hud.boss} t={t} />}
       {hud.incident?.kind === 'solarFlare' && hud.incident.stage === 'active' && <div className="flare-wash" aria-hidden="true" />}
       {hud.incident && !hud.docking && <IncidentPanel incident={hud.incident} t={t} locale={locale} />}
       {hud.gravity > 0.2 && (
@@ -378,6 +379,26 @@ function IncidentPanel({ incident, t, locale }: { incident: NonNullable<HudState
         {formatNumber(locale, Math.ceil(seconds))} s{distance !== null && ` · ${formatDistance(locale, distance)}`}
       </span>
       {covered !== null && stage === 'active' && <em className={covered ? 'covered' : 'exposed'}>{t(covered ? 'incident.covered' : 'incident.exposed')}</em>}
+    </section>
+  );
+}
+
+/** A sector boss: its name, hull with the phase marks, and what opens its guard. */
+function BossBar({ boss, t }: { boss: NonNullable<HudState['boss']>; t: Translate }) {
+  return (
+    <section className={`boss-bar ${boss.open ? 'open' : 'guarded'}`} data-testid="boss" data-boss={boss.id} data-open={boss.open} data-phase={boss.phase}>
+      <div className="boss-title">
+        <strong>{t(`boss.${boss.id}` as MessageKey)}</strong>
+        <span className="boss-state">{t(boss.open ? 'boss.open' : 'boss.guarded')}</span>
+      </div>
+      <div className="boss-meter">
+        <div className="boss-shield" style={{ width: `${Math.round(boss.shield * 100)}%` }} />
+        <div className="boss-hull" style={{ width: `${Math.round(boss.hull * 100)}%` }} />
+        {boss.phases.map((below, i) => (
+          <i key={below} className={i < boss.phase ? 'passed' : ''} style={{ left: `${below * 100}%` }} />
+        ))}
+      </div>
+      <em>{t(`boss.hint.${boss.trigger}` as MessageKey)}</em>
     </section>
   );
 }

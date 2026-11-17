@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import asteroidData from '../data/asteroids.json';
 import campaignData from '../data/campaign.json';
+import bossData from '../data/bosses.json';
 import careerData from '../data/career.json';
 import contractData from '../data/contracts.json';
 import crewData from '../data/crew.json';
@@ -26,6 +27,8 @@ import upgradeData from '../data/upgrades.json';
 import weaponData from '../data/weapons.json';
 import {
   CARGO_MODIFIERS,
+  bossRulesSchema,
+  type BossRules,
   careerRulesSchema,
   type CareerRules,
   directorRulesSchema,
@@ -86,6 +89,7 @@ export const CREW_RULES: CrewRules = crewRulesSchema.parse(crewData);
 export const CAMPAIGN: CampaignDefinition = campaignSchema.parse(campaignData);
 export const CONTRACT_RULES: ContractRules = contractRulesSchema.parse(contractData);
 export const CAREER_RULES: CareerRules = careerRulesSchema.parse(careerData);
+export const BOSS_RULES: BossRules = bossRulesSchema.parse(bossData);
 export const DIRECTOR_RULES: DirectorRules = directorRulesSchema.parse(directorData);
 export const COLLISION_RULES: CollisionRules = collisionRulesSchema.parse(physicsData);
 export const CRUISE_RULES: CruiseRules = cruiseRulesSchema.parse(cruiseData);
@@ -267,5 +271,25 @@ for (const station of STATIONS.values()) for (const r of [...Object.keys(station
   for (const [id, sector] of Object.entries(sectors)) {
     getSector(id);
     if (sector.affixes > affixes.length) throw new Error(`Elites in ${id} roll more affixes than exist`);
+  }
+}
+
+{
+  const seen = new Set<string>();
+  for (const boss of BOSS_RULES.bosses) {
+    if (seen.has(boss.sector)) throw new Error(`Sector ${boss.sector} has two boss lairs`);
+    seen.add(boss.sector);
+    getSector(boss.sector);
+    getShip(boss.ship);
+    getArchetype(boss.archetype);
+    if (getArchetype(boss.archetype).id !== boss.archetype) throw new Error(`Boss ${boss.id}: unknown archetype ${boss.archetype}`);
+    for (const weapon of boss.loadout ?? []) getWeapon(weapon);
+    if (boss.trigger.kind === 'guard') getShip(boss.trigger.ship);
+    if (boss.trigger.kind === 'well' && getSector(boss.sector).anomalies.length === 0) throw new Error(`Boss ${boss.id} needs a gravity well in ${boss.sector}`);
+    for (let i = 0; i < boss.phases.length; i++) {
+      const phase = boss.phases[i];
+      if (phase.summon) getShip(phase.summon.ship);
+      if (i > 0 && phase.below >= boss.phases[i - 1].below) throw new Error(`Boss ${boss.id}: phases must go down in hull`);
+    }
   }
 }

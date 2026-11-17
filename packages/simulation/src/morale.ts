@@ -43,7 +43,7 @@ export function moraleSystem(world: World, dt: number): void {
     if (!ship || ship.destroyed || ship.surrendered || pilot.morale === undefined) continue;
     const archetype = getArchetype(pilot.archetype, ship.baseDefinition.id);
     if ((world.tick - ship.lastDamageTick) * dt > rules.calmAfter) pilot.morale = Math.min(archetype.courage, pilot.morale + rules.recoverPerSecond * dt);
-    if (archetype.fearless || ship.elite?.fearless) continue;
+    if (archetype.fearless || ship.elite?.fearless || ship.boss) continue;
     const hull = ship.hull / ship.definition.hull.integrity;
     if (pilot.mode === 'flee') {
       if (world.tick >= (pilot.fleeUntil ?? 0)) {

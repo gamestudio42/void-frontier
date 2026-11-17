@@ -12,7 +12,7 @@ import { Simulation } from './simulation.ts';
 export const SAVE_VERSION = 8;
 
 /** The parts of the contract board that change; drops and stations come from content. */
-export type SavedBoard = Pick<MissionBoard, 'offers' | 'active' | 'history' | 'reputation' | 'nextId' | 'refreshTick'> & { clients?: Record<string, number>; career?: Career };
+export type SavedBoard = Pick<MissionBoard, 'offers' | 'active' | 'history' | 'reputation' | 'nextId' | 'refreshTick'> & { clients?: Record<string, number>; career?: Career; bosses?: Record<string, number> };
 
 export interface SaveData {
   version: number;
@@ -53,7 +53,7 @@ export function serialize(state: GameState): SaveData {
     player: capturePlayer(sim),
     sectors: { ...structuredClone(state.memory), [sim.world.sectorId]: captureSector(sim) },
     missions: board
-      ? structuredClone({ offers: board.offers, active: board.active, history: board.history, reputation: board.reputation, nextId: board.nextId, refreshTick: board.refreshTick, clients: board.clients, career: board.career })
+      ? structuredClone({ offers: board.offers, active: board.active, history: board.history, reputation: board.reputation, nextId: board.nextId, refreshTick: board.refreshTick, clients: board.clients, career: board.career, bosses: board.bosses })
       : null,
     discovered: [...state.discovered].sort(),
     economy: sim.economy ? (() => {
@@ -87,7 +87,7 @@ export function restore(data: SaveData): GameState {
   const board = createBoard();
   if (data.missions) {
     const m = structuredClone(data.missions);
-    Object.assign(board, { offers: m.offers, active: m.active, history: m.history, reputation: { ...board.reputation, ...m.reputation }, nextId: m.nextId, refreshTick: m.refreshTick, clients: { ...m.clients }, career: { ...createCareer(), ...m.career } });
+    Object.assign(board, { offers: m.offers, active: m.active, history: m.history, reputation: { ...board.reputation, ...m.reputation }, nextId: m.nextId, refreshTick: m.refreshTick, clients: { ...m.clients }, career: { ...createCareer(), ...m.career }, bosses: { ...m.bosses } });
   }
   let economy = data.economy ? structuredClone(data.economy) : null;
   if (!economy) {
