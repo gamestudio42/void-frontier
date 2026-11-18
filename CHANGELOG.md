@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased: art pass, part three
+
+- Docking bays are no longer bare boxes: ribbed walls with light panels in the station's colours, a painted landing pad with chevrons pointing in, gantries, clamps, a lit control gallery, a crane and cargo, and beacon posts at the entrance.
+
 ## Unreleased: art pass, part two
 
 - The last five ships that were still boxes now have real models: the patched, lopsided Jackal pirate, the Mule container hauler, the Prospector with its cutting arms, the needle-nosed Lancer fighter and the Magpie salvager with its claw and crane.

@@ -113,3 +113,56 @@ export function hazardTexture(): CanvasTexture {
   }
   return texture(c);
 }
+
+/**
+ * The bay deck: dark plating with a painted landing pad, a centre line and chevrons that
+ * point into the bay, in the station's faction colour. U runs along the bay, mouth at U=1.
+ */
+export function padTexture(color: string): CanvasTexture {
+  const [c, ctx] = canvas(512, 512);
+  ctx.fillStyle = '#2a2e33';
+  ctx.fillRect(0, 0, 512, 512);
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
+  ctx.lineWidth = 2;
+  for (let i = 0; i <= 512; i += 64) {
+    ctx.beginPath();
+    ctx.moveTo(i, 0);
+    ctx.lineTo(i, 512);
+    ctx.moveTo(0, i);
+    ctx.lineTo(512, i);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.globalAlpha = 0.7;
+  ctx.lineWidth = 10;
+  ctx.beginPath();
+  ctx.arc(200, 256, 110, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(200, 166);
+  ctx.lineTo(200, 346);
+  ctx.moveTo(110, 256);
+  ctx.lineTo(290, 256);
+  ctx.stroke();
+  // Chevrons from the mouth toward the pad.
+  for (let i = 0; i < 3; i++) {
+    const x = 470 - i * 46;
+    ctx.beginPath();
+    ctx.moveTo(x, 196);
+    ctx.lineTo(x - 30, 256);
+    ctx.lineTo(x, 316);
+    ctx.lineTo(x - 14, 316);
+    ctx.lineTo(x - 44, 256);
+    ctx.lineTo(x - 14, 196);
+    ctx.closePath();
+    ctx.fill();
+  }
+  // Worn edge lines.
+  ctx.globalAlpha = 0.6;
+  ctx.fillStyle = '#d9a12b';
+  ctx.fillRect(0, 10, 512, 8);
+  ctx.fillRect(0, 494, 512, 8);
+  return texture(c);
+}
