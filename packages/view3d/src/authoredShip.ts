@@ -35,6 +35,26 @@ import dreadmawAtlas from '../assets/dreadmaw/atlas.png';
 import dreadmawGlow from '../assets/dreadmaw/glow.png';
 import dreadmawOrm from '../assets/dreadmaw/orm.png';
 import dreadmawHull from '../assets/dreadmaw/hull.json';
+import jackalAtlas from '../assets/jackal/atlas.png';
+import jackalGlow from '../assets/jackal/glow.png';
+import jackalOrm from '../assets/jackal/orm.png';
+import jackalHull from '../assets/jackal/hull.json';
+import muleAtlas from '../assets/mule/atlas.png';
+import muleGlow from '../assets/mule/glow.png';
+import muleOrm from '../assets/mule/orm.png';
+import muleHull from '../assets/mule/hull.json';
+import prospectorAtlas from '../assets/prospector/atlas.png';
+import prospectorGlow from '../assets/prospector/glow.png';
+import prospectorOrm from '../assets/prospector/orm.png';
+import prospectorHull from '../assets/prospector/hull.json';
+import lancerAtlas from '../assets/lancer/atlas.png';
+import lancerGlow from '../assets/lancer/glow.png';
+import lancerOrm from '../assets/lancer/orm.png';
+import lancerHull from '../assets/lancer/hull.json';
+import magpieAtlas from '../assets/magpie/atlas.png';
+import magpieGlow from '../assets/magpie/glow.png';
+import magpieOrm from '../assets/magpie/orm.png';
+import magpieHull from '../assets/magpie/hull.json';
 import { PALETTE } from './palette.ts';
 import type { Emitter, ShipModel, ThrusterGroup } from './shipModel.ts';
 
@@ -81,6 +101,11 @@ const HULLS: Record<string, HullSource> = {
   marauder: { file: marauderHull as HullFile, atlas: marauderAtlas, orm: marauderOrm, glow: marauderGlow },
   bulwark: { file: bulwarkHull as HullFile, atlas: bulwarkAtlas, orm: bulwarkOrm, glow: bulwarkGlow },
   dreadmaw: { file: dreadmawHull as HullFile, atlas: dreadmawAtlas, orm: dreadmawOrm, glow: dreadmawGlow },
+  jackal: { file: jackalHull as HullFile, atlas: jackalAtlas, orm: jackalOrm, glow: jackalGlow },
+  mule: { file: muleHull as HullFile, atlas: muleAtlas, orm: muleOrm, glow: muleGlow },
+  prospector: { file: prospectorHull as HullFile, atlas: prospectorAtlas, orm: prospectorOrm, glow: prospectorGlow },
+  lancer: { file: lancerHull as HullFile, atlas: lancerAtlas, orm: lancerOrm, glow: lancerGlow },
+  magpie: { file: magpieHull as HullFile, atlas: magpieAtlas, orm: magpieOrm, glow: magpieGlow },
 };
 
 const geometryCache = new Map<string, { atlas: BufferGeometry; glow: BufferGeometry }>();

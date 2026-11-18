@@ -151,6 +151,6 @@ for capital ships.
 The art pass is split in parts; this page covers the whole of it.
 
 1. Done: this bible, planets with atmosphere, clouds and rings, and a grade per sector.
-2. Studio meshes for the five procedural hulls: Jackal, Mule, Prospector, Lancer, Magpie.
+2. Done: studio meshes for the five hulls that were procedural: Jackal, Mule, Prospector, Lancer, Magpie.
 3. A modular station kit with a lit bay interior, replacing the hazard-striped box.
 4. Asteroids with normal maps and emissive veins that the scanner lights up.
