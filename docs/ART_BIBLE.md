@@ -122,6 +122,18 @@ obstacle.
 - Rings: optional, in planet radii, with lanes and gaps (Industrial Belt and Anomaly Zone
   have them).
 
+## Stations
+
+Stations are built from their data layout (core, ring, truss, panel, tank, dock), so what
+is drawn is what the colliders describe. The docking bay keeps the collider volumes (two
+side walls and a back wall, open at the mouth and on top so the camera sees in) and dresses
+them: ribs on the inner walls with light panels in the faction's colour and warm work
+lights under them, a deck painted with a landing circle, a centre cross and chevrons
+pointing in, light strips along the deck edges, clamps either side of the pad, gantry
+beams across the top, a lit control gallery, a crane and cargo at the back, and hazard
+posts with amber beacons at the mouth. The approach runway of chasing green lights stays.
+Two point lights per bay (faction-tinted overhead, warm at the back) are the budget.
+
 ## Effects
 
 - Hits: a bright flash at the impact, sparks thrown along the surface; shield hits ripple
@@ -152,5 +164,5 @@ The art pass is split in parts; this page covers the whole of it.
 
 1. Done: this bible, planets with atmosphere, clouds and rings, and a grade per sector.
 2. Done: studio meshes for the five hulls that were procedural: Jackal, Mule, Prospector, Lancer, Magpie.
-3. A modular station kit with a lit bay interior, replacing the hazard-striped box.
+3. Done: a lit docking bay in every station, in its faction's colour (see Stations).
 4. Asteroids with normal maps and emissive veins that the scanner lights up.

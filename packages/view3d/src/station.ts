@@ -15,7 +15,7 @@ import {
   type Material,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { hazardTexture, platingTexture, solarTexture, windowsTexture } from './textures.ts';
+import { hazardTexture, padTexture, platingTexture, solarTexture, windowsTexture } from './textures.ts';
 
 /**
  * Builds a station from its data layout, so what you see is what you collide with.
@@ -37,6 +37,7 @@ interface Blinker {
 
 export function buildStationModel(definition: StationDefinition, seed: number): StationModel {
   const pirate = getFaction(definition.faction).hostile;
+  const faction = new Color(getFaction(definition.faction).color);
   const root = new Group();
   const plating = platingTexture(seed);
   const darkPlating = platingTexture(seed + 1, '#4a5058');
@@ -71,6 +72,105 @@ export function buildStationModel(definition: StationDefinition, seed: number): 
   const blinker = (x: number, h: number, y: number, color: number, period: number, phase: number, size = 1.6) => {
     blinkers.push({ mesh: lamp(x, h, y, color, size), on: color, off: new Color(color).multiplyScalar(0.12).getHex(), period, phase });
   };
+
+  /**
+   * The docking bay, inside the volume its colliders describe (two side walls and a back
+   * wall, open at the mouth and on top so the camera sees in): ribbed walls with light
+   * panels in the faction's colour, a painted deck with light strips, gantry beams over
+   * the top, cargo and a crane at the back, clamps at the pad, and lit posts at the mouth.
+   */
+  function buildBay(module: Extract<StationModule, { kind: 'dock' }>): void {
+    const { x, y, angle, width, depth } = module;
+    const group = new Group();
+    group.position.set(x, 0, -y);
+    group.rotation.y = angle;
+    root.add(group);
+    const local = (geometry: BufferGeometry, material: Material, lx: number, h: number, ly: number) => {
+      const mesh = new Mesh(geometry, material);
+      mesh.position.set(lx, h, -ly);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      group.add(mesh);
+      return mesh;
+    };
+    const glowing = (color: Color, intensity: number) => {
+      const material = new MeshStandardMaterial({ color: 0x101214, emissive: color, emissiveIntensity: intensity, roughness: 0.4, metalness: 0.2 });
+      materials.push(material);
+      return material;
+    };
+    const wallHeight = 14;
+    const inner = width / 2 - 2;
+    const panels = glowing(faction, 2.2);
+    const strips = glowing(faction, 3);
+    const warm = glowing(new Color(0xffc27a), 1.8);
+
+    // Walls: the collider volumes, ribbed inside with light panels between the ribs.
+    const ribs = Math.max(3, Math.round(depth / 6));
+    for (const side of [-1, 1]) {
+      local(new BoxGeometry(depth, wallHeight, 4), dark, -depth / 2, 0, (side * width) / 2);
+      local(new BoxGeometry(depth + 4, 1, 4.6), hazard, -depth / 2, wallHeight / 2 + 0.5, (side * width) / 2);
+      for (let i = 0; i <= ribs; i++) {
+        const lx = -depth + 1 + (i * (depth - 2)) / ribs;
+        local(new BoxGeometry(1.2, wallHeight + 1, 1.6), strut, lx, 0.5, side * (inner - 0.2));
+        if (i < ribs) {
+          const mid = lx + (depth - 2) / ribs / 2;
+          local(new BoxGeometry((depth - 2) / ribs - 2.2, 1.6, 0.3), panels, mid, 2.5, side * (inner - 0.3));
+          local(new BoxGeometry((depth - 2) / ribs - 2.2, 0.6, 0.3), warm, mid, -3.2, side * (inner - 0.3));
+        }
+      }
+    }
+    // Back wall: a lit control gallery, a crane on a gantry, cargo in the corners.
+    local(new BoxGeometry(4, wallHeight, width + 4), dark, -depth, 0, 0);
+    const gallery = new MeshStandardMaterial({ map: plating, color: 0x9aa1a8, emissive: 0xffffff, emissiveMap: windowsTexture(seed + 23, 24, 2), emissiveIntensity: 1.6 });
+    materials.push(gallery);
+    local(new BoxGeometry(0.4, 3, width * 0.6), gallery, -depth + 2.2, 3.5, 0);
+    local(new BoxGeometry(2.4, 1.6, width), strut, -depth + 5, wallHeight / 2 + 1, 0);
+    local(new BoxGeometry(3, 2, 3), accent, -depth + 5, wallHeight / 2 - 0.6, width * 0.18);
+    local(new CylinderGeometry(0.25, 0.25, 6, 6), strut, -depth + 5, wallHeight / 2 - 4.5, width * 0.18);
+    for (const side of [-1, 1]) {
+      for (let i = 0; i < 3; i++) {
+        const crate = local(new BoxGeometry(4, 3.2, 4), i === 1 ? accent : hull, -depth + 4 + (i % 2) * 4.4, -wallHeight / 2 + 2.2 + (i === 2 ? 3.2 : 0), side * (inner - 3.5));
+        crate.rotation.y = (i - 1) * 0.12;
+      }
+    }
+    // Deck: the painted pad, light strips along both edges, clamps either side of the pad.
+    const deck = new MeshStandardMaterial({ map: padTexture(`#${faction.getHexString()}`), metalness: 0.5, roughness: 0.6 });
+    materials.push(deck);
+    local(new BoxGeometry(depth, 1.2, width - 4), deck, -depth / 2, -wallHeight / 2, 0);
+    for (const side of [-1, 1]) {
+      local(new BoxGeometry(depth - 2, 0.3, 0.7), strips, -depth / 2, -wallHeight / 2 + 0.8, side * (inner - 1.2));
+      local(new BoxGeometry(3, 2.4, 2), accent, -depth * 0.6, -wallHeight / 2 + 1.6, side * (inner - 4.5));
+      local(new BoxGeometry(1, 1, 5), strut, -depth * 0.6, -wallHeight / 2 + 2.2, side * (inner - 7.5));
+    }
+    // Gantry beams across the open top.
+    for (let i = 1; i <= 2; i++) local(new BoxGeometry(1.4, 1.4, width + 4), strut, -(depth * i) / 3, wallHeight / 2 + 1.6, 0);
+    // Mouth posts with beacons, so the entrance reads from far out.
+    for (const side of [-1, 1]) {
+      local(new BoxGeometry(3, wallHeight + 6, 5), hazard, 0, 3, (side * width) / 2);
+      const beacon = new Mesh(new SphereGeometry(1.4, 10, 8), new MeshBasicMaterial({ color: 0xffb347 }));
+      materials.push(beacon.material as Material);
+      beacon.position.set(0, wallHeight / 2 + 7, -((side * width) / 2));
+      group.add(beacon);
+      blinkers.push({ mesh: beacon, on: 0xffb347, off: 0x2a1c0a, period: 1.6, phase: side > 0 ? 0.8 : 0 });
+    }
+    // Approach lights: a runway in front of the mouth that chases toward the bay.
+    for (let i = 0; i < 12; i++) {
+      for (const side of [-1, 1]) {
+        const m = new Mesh(new SphereGeometry(1.1, 8, 6), new MeshBasicMaterial({ color: 0x34ff6a, transparent: true, blending: AdditiveBlending }));
+        materials.push(m.material as Material);
+        m.position.set(14 + i * 11, -2, -((side * width) / 2));
+        m.userData.order = i;
+        group.add(m);
+        chase.push(m);
+      }
+    }
+    const bayLight = new PointLight(faction.clone().lerp(new Color(0xffffff), 0.6), 380, depth * 3, 2);
+    bayLight.position.set(-depth / 2, 12, 0);
+    group.add(bayLight);
+    const backLight = new PointLight(0xffc27a, 260, depth * 2, 2);
+    backLight.position.set(-depth + 6, 2, 0);
+    group.add(backLight);
+  }
 
   for (const module of definition.modules) build(module);
 
@@ -174,50 +274,7 @@ export function buildStationModel(definition: StationDefinition, seed: number): 
         break;
       }
       case 'dock': {
-        const { x, y, angle, width, depth } = module;
-        const group = new Group();
-        group.position.set(x, 0, -y);
-        group.rotation.y = angle;
-        root.add(group);
-        const local = (geometry: BufferGeometry, material: Material, lx: number, h: number, ly: number) => {
-          const mesh = new Mesh(geometry, material);
-          mesh.position.set(lx, h, -ly);
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-          group.add(mesh);
-          return mesh;
-        };
-        const wallHeight = 14;
-        for (const side of [-1, 1]) {
-          local(new BoxGeometry(depth, wallHeight, 4), dark, -depth / 2, 0, (side * width) / 2);
-          local(new BoxGeometry(depth, 1, 4.4), hazard, -depth / 2, wallHeight / 2 + 0.5, (side * width) / 2);
-        }
-        local(new BoxGeometry(4, wallHeight, width + 4), dark, -depth, 0, 0);
-        local(new BoxGeometry(depth, 1.2, width), hull, -depth / 2, -wallHeight / 2, 0);
-        // Wall lights inside the bay.
-        for (let i = 0; i < 6; i++) {
-          const lx = -depth + 3 + (i * (depth - 6)) / 5;
-          for (const side of [-1, 1]) {
-            const m = new Mesh(new SphereGeometry(0.9, 8, 6), new MeshBasicMaterial({ color: 0x9fe4ff }));
-            materials.push(m.material as Material);
-            m.position.set(lx, wallHeight / 2 - 2, -((side * (width / 2 - 2.4))));
-            group.add(m);
-          }
-        }
-        // Approach lights: a runway in front of the mouth that chases toward the bay.
-        for (let i = 0; i < 12; i++) {
-          for (const side of [-1, 1]) {
-            const m = new Mesh(new SphereGeometry(1.1, 8, 6), new MeshBasicMaterial({ color: 0x34ff6a, transparent: true, blending: AdditiveBlending }));
-            materials.push(m.material as Material);
-            m.position.set(14 + i * 11, -2, -((side * width) / 2));
-            m.userData.order = i;
-            group.add(m);
-            chase.push(m);
-          }
-        }
-        const bayLight = new PointLight(0x9fe4ff, 700, depth * 3, 2);
-        bayLight.position.set(-depth / 2, 4, 0);
-        group.add(bayLight);
+        buildBay(module);
         break;
       }
     }
