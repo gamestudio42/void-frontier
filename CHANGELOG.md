@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased: art pass, part four
+
+- Asteroids have finer, rockier surfaces up close.
+- A scanner pulse now lights up the ore veins of the rocks it reads, in the ore's colour, pulsing until the reading fades.
+
 ## Unreleased: art pass, part three
 
 - Docking bays are no longer bare boxes: ribbed walls with light panels in the station's colours, a painted landing pad with chevrons pointing in, gantries, clamps, a lit control gallery, a crane and cargo, and beacon posts at the entrance.
