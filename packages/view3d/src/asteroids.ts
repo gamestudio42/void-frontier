@@ -2,6 +2,7 @@ import type { AsteroidType } from '@void-frontier/content';
 import type { Asteroid, EntityId, World } from '@void-frontier/simulation';
 import {
   BufferAttribute,
+  InstancedBufferAttribute,
   Color,
   DynamicDrawUsage,
   Euler,
@@ -40,6 +41,7 @@ export function buildRockGeometry(type: AsteroidType, variant: number, detail = 
   const geometry = mergeVertices(new IcosahedronGeometry(1, detail));
   const position = geometry.getAttribute('position') as BufferAttribute;
   const colors = new Float32Array(position.count * 3);
+  const veins = new Float32Array(position.count);
   const base = new Color(type.look.base);
   const vein = new Color(type.look.vein);
   const dark = base.clone().multiplyScalar(0.45);
@@ -71,11 +73,98 @@ export function buildRockGeometry(type: AsteroidType, variant: number, detail = 
     const band = Math.abs(veinNoise.fbm(v.x * 3.1, v.y * 3.1, v.z * 3.1, 4));
     if (band < 0.035) tmp.lerp(vein, (1 - band / 0.035) * 0.75 * (1 - craterShade * 0.6));
     colors.set([tmp.r, tmp.g, tmp.b], i * 3);
+    // The same veins, a little wider, are what glows when a scanner reads the rock.
+    veins[i] = band < 0.03 ? (1 - band / 0.03) * (1 - craterShade * 0.6) : 0;
   }
   geometry.setAttribute('color', new BufferAttribute(colors, 3));
+  geometry.setAttribute('vein', new BufferAttribute(veins, 1));
   geometry.computeVertexNormals();
   geometry.computeBoundingSphere();
   return geometry;
+}
+
+/**
+ * Rock material: the vertex-coloured standard material plus two things in the shader.
+ * A procedural bump (value noise in the rock's own space) breaks up the smooth normals at
+ * close range without a texture or UVs. And the vein mask glows in the ore's colour by the
+ * instance's `glow`, which the renderer raises while a scanner reading lasts.
+ */
+export function rockMaterial(type: AsteroidType): MeshStandardMaterial {
+  const material = new MeshStandardMaterial({ vertexColors: true, roughness: type.look.roughness, metalness: type.look.metalness });
+  const veinColor = new Color(type.look.vein);
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.veinColor = { value: veinColor };
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+        attribute float vein;
+        attribute float glow;
+        varying float vVein;
+        varying float vGlow;
+        varying vec3 vRockPos;
+        varying mat3 vRockBasis;`,
+      )
+      .replace(
+        '#include <begin_vertex>',
+        `#include <begin_vertex>
+        vVein = vein;
+        vGlow = glow;
+        vRockPos = position;
+        vRockBasis = normalMatrix * mat3(instanceMatrix);`,
+      );
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+        uniform vec3 veinColor;
+        varying float vVein;
+        varying float vGlow;
+        varying vec3 vRockPos;
+        varying mat3 vRockBasis;
+        float rockHash(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
+        float rockNoise(vec3 p) {
+          vec3 i = floor(p);
+          vec3 f = fract(p);
+          f = f * f * (3.0 - 2.0 * f);
+          return mix(
+            mix(mix(rockHash(i), rockHash(i + vec3(1, 0, 0)), f.x), mix(rockHash(i + vec3(0, 1, 0)), rockHash(i + vec3(1, 1, 0)), f.x), f.y),
+            mix(mix(rockHash(i + vec3(0, 0, 1)), rockHash(i + vec3(1, 0, 1)), f.x), mix(rockHash(i + vec3(0, 1, 1)), rockHash(i + vec3(1, 1, 1)), f.x), f.y),
+            f.z);
+        }
+        float rockBump(vec3 p) { return rockNoise(p * 9.0) * 0.6 + rockNoise(p * 23.0) * 0.4; }`,
+      )
+      .replace(
+        '#include <normal_fragment_maps>',
+        `#include <normal_fragment_maps>
+        #ifdef ROCK_BUMP
+        {
+          float e = 0.02;
+          float h = rockBump(vRockPos);
+          vec3 g = vec3(rockBump(vRockPos + vec3(e, 0, 0)) - h, rockBump(vRockPos + vec3(0, e, 0)) - h, rockBump(vRockPos + vec3(0, 0, e)) - h) / e;
+          vec3 gv = vRockBasis * g;
+          normal = normalize(normal - 0.006 * (gv - dot(gv, normal) * normal));
+        }
+        #endif`,
+      )
+      .replace(
+        '#include <emissivemap_fragment>',
+        `#include <emissivemap_fragment>
+        totalEmissiveRadiance += veinColor * smoothstep(0.2, 0.85, vVein) * vGlow * 4.5;`,
+      );
+  };
+  // The bump costs eight noise samples a pixel: low quality goes without it.
+  material.defines = { ROCK_BUMP: '' };
+  material.customProgramCacheKey = () => ('ROCK_BUMP' in (material.defines ?? {}) ? 'rock-bump' : 'rock');
+  return material;
+}
+
+/** One glow value per instance, written each frame. */
+function glowAttribute(geometry: BufferGeometry, count: number): InstancedBufferAttribute {
+  const attribute = new InstancedBufferAttribute(new Float32Array(count), 1);
+  attribute.setUsage(DynamicDrawUsage);
+  geometry.setAttribute('glow', attribute);
+  return attribute;
 }
 
 function hashString(text: string): number {
@@ -109,6 +198,8 @@ export class AsteroidRenderer {
   private readonly materials = new Map<string, MeshStandardMaterial>();
   /** Spare instances per rock type for fragments cracked off in play. */
   private readonly pools = new Map<string, { mesh: InstancedMesh; free: number[] }>();
+  /** Scanner glow per instance, keyed by each mesh's geometry. */
+  private readonly glows = new Map<BufferGeometry, InstancedBufferAttribute>();
 
   constructor(private readonly scene: Scene, world: World) {
     const groups = new Map<string, EntityId[]>();
@@ -124,11 +215,13 @@ export class AsteroidRenderer {
       const type = asteroid.type;
       let material = materials.get(type.id);
       if (!material) {
-        material = new MeshStandardMaterial({ vertexColors: true, roughness: type.look.roughness, metalness: type.look.metalness });
+        material = rockMaterial(type);
         materials.set(type.id, material);
       }
       const [, variant, detail] = key.split(':').map(Number);
-      const mesh = new InstancedMesh(buildRockGeometry(type, variant, detail), material, ids.length);
+      const geometry = buildRockGeometry(type, variant, detail);
+      this.glows.set(geometry, glowAttribute(geometry, ids.length));
+      const mesh = new InstancedMesh(geometry, material, ids.length);
       mesh.instanceMatrix.setUsage(DynamicDrawUsage);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
@@ -154,10 +247,12 @@ export class AsteroidRenderer {
     if (!pool) {
       let material = this.materials.get(rock.type.id);
       if (!material) {
-        material = new MeshStandardMaterial({ vertexColors: true, roughness: rock.type.look.roughness, metalness: rock.type.look.metalness });
+        material = rockMaterial(rock.type);
         this.materials.set(rock.type.id, material);
       }
-      const mesh = new InstancedMesh(buildRockGeometry(rock.type, 0, 3), material, FRAGMENT_POOL);
+      const geometry = buildRockGeometry(rock.type, 0, 3);
+      this.glows.set(geometry, glowAttribute(geometry, FRAGMENT_POOL));
+      const mesh = new InstancedMesh(geometry, material, FRAGMENT_POOL);
       mesh.instanceMatrix.setUsage(DynamicDrawUsage);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
@@ -180,7 +275,18 @@ export class AsteroidRenderer {
     this.slots.set(id, { mesh: pool.mesh, index, tilt, lift: (rand() - 0.5) * Math.min(14, rock.radius), pooled: rock.type.id });
   }
 
-  update(world: World, alpha: number): void {
+  /** Fine surface relief on or off (off at low quality); the renderer recompiles materials after. */
+  setDetail(on: boolean): void {
+    for (const material of this.materials.values()) {
+      material.defines ??= {};
+      if (on) material.defines.ROCK_BUMP = '';
+      else delete material.defines.ROCK_BUMP;
+      material.needsUpdate = true;
+    }
+  }
+
+  /** `time` in seconds drives the veins' pulse while a scan reading lasts. */
+  update(world: World, alpha: number, time = 0): void {
     for (const [id, rock] of world.asteroids) if (rock.fragment && !this.slots.has(id)) this.adopt(id, rock);
     for (const [id, slot] of this.slots) {
       const body = world.bodies.get(id);
@@ -189,6 +295,7 @@ export class AsteroidRenderer {
         // Mined out or cracked: collapse the instance and forget it.
         this.matrix.makeScale(0, 0, 0);
         slot.mesh.setMatrixAt(slot.index, this.matrix);
+        this.glows.get(slot.mesh.geometry)?.setX(slot.index, 0);
         if (slot.pooled) this.pools.get(slot.pooled)?.free.push(slot.index);
         this.slots.delete(id);
         continue;
@@ -205,8 +312,14 @@ export class AsteroidRenderer {
       this.scaleVector.setScalar(rock.radius);
       this.matrix.compose(this.position, this.rotation, this.scaleVector);
       slot.mesh.setMatrixAt(slot.index, this.matrix);
+      // Veins light up with a scan, pulse while the reading lasts, and fade as it expires.
+      const until = world.scanned.get(id);
+      const left = until === undefined ? 0 : Math.max(0, Math.min(1, (until - world.tick) / 180));
+      const glow = left * (0.55 + 0.45 * Math.sin(time * 3 + rock.look) ** 2);
+      this.glows.get(slot.mesh.geometry)?.setX(slot.index, glow);
     }
     for (const mesh of this.meshes) mesh.instanceMatrix.needsUpdate = true;
+    for (const glow of this.glows.values()) glow.needsUpdate = true;
   }
 
   dispose(): void {

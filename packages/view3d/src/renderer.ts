@@ -237,6 +237,7 @@ export class SpaceRenderer {
       this.sun.shadow.map = null;
     }
     this.bloom.enabled = quality !== 'low';
+    this.asteroids.setDetail(quality !== 'low');
     // Materials compile differently with and without shadows.
     this.scene.traverse((object) => {
       const material = (object as Mesh).material;
@@ -377,7 +378,7 @@ export class SpaceRenderer {
     this.time += frameDt;
     this.renderer.info.reset();
     this.syncShips(sim, alpha, frameDt);
-    this.asteroids.update(sim.world, alpha);
+    this.asteroids.update(sim.world, alpha, this.time);
     for (const station of this.stations) station.update(this.time);
     for (const beacon of this.beacons) beacon.update(this.time);
     for (const landmark of this.landmarks) landmark.update(this.time);
