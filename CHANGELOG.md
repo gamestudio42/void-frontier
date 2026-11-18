@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased: art pass, part two
+
+- The last five ships that were still boxes now have real models: the patched, lopsided Jackal pirate, the Mule container hauler, the Prospector with its cutting arms, the needle-nosed Lancer fighter and the Magpie salvager with its claw and crane.
+
 ## Unreleased: art pass, part one
 
 - Planets have stormy, turbulent bands, a drifting cloud deck and an atmosphere that glows on the sunlit side; the Industrial Belt and Anomaly Zone planets have rings.
