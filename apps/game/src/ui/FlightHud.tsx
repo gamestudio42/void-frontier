@@ -3,6 +3,7 @@ import type { FlightTelemetry } from '@void-frontier/simulation';
 import type { MessageKey, Translate } from '../i18n.ts';
 import type { HudState } from '../store.ts';
 import { Compass } from './Compass.tsx';
+import { Portrait } from './Portrait.tsx';
 import { DockingPanel } from './DockingPanel.tsx';
 import { ShipSchematic } from './ShipSchematic.tsx';
 import { formatBearing, formatDistance, formatNumber } from './format.ts';
@@ -260,6 +261,7 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
         </section>
       )}
       {hud.boss && !hud.docking && <BossBar boss={hud.boss} t={t} />}
+      {hud.radio && <RadioPanel radio={hud.radio} t={t} />}
       {hud.incident?.kind === 'solarFlare' && hud.incident.stage === 'active' && <div className="flare-wash" aria-hidden="true" />}
       {hud.incident && !hud.docking && <IncidentPanel incident={hud.incident} t={t} locale={locale} />}
       {hud.gravity > 0.2 && (
@@ -400,5 +402,24 @@ function BossBar({ boss, t }: { boss: NonNullable<HudState['boss']>; t: Translat
       </div>
       <em>{t(`boss.hint.${boss.trigger}` as MessageKey)}</em>
     </section>
+  );
+}
+
+/** A line on the radio: the speaker's portrait and name, and what they say. */
+function RadioPanel({ radio, t }: { radio: NonNullable<HudState['radio']>; t: Translate }) {
+  const values = { ...radio.values };
+  if (values.sector) values.sector = t(`sector.${values.sector}` as MessageKey);
+  const line = t(radio.key as MessageKey).replace(/\{(\w+)\}/g, (_, k: string) => values[k] ?? '');
+  const name = radio.name ?? t(`speaker.${radio.speaker}` as MessageKey);
+  return (
+    <aside className={`radio radio-${radio.speaker}`} data-testid="radio" data-key={radio.key} role="status" aria-live="polite">
+      <Portrait speaker={radio.speaker} />
+      <div>
+        <span className="label">
+          {t('hud.radio')} · {name}
+        </span>
+        <p>{line}</p>
+      </div>
+    </aside>
   );
 }

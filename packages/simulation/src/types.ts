@@ -245,6 +245,8 @@ export type SimEvent =
   | { type: 'rank'; rank: number; id: string; credits: number }
   /** A sector boss appeared, opened up, closed its guard, reached a phase, or was beaten (`credits` paid). */
   | { type: 'boss'; boss: string; ship: EntityId; stage: 'spawned' | 'open' | 'guarded' | 'phase' | 'defeated'; phase: number; credits: number }
+  /** A hired pilot will remember this: being saved, a boss or an elite brought down. */
+  | { type: 'memory'; ship: EntityId; pilot: string; kind: 'saved' | 'boss' | 'elite'; sector: string }
   /** An elite pirate went down; `credits` is the bounty the player's side was paid (0 otherwise). */
   | { type: 'eliteDown'; ship: EntityId; affixes: string[]; position: { x: number; y: number }; credits: number }
   /**

@@ -35,3 +35,4 @@ export * from './bosses.ts';
 export * from './career.ts';
 export * from './director.ts';
 export * from './elites.ts';
+export * from './memories.ts';

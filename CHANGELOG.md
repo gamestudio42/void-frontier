@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased: radio chatter and fleet stories
+
+- The cast now talks in flight: Dispatch, Cmdr. Oyelaran, the Ferrum foreman and Kess Varo call incidents, contacts, bosses, elites, a full hold and promotions, and greet you in each sector, with their portrait under the mission card.
+- Your hired pilots remember the fights you share: when you save them, and the bosses and elites you bring down together. They thank you on the radio, and bring it up when they fly out with you again.
+
 ## Unreleased: art pass, part four
 
 - Asteroids have finer, rockier surfaces up close.
