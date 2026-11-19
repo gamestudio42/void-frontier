@@ -3,6 +3,7 @@ import { FIXED_DT, Rng, toRadians } from '@void-frontier/kernel';
 import { forwardOf, spawnShip } from './ship.ts';
 import { aiSystem, encounterSystem, spawnEncounter } from './ai.ts';
 import { bossSystem } from './bosses.ts';
+import { memorySystem } from './memories.ts';
 import { directorSystem, startIncident } from './director.ts';
 import { promoteLeader } from './elites.ts';
 import { moraleSystem } from './morale.ts';
@@ -152,6 +153,7 @@ export class Simulation {
     if (this.economy) {
       crewSystem(this.world, this.fleet);
       fleetSystem(this);
+      memorySystem(this, this.world.events.slice(mark));
     }
     campaignSystem(this);
     this.world.tick++;

@@ -82,6 +82,7 @@ The collision system also publishes its grid as `world.spatial`; weapons, projec
 - `combat.ts`: weapon mounts (cooldown, heat, overheat, gimbal), projectile spawning with velocity inheritance and seeded spread, beam raycasts, `leadPoint` (intercept solver) and `hostilesNear`.
 - `damage.ts`: shield → armour → hull with per-weapon multipliers; `destroyShip` credits kills and removes the wreck's collider.
 - `bosses.ts`: sector lairs, boss stats, the guard that cuts weapon damage until the sector's trick opens it (rock impact, gravity well core, escorts down, guns overheated), phases, and the reward and respawn log kept on the contract board.
+- `memories.ts`: what hired pilots remember (saved by the player, a boss or an elite brought down nearby), read from each step's events after the fleet system and kept on the pilot, so it is saved with the fleet.
 - `elites.ts`: elite pirate rolls (a hash of sector, group and tick, so no world RNG is drawn), affixes applied to the effective ship definition and weapons, the volatile death blast and the bounty paid in `destroyShip`.
 - `ai.ts`: pirate pilots (patrol, engage, retreat, avoidance) that only write ShipCommands, plus encounter spawning and respawn.
 - `mining.ts`: ore extraction, rock resizing and break-up, pickups, tractor, scanner, jettison and pirate salvage. Ship mass includes the hold, so mining feeds straight into flight.

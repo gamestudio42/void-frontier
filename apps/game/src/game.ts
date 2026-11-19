@@ -14,6 +14,7 @@ import { padVerb } from './verbs.ts';
 import { drawRadar } from './radar.ts';
 import { drawTargeting } from './targeting.ts';
 import type { DeathCause, HudState, HudStore } from './store.ts';
+import { Radio } from './radio.ts';
 
 /** When the docking checklist counts as an approach (metres, m/s, degrees). Presentation only. */
 const APPROACH = { near: 60, corridorLength: 400, corridorWidth: 60, facingAngle: 45, closingSpeed: 2, closingRange: 250 };
@@ -73,6 +74,7 @@ export class Game {
   private lastTime = 0;
   private clock = 0;
   private hudTimer = 0;
+  private readonly radio = new Radio();
   private fpsFrames = 0;
   private fpsTime = 0;
   private fps = 0;
@@ -586,6 +588,7 @@ export class Game {
       this.updateTutorial(events);
       this.updateTips(events);
       this.autosave(elapsed, events);
+      this.radio.handle(this.sim, events, this.clock);
       if (events.length) {
         this.renderer.handleEvents(this.sim, events);
         for (const event of events) {
@@ -1350,6 +1353,7 @@ export class Game {
       cruise: this.cruiseView(),
       deathCause: this.deathCause,
       incident: this.incidentView(),
+      radio: this.radio.line(this.clock),
       boss: this.bossView(),
       discovered: [...this.discovered],
       news: (this.sim.economy?.news ?? []).slice(0, 8),

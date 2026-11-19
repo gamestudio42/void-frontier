@@ -2874,3 +2874,57 @@ body.gamepad :focus {
 .boss-bar.open em {
   color: var(--green);
 }
+
+.radio {
+  position: absolute;
+  top: 268px;
+  left: 16px;
+  width: 300px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border-left: 3px solid var(--blue);
+  background: rgb(8 12 20 / 78%);
+  pointer-events: none;
+  animation: radio-in 0.25s ease-out;
+}
+
+.radio .portrait {
+  width: 44px;
+  height: 44px;
+  flex: none;
+}
+
+.radio p {
+  margin: 2px 0 0;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.radio-varo {
+  border-left-color: var(--red);
+}
+
+.radio-foreman {
+  border-left-color: var(--amber);
+}
+
+.radio-oyelaran,
+.radio-wing {
+  border-left-color: var(--green);
+}
+
+@keyframes radio-in {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .radio {
+    animation: none;
+  }
+}

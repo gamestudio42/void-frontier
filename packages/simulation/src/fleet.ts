@@ -7,6 +7,7 @@ import { dockShip } from './station.ts';
 import type { RouteRun } from './routes.ts';
 import type { EntityId } from './types.ts';
 import type { World } from './world.ts';
+import type { Memory } from './memories.ts';
 
 export interface PilotSkills {
   piloting: number;
@@ -25,6 +26,8 @@ export interface Pilot {
   trips: number;
   /** Missed a payday: leaves at the next station. */
   unpaid: boolean;
+  /** Moments lived with the player, newest last (memories.ts). */
+  memories?: Memory[];
 }
 
 /** Standing instructions for a ship with a pilot aboard. */
