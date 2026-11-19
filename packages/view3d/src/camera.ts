@@ -36,6 +36,19 @@ export const DEFAULT_CAMERA: CameraSettings = {
  * Follows the ship from above at a fixed tilt. It does not rotate with the ship, leads
  * the view in the direction of travel and pulls back as speed grows.
  */
+/**
+ * A free camera for photo mode: offset from the player's ship in scene units (x, z), turned
+ * `yaw` radians around the focus, `tilt` degrees above the plane, `zoom` times the normal
+ * distance. The game is paused meanwhile; no follow, look-ahead or shake.
+ */
+export interface PhotoCamera {
+  x: number;
+  z: number;
+  yaw: number;
+  tilt: number;
+  zoom: number;
+}
+
 export class CameraRig {
   readonly camera: PerspectiveCamera;
   private readonly focus = new Vector3();
@@ -105,8 +118,21 @@ export class CameraRig {
    * `target` and `velocity` are in scene units (XZ plane). `frame` is an optional second
    * point to keep in view (the combat target): the camera eases back and shifts toward it.
    */
-  update(target: Vector3, velocity: Vector3, frameDt: number, frame: Vector3 | null = null, boss = false, shipLength = 0, closeUp = 1): Vector3 {
+  update(target: Vector3, velocity: Vector3, frameDt: number, frame: Vector3 | null = null, boss = false, shipLength = 0, closeUp = 1, photo: PhotoCamera | null = null): Vector3 {
     const s = this.settings;
+    if (photo) {
+      const d = s.distance * photo.zoom;
+      const tilt = (photo.tilt * Math.PI) / 180;
+      this.lookTarget.set(target.x + photo.x, 0, target.z + photo.z);
+      this.camera.position.set(
+        this.lookTarget.x + Math.sin(photo.yaw) * Math.cos(tilt) * d,
+        Math.sin(tilt) * d,
+        this.lookTarget.z + Math.cos(photo.yaw) * Math.cos(tilt) * d,
+      );
+      this.lastDistance = d;
+      this.camera.lookAt(this.lookTarget);
+      return this.lookTarget;
+    }
     const speed = Math.hypot(velocity.x, velocity.z);
     // Half the visible height around the focus, from last frame: the look-ahead and the
     // combat shift may not push the player's own ship off the screen.

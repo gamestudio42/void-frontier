@@ -3,7 +3,7 @@ import { FIXED_DT, FixedStepper, type Vec2 } from '@void-frontier/kernel';
 import { getUpgrade, getWeapon, weaponGroup } from '@void-frontier/content';
 import { CAREER_RULES } from '@void-frontier/content';
 import { Simulation, WEAPON_RESALE, abilityBlock, abilityStatus, upgradeFit, boardDisabled, boardingStatus, campaignStep, campaignTarget, fleetEntities, hireFee, isParkedAt, orderProblem, payroll, shipValue, shipyardOffers, type FleetOrder, slotUsage, applySectorSnapshot, captureSector, gateStatus, gravityAt, jump, markDiscovered, nextGate, dockedStationKey, type SectorSnapshot, decodeSave, encodeSave, restore, serialize, carryBoard, contractProgress, payout, dockingStatus, bayEntryPoint, type CruiseOrder, installUpgrades, hostilesNear, nearestObstacle, sensorRange, readTarget, readTelemetry, serviceCost, unitPrice, type DockRefusal, inShadow, getBoss, type SimEvent } from '@void-frontier/simulation';
-import { SpaceRenderer, type Quality } from '@void-frontier/view3d';
+import { SpaceRenderer, type PhotoCamera, type Quality } from '@void-frontier/view3d';
 import { AudioEngine } from './audio.ts';
 import { DEFAULT_BINDINGS, InputController } from './input.ts';
 import { saveStore, type SlotId } from './saves.ts';
@@ -75,6 +75,10 @@ export class Game {
   private clock = 0;
   private hudTimer = 0;
   private readonly radio = new Radio();
+  private radioEnabled = true;
+  /** Photo mode's free camera, or null in normal play. */
+  private photo: PhotoCamera | null = null;
+  private shotPending = false;
   private fpsFrames = 0;
   private fpsTime = 0;
   private fps = 0;
@@ -199,7 +203,16 @@ export class Game {
         if (this.sim.world.ships.get(this.sim.playerId)?.destroyed) this.restart();
         else this.sim.scan(this.sim.playerId);
       },
-      zoom: (factor) => this.renderer.rig.zoomBy(factor),
+      zoom: (factor) => {
+        if (this.photo) this.photo.zoom = Math.min(6, Math.max(0.15, this.photo.zoom * factor));
+        else this.renderer.rig.zoomBy(factor);
+      },
+      togglePhoto: () => this.togglePhoto(),
+      photoKey: (key) => {
+        if (!this.photo) return;
+        if (key === 'shot') this.shotPending = true;
+        else this.store.update({ photo: { hint: !this.store.getSnapshot().photo?.hint } });
+      },
       useAbility: (kind) => this.useAbility(kind),
       padVerb: (direction) => {
         const fitted = new Set(abilityStatus(this.sim.world, this.sim.playerId, this.sim.dt).map((a) => a.kind));
@@ -457,6 +470,7 @@ export class Game {
     this.input.steering = settings.mouseSteering;
     this.startAssisted = settings.startAssisted;
     this.tipsEnabled = settings.tips;
+    this.radioEnabled = settings.radio;
     if (!new URLSearchParams(window.location.search).get('quality')) {
       this.autoQuality = settings.quality === 'auto';
       if (settings.quality !== 'auto') this.renderer.setQuality(settings.quality);
@@ -540,7 +554,8 @@ export class Game {
     this.clock += elapsed;
     const snapshot = this.store.getSnapshot();
     const help = snapshot.help;
-    const paused = snapshot.paused || snapshot.menu !== null || snapshot.mapOpen || snapshot.fleetOpen;
+    const paused = snapshot.paused || snapshot.menu !== null || snapshot.mapOpen || snapshot.fleetOpen || this.photo !== null;
+    if (this.photo) this.movePhotoCamera(elapsed);
 
     const docked = this.sim.world.ships.get(this.sim.playerId)?.docked != null;
     this.input.pollGamepad(this.clock, snapshot.menu !== null || snapshot.mapOpen || snapshot.fleetOpen || help || docked);
@@ -682,13 +697,17 @@ export class Game {
     const frameTarget = targetBody && gap < (boss ? 1600 : 650) ? targetBody.position : null;
     this.audio.update(this.sim, !paused && !help, elapsed);
     const cutting = this.sim.world.ships.get(this.sim.playerId)?.weapons.some((w) => w.definition.kind === 'mining' && w.beam?.hit != null && this.sim.world.asteroids.has(w.beam.hit));
-    const stats = this.renderer.render(this.sim, alpha, frameDt, { aim: this.input.steering ? this.aim : null, frame: frameTarget, boss: boss && frameTarget !== null, closeUp: cutting ? MINING_RULES.cameraZoom : 1 });
+    const stats = this.renderer.render(this.sim, alpha, frameDt, { aim: this.input.steering ? this.aim : null, frame: frameTarget, boss: boss && frameTarget !== null, closeUp: cutting ? MINING_RULES.cameraZoom : 1, photo: this.photo });
+    if (this.shotPending) {
+      this.shotPending = false;
+      this.savePhoto();
+    }
     if (this.radar) drawRadar(this.radar, this.sim, this.clock, this.target);
     this.hitFlash = Math.max(0, this.hitFlash - elapsed * 6);
     // Docked, the scene slides aside so the ship stays visible next to the station panel.
     const parked = this.sim.world.ships.get(this.sim.playerId)?.docked !== null && snapshot.menu === null;
     this.renderer.setSceneShift(parked && window.innerWidth >= 1100 ? 0.22 : 0);
-    if (this.overlay) drawTargeting(this.overlay, this.sim, this.renderer, this.target, this.hitFlash, this.input.pointer, this.waypoints(), this.markers(), this.labels.stop(), this.cruiseMarker());
+    if (this.overlay && !this.photo) drawTargeting(this.overlay, this.sim, this.renderer, this.target, this.hitFlash, this.input.pointer, this.waypoints(), this.markers(), this.labels.stop(), this.cruiseMarker());
 
     this.fpsFrames++;
     this.fpsTime += elapsed;
@@ -1089,6 +1108,51 @@ export class Game {
     if (event.stage === 'ambush' || event.stage === 'detonated') this.rumble(0.7, 260);
   }
 
+  /**
+   * Photo mode: the game pauses, the HUD goes, and a free camera starts where the follow
+   * camera was. WASD pan, Q and E turn, R and F tilt, the wheel zooms, Enter saves a PNG.
+   */
+  togglePhoto(): void {
+    const snapshot = this.store.getSnapshot();
+    if (this.photo) {
+      this.photo = null;
+      this.input.photo = false;
+      this.store.update({ photo: null });
+      return;
+    }
+    if (snapshot.menu === 'main' || !this.sim.world.ships.has(this.sim.playerId)) return;
+    this.photo = { x: 0, z: 0, yaw: 0, tilt: 55, zoom: this.renderer.rig.zoomLevel };
+    this.input.photo = true;
+    this.store.update({ photo: { hint: true }, menu: null, mapOpen: false, fleetOpen: false });
+  }
+
+  private movePhotoCamera(elapsed: number): void {
+    const photo = this.photo!;
+    const held = (code: string) => this.input.isHeld(code);
+    const pan = 260 * photo.zoom * elapsed;
+    const forward = (held('KeyW') ? 1 : 0) - (held('KeyS') ? 1 : 0);
+    const right = (held('KeyD') ? 1 : 0) - (held('KeyA') ? 1 : 0);
+    // Screen up is away from the camera, turned with the yaw.
+    photo.x += (-Math.sin(photo.yaw) * forward + Math.cos(photo.yaw) * right) * pan;
+    photo.z += (-Math.cos(photo.yaw) * forward - Math.sin(photo.yaw) * right) * pan;
+    photo.yaw += ((held('KeyE') ? 1 : 0) - (held('KeyQ') ? 1 : 0)) * 1.2 * elapsed;
+    photo.tilt = Math.min(89, Math.max(8, photo.tilt + ((held('KeyR') ? 1 : 0) - (held('KeyF') ? 1 : 0)) * 40 * elapsed));
+  }
+
+  /** The frame just drawn, as a PNG download; read in the same task as the draw. */
+  private savePhoto(): void {
+    this.canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+      link.href = url;
+      link.download = `void-frontier-${stamp}.png`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }, 'image/png');
+  }
+
   /** The boss bar: shown once a boss is close or hunting the player. */
   private bossView(): HudState['boss'] {
     const world = this.sim.world;
@@ -1353,7 +1417,7 @@ export class Game {
       cruise: this.cruiseView(),
       deathCause: this.deathCause,
       incident: this.incidentView(),
-      radio: this.radio.line(this.clock),
+      radio: this.radioEnabled ? this.radio.line(this.clock) : null,
       boss: this.bossView(),
       discovered: [...this.discovered],
       news: (this.sim.economy?.news ?? []).slice(0, 8),

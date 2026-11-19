@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased: photo mode and accessibility
+
+- Photo mode (F9, or Photo mode in the pause menu): the game pauses, the HUD disappears, and you fly a free camera with WASD, turn with Q and E, tilt with R and F, zoom with the wheel. Enter saves the picture as a PNG; H hides the help.
+- Colour-blind correction in Settings, for protanopia, deuteranopia and tritanopia. It adjusts the whole screen, so resources, factions, tracers and markers stay distinct.
+- Radio chatter can be turned off in Settings.
+
 ## Unreleased: radio chatter and fleet stories
 
 - The cast now talks in flight: Dispatch, Cmdr. Oyelaran, the Ferrum foreman and Kess Varo call incidents, contacts, bosses, elites, a full hold and promotions, and greet you in each sector, with their portrait under the mission card.

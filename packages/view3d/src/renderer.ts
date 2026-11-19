@@ -30,7 +30,7 @@ import { createGiant } from './giants.ts';
 import { createCache, createDerelict, createGate, createWell, type Landmark } from './landmarks.ts';
 import { BeamRenderer, ShieldBubble, TracerRenderer } from './combatFx.ts';
 import { PickupRenderer } from './mining.ts';
-import { CameraRig } from './camera.ts';
+import { CameraRig, type PhotoCamera } from './camera.ts';
 import { fromScene, toScene } from './coords.ts';
 import { DustField, PlaneGrid, createBeacon, createStarfield } from './environment.ts';
 import { createGradePass, NEUTRAL_GRADE } from './grade.ts';
@@ -52,6 +52,8 @@ export interface RenderOptions {
   boss?: boolean;
   /** Camera zoom wanted while mining (below 1 moves in); 1 or absent for the normal framing. */
   closeUp?: number;
+  /** Photo mode's free camera, which replaces the follow camera while set. */
+  photo?: PhotoCamera | null;
 }
 
 /** What a sector's own colour needs from its data. */
@@ -388,7 +390,7 @@ export class SpaceRenderer {
     if (body && ship) {
       const position = toScene(lerp2(body.previousPosition, body.position, alpha));
       const velocity = toScene(body.velocity);
-      const focus = this.rig.update(position, velocity, frameDt, options.frame ? toScene(options.frame) : null, options.boss === true, ship.definition.hull.length, options.closeUp ?? 1);
+      const focus = this.rig.update(position, velocity, frameDt, options.frame ? toScene(options.frame) : null, options.boss === true, ship.definition.hull.length, options.closeUp ?? 1, options.photo ?? null);
       this.dust.setFocus(focus, this.rig.camera.position.distanceTo(focus));
       this.grid.setFocus(focus);
       this.starfield.position.copy(this.rig.camera.position);

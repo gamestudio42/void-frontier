@@ -191,6 +191,20 @@ export function SettingsPanel({ settings, onSettings, t }: { settings: Settings;
         <input type="checkbox" checked={settings.reduceFlashes} onChange={(e) => set({ reduceFlashes: e.target.checked })} data-testid="reduce-flashes" />
       </label>
       <label className="setting">
+        <span>{t('settings.colorVision')}</span>
+        <select value={settings.colorVision} onChange={(e) => set({ colorVision: e.target.value as Settings['colorVision'] })} data-testid="color-vision">
+          {(['normal', 'protanopia', 'deuteranopia', 'tritanopia'] as const).map((mode) => (
+            <option key={mode} value={mode}>
+              {t(`settings.colorVision.${mode}`)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="setting check">
+        <span>{t('settings.radio')}</span>
+        <input type="checkbox" checked={settings.radio} onChange={(e) => set({ radio: e.target.checked })} data-testid="radio-toggle" />
+      </label>
+      <label className="setting">
         <span>{t('settings.text')}</span>
         <select value={settings.textScale} onChange={(e) => set({ textScale: Number(e.target.value) })} data-testid="text-scale">
           <option value={1}>100%</option>
@@ -246,6 +260,9 @@ export function MainMenu({ game, t, locale, settings, onSettings, onControls }: 
               {t('menu.tutorial')}
             </label>
             <button onClick={press(() => setView('load'))}>{t('menu.load')}</button>
+            <button onClick={press(() => game.togglePhoto())} data-testid="open-photo">
+              {t('menu.photo')}
+            </button>
             <button onClick={press(() => setView('settings'))}>{t('menu.settings')}</button>
             <button onClick={press(onControls)}>{t('menu.controls')}</button>
           </nav>

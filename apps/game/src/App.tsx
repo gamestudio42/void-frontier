@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSPro
 import { StationPanel } from './ui/StationPanel.tsx';
 import { CampaignCard, ContractTracker, Notices } from './ui/contracts.tsx';
 import { Game } from './game.ts';
-import { LOCALES, detectLocale, saveLocale, translator, type Locale, type MessageKey } from './i18n.ts';
+import { LOCALES, detectLocale, saveLocale, translator, type Locale, type MessageKey, type Translate } from './i18n.ts';
 import { HudStore, initialHudState } from './store.ts';
 import { ControlsPanel } from './ui/ControlsPanel.tsx';
 import { MainMenu, PauseMenu, TutorialCard } from './ui/menus.tsx';
@@ -96,8 +96,14 @@ export function App() {
     );
 
   return (
-    <div className="app" style={{ '--ui-scale': settings.textScale } as CSSProperties}>
+    <div
+      className={hud.photo ? 'app photo' : 'app'}
+      data-color-vision={settings.colorVision}
+      style={{ '--ui-scale': settings.textScale, filter: settings.colorVision === 'normal' ? undefined : `url(#cvd-${settings.colorVision})` } as CSSProperties}
+    >
+      <ColorVisionFilters />
       <canvas ref={canvasRef} className="viewport" data-testid="viewport" />
+      {hud.photo && <PhotoHint hint={hud.photo.hint} t={t} />}
       <canvas ref={overlayRef} className="targeting" aria-hidden="true" />
       <div key={hud.hits} className={hud.hits > 0 && !settings.reduceFlashes ? 'damage-flash' : ''} aria-hidden="true" />
       {hud.menu !== 'main' && <FlightHud hud={hud} t={t} locale={locale} />}
@@ -194,5 +200,47 @@ export function App() {
         />
       )}
     </div>
+  );
+}
+
+/**
+ * Daltonisation for the three kinds of colour blindness: the colours a player cannot tell
+ * apart are shifted into ones they can (simulation by Machado et al. 2009, error moved into
+ * the channels still seen). Applied as a CSS filter on the whole app, 3D view and HUD alike.
+ */
+function ColorVisionFilters() {
+  const matrices = {
+    protanopia: '1 0 0 0 0  0.4789 0.4769 0.0442 0 0  0.5973 -0.6887 1.0914 0 0  0 0 0 1 0',
+    deuteranopia: '1 0 0 0 0  0.1628 0.725 0.1122 0 0  0.4547 -0.6454 1.1907 0 0  0 0 0 1 0',
+    tritanopia: '0.7412 -0.4072 0.666 0 0  0.0751 0.5852 0.3397 0 0  0 0 1 0 0  0 0 0 1 0',
+  };
+  return (
+    <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
+      <defs>
+        {Object.entries(matrices).map(([id, values]) => (
+          <filter key={id} id={`cvd-${id}`} colorInterpolationFilters="sRGB">
+            <feColorMatrix type="matrix" values={values} />
+          </filter>
+        ))}
+      </defs>
+    </svg>
+  );
+}
+
+/** Photo mode's controls, in a corner; H hides them for a clean shot. */
+function PhotoHint({ hint, t }: { hint: boolean; t: Translate }) {
+  return (
+    <aside className={hint ? 'photo-hint' : 'photo-hint hidden'} data-testid="photo-mode">
+      {hint && (
+        <>
+          <strong>{t('photo.title')}</strong>
+          <span>{t('photo.move')}</span>
+          <span>{t('photo.turn')}</span>
+          <span>{t('photo.zoom')}</span>
+          <span>{t('photo.save')}</span>
+          <span>{t('photo.exit')}</span>
+        </>
+      )}
+    </aside>
   );
 }

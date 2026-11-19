@@ -246,6 +246,8 @@ export interface HudState {
    * past, and whether its guard is open.
    */
   boss: { id: string; trigger: string; hull: number; shield: number; phase: number; phases: number[]; open: boolean; distance: number } | null;
+  /** Photo mode is on (HUD hidden, game paused), and whether its key hint shows. */
+  photo: { hint: boolean } | null;
   /** The radio line on screen: who speaks and the message key with its values. */
   radio: { speaker: string; key: string; values: Record<string, string>; name: string | null } | null;
   /** Increments on every damaging hit, so the HUD can flash. */
@@ -305,6 +307,7 @@ export const initialHudState = (): HudState => ({
   deathCause: null,
   incident: null,
   radio: null,
+  photo: null,
   boss: null,
   discovered: [],
   visited: ['outpost_alpha'],
