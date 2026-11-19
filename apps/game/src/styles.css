@@ -2928,3 +2928,31 @@ body.gamepad :focus {
     animation: none;
   }
 }
+
+.app.photo > :not(.viewport):not(.photo-hint):not(svg) {
+  display: none !important;
+}
+
+.photo-hint {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  background: rgb(8 12 20 / 72%);
+  font-size: 13px;
+  pointer-events: none;
+}
+
+.photo-hint.hidden {
+  display: none;
+}
+
+.photo-hint strong {
+  color: var(--amber);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}

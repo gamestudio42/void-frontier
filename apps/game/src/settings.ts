@@ -19,6 +19,10 @@ export interface Settings {
   reduceFlashes: boolean;
   /** Interface text size, as a multiple. */
   textScale: number;
+  /** Colour correction for colour-blind players, applied to the whole screen. */
+  colorVision: 'normal' | 'protanopia' | 'deuteranopia' | 'tritanopia';
+  /** The cast's lines on the radio in flight. */
+  radio: boolean;
   /** Keys moved from their defaults, by action. */
   bindings: Partial<Bindings>;
 }
@@ -38,6 +42,8 @@ export const DEFAULT_SETTINGS: Settings = {
   locale: null,
   reduceFlashes: false,
   textScale: 1,
+  colorVision: 'normal',
+  radio: true,
   bindings: {},
 };
 

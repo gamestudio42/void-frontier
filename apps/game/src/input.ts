@@ -27,6 +27,10 @@ export interface InputActions {
   uiBack(): void;
   /** The player switched between keyboard and mouse and a gamepad. */
   deviceChanged(device: InputDevice): void;
+  /** Photo mode on or off (F9). */
+  togglePhoto(): void;
+  /** Photo mode: save the picture (Enter), or hide the hint (H). */
+  photoKey(key: 'shot' | 'hint'): void;
 }
 
 export type InputDevice = 'keyboard' | 'gamepad';
@@ -92,6 +96,8 @@ export class InputController {
   pointer: { x: number; y: number } | null = null;
   steering = true;
   bindings: Bindings = { ...DEFAULT_BINDINGS };
+  /** Photo mode is on: keys move the free camera instead of flying. */
+  photo = false;
 
   private readonly onKeyDown = (event: KeyboardEvent) => {
     if (isTyping(event)) return;
@@ -99,6 +105,18 @@ export class InputController {
     if (event.repeat) return;
     this.useDevice('keyboard');
     this.held.add(event.code);
+    if (event.code === 'F9') {
+      event.preventDefault();
+      this.actions.togglePhoto();
+      return;
+    }
+    // In photo mode the keys move the camera; only these do anything else.
+    if (this.photo) {
+      if (event.code === 'Escape') this.actions.togglePhoto();
+      else if (event.code === 'Enter') this.actions.photoKey('shot');
+      else if (event.code === 'KeyH') this.actions.photoKey('hint');
+      return;
+    }
     const bound = this.bindings;
     if (event.code === bound.mode) this.actions.toggleFlightMode();
     else if (event.code === bound.steering) {
