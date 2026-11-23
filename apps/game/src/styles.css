@@ -276,6 +276,11 @@ kbd {
   gap: 6px;
 }
 
+/* Lets a portrait touch layout regroup a label and its bar without changing the desktop column. */
+.stat {
+  display: contents;
+}
+
 .row {
   display: flex;
   justify-content: space-between;
@@ -2955,4 +2960,511 @@ body.gamepad :focus {
   color: var(--amber);
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+/* Touch flight controls ---------------------------------------------------- */
+
+.touch-controls {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+  user-select: none;
+}
+
+body.touch .touch-controls {
+  display: block;
+}
+
+.touch-stick {
+  position: absolute;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  border: 2px solid rgba(138, 160, 180, 0.55);
+  background: rgba(10, 14, 20, 0.5);
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.touch-throttle {
+  left: calc(12px + env(safe-area-inset-left));
+}
+
+.touch-steer {
+  right: calc(12px + env(safe-area-inset-right));
+}
+
+.touch-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 48px;
+  height: 48px;
+  margin: -24px 0 0 -24px;
+  border-radius: 50%;
+  background: rgba(214, 221, 228, 0.9);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+.touch-stick-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 10px;
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bg);
+  pointer-events: none;
+}
+
+.touch-actions {
+  position: absolute;
+  left: calc(8px + env(safe-area-inset-left));
+  right: calc(8px + env(safe-area-inset-right));
+  bottom: calc(128px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: flex-end;
+  gap: 6px;
+  max-height: 156px;
+  pointer-events: auto;
+}
+
+.touch-actions button {
+  flex: 1 1 22%;
+  min-width: 72px;
+  max-width: 132px;
+  min-height: 44px;
+  padding: 6px 4px;
+  border-radius: 10px;
+  border: 1px solid var(--panel-edge);
+  background: rgba(10, 14, 20, 0.78);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  touch-action: none;
+}
+
+.touch-actions button:active {
+  background: rgba(255, 179, 71, 0.35);
+  border-color: var(--amber);
+}
+
+@media (orientation: landscape) {
+  .touch-stick {
+    width: 96px;
+    height: 96px;
+  }
+
+  .touch-actions {
+    left: 120px;
+    right: 120px;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-content: flex-end;
+    gap: 6px;
+    max-height: 108px;
+  }
+
+  .touch-actions button {
+    flex: 0 1 auto;
+    min-width: 72px;
+    max-width: none;
+  }
+}
+
+/* A finger needs a target at least 44px, and the portrait HUD must leave the ship visible. */
+@media (pointer: coarse) {
+  .tutorial-head button,
+  .menu-buttons button,
+  .menu .back,
+  .tabs button,
+  .station button,
+  .primary,
+  .locale button {
+    min-height: 44px;
+  }
+
+  .tutorial-head button {
+    min-width: 44px;
+    padding: 10px 14px;
+    font-size: 14px;
+    text-decoration: none;
+    border: 1px solid var(--panel-edge);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+
+@media (max-width: 480px) {
+  .menu {
+    padding: 18px 14px;
+  }
+
+  .menu h1 {
+    letter-spacing: 0.08em;
+    font-size: 26px;
+  }
+
+  .menu .tagline {
+    margin-bottom: 12px;
+  }
+}
+
+@media (orientation: portrait) {
+  .hud-top {
+    top: calc(8px + env(safe-area-inset-top));
+    left: 8px;
+    right: 8px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'brand credits'
+      'mode flags';
+    align-items: center;
+    gap: 4px 8px;
+  }
+
+  .brand {
+    grid-area: brand;
+    min-width: 0;
+  }
+
+  .brand strong {
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+
+  .brand span {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .credits-badge {
+    grid-area: credits;
+    justify-self: end;
+    padding: 4px 8px;
+  }
+
+  .mode {
+    grid-area: mode;
+    justify-self: start;
+    white-space: nowrap;
+    max-width: 100%;
+    padding: 4px 8px;
+    gap: 6px;
+  }
+
+  .mode .label,
+  .mode strong {
+    white-space: nowrap;
+  }
+
+  .flags {
+    grid-area: flags;
+    justify-self: end;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .radar {
+    width: 84px;
+    height: 84px;
+    top: 78px;
+    right: 8px;
+  }
+
+  .nav {
+    left: 8px;
+    right: auto;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    width: max-content;
+    max-width: 46vw;
+  }
+
+  .ship,
+  .hud.compact .ship {
+    top: 172px;
+    right: 8px;
+    bottom: auto;
+    left: auto;
+    width: 112px;
+    max-height: 30vh;
+    overflow: hidden;
+  }
+
+  .tutorial:not(.top) {
+    top: 76px;
+    bottom: auto;
+    left: 8px;
+    transform: none;
+    width: calc(100% - 108px);
+    max-height: 168px;
+    overflow: auto;
+    pointer-events: auto;
+  }
+
+  .hud-bottom {
+    left: auto;
+    right: 8px;
+    bottom: calc(8px + env(safe-area-inset-bottom));
+    max-width: 50%;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .mining-status {
+    left: 8px;
+    right: auto;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    top: auto;
+    transform: none;
+    max-width: 46vw;
+    white-space: normal;
+  }
+
+  .tip {
+    bottom: auto;
+    top: 252px;
+    max-width: calc(100% - 140px);
+  }
+}
+
+@media (orientation: portrait) and (min-width: 600px) {
+  .ship,
+  .hud.compact .ship {
+    width: 160px;
+  }
+
+  .brand strong {
+    font-size: 15px;
+  }
+}
+
+body.touch .hud-bottom {
+  display: none;
+}
+
+/* The scan button already says what the idle line repeats, and that line sat on the ship. */
+body.touch .scan-state {
+  display: none;
+}
+
+body.touch .mining-status:not(:has(.mining-target)) {
+  display: none;
+}
+
+@media (orientation: portrait) {
+  body.touch .tutorial:not(.top) {
+    top: 58px;
+    right: 8px;
+    width: auto;
+    max-height: 156px;
+    padding: 6px 10px;
+    overflow: auto;
+  }
+
+  body.touch .tutorial p {
+    margin: 2px 0 4px;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  body.touch .tutorial strong {
+    margin-top: 0;
+    font-size: 14px;
+  }
+
+  body.touch .nav {
+    top: 220px;
+    bottom: auto;
+    left: 8px;
+    width: max-content;
+    max-width: 168px;
+  }
+
+  body.touch .compass {
+    display: none;
+  }
+
+  body.touch .ship,
+  body.touch .hud.compact .ship {
+    top: 220px;
+    right: 8px;
+    bottom: auto;
+    left: auto;
+    width: calc(100% - 196px);
+    max-width: 440px;
+    max-height: none;
+    overflow: visible;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 4px 8px;
+    padding: 6px 8px;
+  }
+
+  body.touch .ship .stat {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 30%;
+    min-width: 0;
+    gap: 1px;
+  }
+
+  body.touch .ship .stat .label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body.touch .ship .bar {
+    height: 4px;
+  }
+
+  body.touch .radar {
+    top: 308px;
+    right: 8px;
+    width: 72px;
+    height: 72px;
+  }
+
+  body.touch .mining-status {
+    top: auto;
+    left: 50%;
+    right: auto;
+    bottom: calc(292px + env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    max-width: 86vw;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(8, 12, 20, 0.72);
+  }
+
+  body.touch .tip {
+    top: 304px;
+    bottom: auto;
+    left: 8px;
+    max-width: 52vw;
+  }
+}
+
+@media (orientation: portrait) and (max-width: 500px) {
+  body.touch .readout.stop {
+    display: none;
+  }
+
+  body.touch .readout.big strong {
+    font-size: 24px;
+  }
+
+  body.touch .ship .weapons {
+    display: none;
+  }
+}
+
+@media (orientation: landscape) {
+  body.touch .nav {
+    top: 58px;
+    left: 12px;
+    bottom: auto;
+    right: auto;
+    max-width: 220px;
+  }
+
+  body.touch .tutorial:not(.top) {
+    top: 58px;
+    bottom: auto;
+    left: 248px;
+    transform: none;
+    width: min(440px, calc(100% - 500px));
+    max-height: 30vh;
+    overflow: auto;
+    pointer-events: auto;
+  }
+
+  body.touch .ship {
+    bottom: calc(120px + env(safe-area-inset-bottom));
+    max-height: 36vh;
+    overflow: hidden;
+  }
+
+  body.touch .mining-status {
+    left: 12px;
+    top: 210px;
+    bottom: auto;
+    transform: none;
+    max-width: 280px;
+    white-space: normal;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  body.touch .nav {
+    top: 50px;
+    left: 8px;
+    width: 200px;
+    max-width: 200px;
+    overflow: hidden;
+  }
+
+  body.touch .compass {
+    width: 56px;
+    height: 56px;
+  }
+
+  body.touch .tutorial:not(.top) {
+    top: 50px;
+    left: 216px;
+    width: min(300px, calc(100% - 560px));
+    max-height: 88px;
+  }
+
+  body.touch .radar {
+    top: 50px;
+    width: 84px;
+    height: 84px;
+  }
+
+  body.touch .ship,
+  body.touch .hud.compact .ship {
+    top: 146px;
+    right: 8px;
+    bottom: auto;
+    width: 168px;
+    max-height: none;
+    overflow: visible;
+  }
+
+  body.touch .ship .weapons {
+    display: none;
+  }
+
+  body.touch .mining-status {
+    top: auto;
+    left: 112px;
+    bottom: calc(122px + env(safe-area-inset-bottom));
+    transform: none;
+    max-width: 240px;
+    text-align: left;
+  }
 }

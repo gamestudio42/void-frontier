@@ -211,7 +211,7 @@ export interface HudState {
   /** Game clock of the last jump, for the transition effect. */
   jumpedAt: number;
   /** Last device the player used, for button prompts. */
-  device: 'keyboard' | 'gamepad';
+  device: 'keyboard' | 'gamepad' | 'touch';
   /** The cruise autopilot's destination and what it is doing, while it flies. */
   cruise: { label: string; distance: number; phase: string } | null;
   deathCause: DeathCause | null;

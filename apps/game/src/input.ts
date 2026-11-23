@@ -1,6 +1,7 @@
 import type { ShipCommand } from '@void-frontier/simulation';
 import type { Vec2 } from '@void-frontier/kernel';
 import { active, firstPad, pressed, readPad, type PadButton, type PadState } from './gamepad.ts';
+import { coarsePointer, stickAxes } from './touch.ts';
 
 export interface InputActions {
   toggleFlightMode(): void;
@@ -33,7 +34,36 @@ export interface InputActions {
   photoKey(key: 'shot' | 'hint'): void;
 }
 
-export type InputDevice = 'keyboard' | 'gamepad';
+export type InputDevice = 'keyboard' | 'gamepad' | 'touch';
+
+/** One-shot controls on the touch HUD. Held axes go through `setTouch` instead. */
+export type TouchTap = 'mode' | 'scan' | 'dock' | 'target' | 'fleet' | 'pause' | 'cruise' | 'dash' | 'chaff' | 'emp';
+
+/** Axes and held buttons written by the on-screen sticks. */
+export interface TouchState {
+  /** -1..1, positive is forward. */
+  thrust: number;
+  /** -1..1, positive is to the right. */
+  strafe: number;
+  /** Steer stick, x right and y up, or null when it is released. */
+  aim: { x: number; y: number } | null;
+  firePrimary: boolean;
+  fireSecondary: boolean;
+  fireMining: boolean;
+  brake: boolean;
+  boost: boolean;
+}
+
+const emptyTouch = (): TouchState => ({
+  thrust: 0,
+  strafe: 0,
+  aim: null,
+  firePrimary: false,
+  fireSecondary: false,
+  fireMining: false,
+  brake: false,
+  boost: false,
+});
 
 /** One-shot gamepad buttons in flight and the action each calls. */
 const PAD_ACTIONS: Partial<Record<PadButton, keyof InputActions>> = {
@@ -98,12 +128,18 @@ export class InputController {
   bindings: Bindings = { ...DEFAULT_BINDINGS };
   /** Photo mode is on: keys move the free camera instead of flying. */
   photo = false;
+  /** On-screen sticks and held buttons. */
+  private touch: TouchState = emptyTouch();
+  /** A finger dragging on the view, steering the way the steer stick does. */
+  private canvasSteer: { id: number; x: number; y: number } | null = null;
+  private canvasAim: { x: number; y: number } | null = null;
 
   private readonly onKeyDown = (event: KeyboardEvent) => {
     if (isTyping(event)) return;
     if (CAPTURED.has(event.code)) event.preventDefault();
     if (event.repeat) return;
-    this.useDevice('keyboard');
+    // A finger-first device keeps its touch prompts; a keyboard still flies.
+    if (!coarsePointer()) this.useDevice('keyboard');
     this.held.add(event.code);
     if (event.code === 'F9') {
       event.preventDefault();
@@ -155,10 +191,15 @@ export class InputController {
   private readonly onBlur = () => {
     this.held.clear();
     this.buttons.clear();
+    this.clearTouch();
   };
 
   private readonly onPointerMove = (event: PointerEvent) => {
-    if (Math.abs(event.movementX) + Math.abs(event.movementY) > 2) this.useDevice('keyboard');
+    if (event.pointerType === 'touch') {
+      this.steerFromCanvas(event);
+      return;
+    }
+    if (!coarsePointer() && Math.abs(event.movementX) + Math.abs(event.movementY) > 2) this.useDevice('keyboard');
     const rect = this.surface.getBoundingClientRect();
     this.pointer = {
       x: ((event.clientX - rect.left) / rect.width) * 2 - 1,
@@ -173,11 +214,22 @@ export class InputController {
   private readonly buttons = new Set<number>();
 
   private readonly onPointerDown = (event: PointerEvent) => {
+    // A finger on the view steers by dragging. It does not fire: guns are a button.
+    if (event.pointerType === 'touch') {
+      this.useDevice('touch');
+      this.canvasSteer = { id: event.pointerId, x: event.clientX, y: event.clientY };
+      this.surface.setPointerCapture?.(event.pointerId);
+      return;
+    }
     this.buttons.add(event.button);
     this.surface.setPointerCapture?.(event.pointerId);
   };
 
   private readonly onPointerUp = (event: PointerEvent) => {
+    if (this.canvasSteer?.id === event.pointerId) {
+      this.canvasSteer = null;
+      this.canvasAim = null;
+    }
     this.buttons.delete(event.button);
   };
 
@@ -198,6 +250,7 @@ export class InputController {
     surface.addEventListener('pointerdown', this.onPointerDown);
     window.addEventListener('pointerup', this.onPointerUp);
     surface.addEventListener('contextmenu', this.onContextMenu);
+    if (coarsePointer()) this.useDevice('touch');
   }
 
   /** Which device the player last used, for button prompts. */
@@ -212,9 +265,9 @@ export class InputController {
     this.actions.deviceChanged(device);
   }
 
-  /** Right stick direction while it is pushed (x right, y up on screen), else null. */
-  get padAim(): { x: number; y: number } | null {
-    return this.pad?.aim ?? null;
+  /** Right stick, the steer stick, or a drag on the view (x right, y up), else null. */
+  get stickAim(): { x: number; y: number } | null {
+    return this.pad?.aim ?? this.touch.aim ?? this.canvasAim;
   }
 
   /**
@@ -283,6 +336,45 @@ export class InputController {
     return this.held.has(code);
   }
 
+  /** Brake from the key, the pad or the on-screen button. */
+  isBraking(): boolean {
+    return this.held.has(this.bindings.brake) || !!this.pad?.held.has('b') || this.touch.brake;
+  }
+
+  /** The touch HUD writes held axes and buttons here. They add to the keys, the same way a pad does. */
+  setTouch(patch: Partial<TouchState>): void {
+    this.touch = { ...this.touch, ...patch };
+    this.useDevice('touch');
+  }
+
+  /** Drops every on-screen hold, for example when the HUD unmounts or the window blurs. */
+  clearTouch(): void {
+    this.touch = emptyTouch();
+    this.canvasSteer = null;
+    this.canvasAim = null;
+  }
+
+  /** A tap on an on-screen button runs the same action as its key. */
+  tap(action: TouchTap): void {
+    this.useDevice('touch');
+    if (action === 'mode') this.actions.toggleFlightMode();
+    else if (action === 'scan') this.actions.scanOrRelaunch();
+    else if (action === 'dock') this.actions.dockOrUndock();
+    else if (action === 'target') this.actions.cycleTarget();
+    else if (action === 'fleet') this.actions.toggleFleet();
+    else if (action === 'pause') this.actions.togglePause();
+    else if (action === 'cruise') this.actions.toggleCruise();
+    else this.actions.useAbility(action);
+  }
+
+  /** Dragging a finger on the view points the nose. The finger never counts as a mouse button. */
+  private steerFromCanvas(event: PointerEvent): void {
+    this.useDevice('touch');
+    if (!this.canvasSteer || this.canvasSteer.id !== event.pointerId) return;
+    const axes = stickAxes(event.clientX - this.canvasSteer.x, event.clientY - this.canvasSteer.y, 80);
+    this.canvasAim = axes.x === 0 && axes.y === 0 ? null : axes;
+  }
+
   command(aim: Vec2 | null): ShipCommand {
     const axis = (positive: string[], negative: string[]) =>
       (positive.some((code) => this.held.has(code)) ? 1 : 0) - (negative.some((code) => this.held.has(code)) ? 1 : 0);
@@ -291,20 +383,20 @@ export class InputController {
     const clampAxis = (v: number) => Math.max(-1, Math.min(1, v));
     return {
       // Keys and the left stick add up; a half-pushed stick is a half throttle.
-      thrust: clampAxis(axis([this.bindings.thrust, 'ArrowUp'], [this.bindings.reverse, 'ArrowDown']) + (pad?.move.y ?? 0)),
-      strafe: clampAxis(axis([this.bindings.strafeRight, 'ArrowRight'], [this.bindings.strafeLeft, 'ArrowLeft']) + (pad?.move.x ?? 0)),
+      thrust: clampAxis(axis([this.bindings.thrust, 'ArrowUp'], [this.bindings.reverse, 'ArrowDown']) + (pad?.move.y ?? 0) + this.touch.thrust),
+      strafe: clampAxis(axis([this.bindings.strafeRight, 'ArrowRight'], [this.bindings.strafeLeft, 'ArrowLeft']) + (pad?.move.x ?? 0) + this.touch.strafe),
       turn: axis([this.bindings.turnLeft], [this.bindings.turnRight]),
-      // The right stick always steers; the mouse only while steering is on.
-      aim: pad?.aim || this.steering ? aim : null,
-      // Left mouse, Ctrl or RT: guns. Right mouse, Alt or LT: laser.
-      firePrimary: this.buttons.has(0) || this.held.has('ControlLeft') || padHeld('rt'),
-      fireSecondary: this.buttons.has(2) || this.held.has('AltLeft') || padHeld('lt'),
+      // The right stick, the steer stick and a finger drag always steer; the mouse only while steering is on.
+      aim: pad?.aim || this.touch.aim || this.canvasAim || this.steering ? aim : null,
+      // Left mouse, Ctrl, RT or the Fire button: guns. Right mouse, Alt, LT or Laser: laser.
+      firePrimary: this.buttons.has(0) || this.held.has('ControlLeft') || padHeld('rt') || this.touch.firePrimary,
+      fireSecondary: this.buttons.has(2) || this.held.has('AltLeft') || padHeld('lt') || this.touch.fireSecondary,
       target: null,
-      // Middle mouse, X or LB: mining laser.
-      fireMining: this.buttons.has(1) || this.held.has(this.bindings.mine) || padHeld('lb'),
+      // Middle mouse, X, LB or the Mine button: mining laser.
+      fireMining: this.buttons.has(1) || this.held.has(this.bindings.mine) || padHeld('lb') || this.touch.fireMining,
       targetSystem: null,
-      brake: this.held.has(this.bindings.brake) || padHeld('b'),
-      boost: this.held.has('ShiftLeft') || this.held.has('ShiftRight') || padHeld('ls'),
+      brake: this.held.has(this.bindings.brake) || padHeld('b') || this.touch.brake,
+      boost: this.held.has('ShiftLeft') || this.held.has('ShiftRight') || padHeld('ls') || this.touch.boost,
     };
   }
 
