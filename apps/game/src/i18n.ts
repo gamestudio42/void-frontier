@@ -28,14 +28,18 @@ export function saveLocale(locale: Locale): void {
 
 export type Translate = (key: MessageKey) => string;
 
+export type InputDevice = 'keyboard' | 'gamepad' | 'touch';
+
 /**
- * Strings for the chosen language. With a gamepad in use, a key that has a `pad.`
- * twin (a prompt naming a key) reads the twin, which names the button instead.
+ * Strings for the chosen language. With a gamepad or a touch screen in use, a key
+ * that has a `pad.` or `touch.` twin (a prompt naming a key) reads the twin, which
+ * names the button instead.
  */
-export const translator = (locale: Locale, device: 'keyboard' | 'gamepad' = 'keyboard'): Translate => (key) => {
-  if (device === 'gamepad') {
-    const pad = `pad.${key}` as MessageKey;
-    const text = dictionaries[locale][pad] ?? en[pad];
+export const translator = (locale: Locale, device: InputDevice = 'keyboard'): Translate => (key) => {
+  if (device !== 'keyboard') {
+    // Gamepad strings already live under `pad.`; touch strings live under `touch.`.
+    const alt = `${device === 'gamepad' ? 'pad' : device}.${key}` as MessageKey;
+    const text = dictionaries[locale][alt] ?? en[alt];
     if (text !== undefined) return text;
   }
   return dictionaries[locale][key] ?? en[key];

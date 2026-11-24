@@ -228,6 +228,7 @@ export class Game {
       },
       deviceChanged: (device) => {
         document.body.classList.toggle('gamepad', device === 'gamepad');
+        document.body.classList.toggle('touch', device === 'touch');
         this.store.update({ device });
       },
       toggleCruise: () => {
@@ -562,7 +563,7 @@ export class Game {
 
     // The camera from the last frame is close enough to turn the cursor into a world point.
     // The right stick points the nose the way it is pushed, as seen on screen.
-    const stick = this.input.padAim;
+    const stick = this.input.stickAim;
     const ship = stick ? this.sim.world.bodies.get(this.sim.playerId) : undefined;
     if (stick && ship) {
       const width = this.canvas.clientWidth || 1;
@@ -928,10 +929,10 @@ export class Game {
 
   /** The overlay's cruise mark: the destination while flying, else what the key would pick. */
   private cruiseMarker(): { position: Vec2; label: string; active: boolean; key: string } | null {
-    const key = this.input.device === 'gamepad' ? 'Ⓨ' : this.input.bindings.cruise.replace(/^Key/, '');
+    const key = this.input.device === 'gamepad' ? 'Ⓨ' : this.input.device === 'touch' ? this.labels.cruise() : this.input.bindings.cruise.replace(/^Key/, '');
     if (this.cruise) return { position: this.cruise.order.to, label: this.cruise.label, active: true, key };
     // Not in a fight or with the cursor off the canvas, so the tag does not clutter combat.
-    if (this.target !== null || (this.input.pointer === null && this.input.padAim === null)) return null;
+    if (this.target !== null || (this.input.pointer === null && this.input.stickAim === null)) return null;
     const pick = this.pickCruiseTarget();
     return pick ? { position: pick.position, label: pick.label, active: false, key } : null;
   }
@@ -1196,7 +1197,12 @@ export class Game {
   }
 
   /** Set by the UI so canvas labels follow the chosen language. */
-  labels = { boss: (id: string) => id, drop: (id: string) => id, station: (id: string) => id, sector: (id: string) => id, route: (id: string) => id, campaign: () => '', stop: () => 'Stop' };
+  labels = { boss: (id: string) => id, drop: (id: string) => id, station: (id: string) => id, sector: (id: string) => id, route: (id: string) => id, campaign: () => '', stop: () => 'Stop', cruise: () => 'Cruise' };
+
+  /** The input controller, so on-screen controls feed the same command as the keys. */
+  get flightInput(): InputController {
+    return this.input;
+  }
 
   private contractsView() {
     const board = this.sim.missions;
@@ -1444,7 +1450,7 @@ export class Game {
       })(),
       hits: this.hits,
       steering: this.input.steering,
-      braking: this.input.isHeld('Space'),
+      braking: this.input.isBraking(),
       stats: {
         ...previous,
         ...frameStats,

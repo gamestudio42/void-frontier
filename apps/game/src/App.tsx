@@ -3,7 +3,7 @@ import { StationPanel } from './ui/StationPanel.tsx';
 import { CampaignCard, ContractTracker, Notices } from './ui/contracts.tsx';
 import { Game } from './game.ts';
 import { LOCALES, detectLocale, saveLocale, translator, type Locale, type MessageKey, type Translate } from './i18n.ts';
-import { HudStore, initialHudState } from './store.ts';
+import { HudStore, initialHudState, type HudState } from './store.ts';
 import { ControlsPanel } from './ui/ControlsPanel.tsx';
 import { MainMenu, PauseMenu, TutorialCard } from './ui/menus.tsx';
 import { SectorMap } from './ui/SectorMap.tsx';
@@ -11,6 +11,7 @@ import { FleetPanel } from './ui/Fleet.tsx';
 import { loadSettings, saveSettings, type Settings } from './settings.ts';
 import { DebugOverlay } from './ui/DebugOverlay.tsx';
 import { FlightHud } from './ui/FlightHud.tsx';
+import { TouchControls } from './ui/TouchControls.tsx';
 import { formatNumber } from './ui/format.ts';
 
 export function App() {
@@ -75,6 +76,7 @@ export function App() {
         route: (id) => t(`route.${id}` as MessageKey),
         campaign: () => t('campaign.marker'),
         stop: () => t('hud.stop'),
+        cruise: () => t('ui.touch.cruise'),
       };
   }, [game, t]);
 
@@ -182,6 +184,13 @@ export function App() {
         </aside>
       )}
       {hud.tutorial && !hud.menu && game && <TutorialCard tutorial={hud.tutorial} t={t} onSkip={() => game.skipTutorial()} top={!!hud.station} />}
+      {game && showTouch(hud) && (
+        <TouchControls
+          input={game.flightInput}
+          t={t}
+          verbs={(hud.telemetry?.abilities ?? []).flatMap((ability) => (ability.kind === 'dash' || ability.kind === 'chaff' || ability.kind === 'emp' ? [ability.kind] : []))}
+        />
+      )}
       {hud.menu === 'main' && game && !hud.help && (
         <MainMenu game={game} t={t} locale={locale} settings={settings} onSettings={changeSettings} onControls={() => store.update({ help: true })} />
       )}
@@ -208,6 +217,11 @@ export function App() {
  * apart are shifted into ones they can (simulation by Machado et al. 2009, error moved into
  * the channels still seen). Applied as a CSS filter on the whole app, 3D view and HUD alike.
  */
+/** Flight sticks stay off menus, the station and panels that need the whole screen. */
+function showTouch(hud: HudState): boolean {
+  return hud.device === 'touch' && hud.menu === null && !hud.help && !hud.mapOpen && !hud.fleetOpen && !hud.station && !hud.photo;
+}
+
 function ColorVisionFilters() {
   const matrices = {
     protanopia: '1 0 0 0 0  0.4789 0.4769 0.0442 0 0  0.5973 -0.6887 1.0914 0 0  0 0 0 1 0',

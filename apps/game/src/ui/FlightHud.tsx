@@ -168,39 +168,49 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
         <div className="detail">
           <ShipSchematic systems={tel.subsystems} mounts={tel.mounts} t={t} />
         </div>
-        <div className="row">
-          <span className="label">{t('hud.hull')}</span>
-          <strong data-testid="hull" data-value={tel.hull.toFixed(2)}>{formatNumber(locale, (tel.hull / tel.hullMax) * 100)}%</strong>
+        <div className="stat">
+          <div className="row">
+            <span className="label">{t('hud.hull')}</span>
+            <strong data-testid="hull" data-value={tel.hull.toFixed(2)}>{formatNumber(locale, (tel.hull / tel.hullMax) * 100)}%</strong>
+          </div>
+          <Bar value={tel.hull} max={tel.hullMax} className={`hull ${tel.hull / tel.hullMax < 0.35 ? 'low' : tel.hull / tel.hullMax < 0.7 ? 'mid' : ''}`} />
         </div>
-        <Bar value={tel.hull} max={tel.hullMax} className={`hull ${tel.hull / tel.hullMax < 0.35 ? 'low' : tel.hull / tel.hullMax < 0.7 ? 'mid' : ''}`} />
-        <div className="row">
-          <span className="label">{t('hud.shield')}</span>
-          <strong data-testid="shield" data-value={tel.shield.toFixed(2)}>{formatNumber(locale, (tel.shield / Math.max(1, tel.shieldMax)) * 100)}%</strong>
+        <div className="stat">
+          <div className="row">
+            <span className="label">{t('hud.shield')}</span>
+            <strong data-testid="shield" data-value={tel.shield.toFixed(2)}>{formatNumber(locale, (tel.shield / Math.max(1, tel.shieldMax)) * 100)}%</strong>
+          </div>
+          <Bar value={tel.shield} max={tel.shieldMax} className="shield" />
         </div>
-        <Bar value={tel.shield} max={tel.shieldMax} className="shield" />
-        <div className="row">
-          <span className="label">{t('hud.energy')}</span>
-          <strong>{formatNumber(locale, (tel.energy / Math.max(1, tel.energyMax)) * 100)}%</strong>
+        <div className="stat">
+          <div className="row">
+            <span className="label">{t('hud.energy')}</span>
+            <strong>{formatNumber(locale, (tel.energy / Math.max(1, tel.energyMax)) * 100)}%</strong>
+          </div>
+          <Bar value={tel.energy} max={tel.energyMax} className="energy" />
         </div>
-        <Bar value={tel.energy} max={tel.energyMax} className="energy" />
-        <div className="row">
-          <span className="label">{t('hud.fuel')}</span>
-          <strong data-testid="fuel" data-value={tel.fuel.toFixed(3)}>{formatNumber(locale, fuelRatio * 100)}%</strong>
+        <div className="stat">
+          <div className="row">
+            <span className="label">{t('hud.fuel')}</span>
+            <strong data-testid="fuel" data-value={tel.fuel.toFixed(3)}>{formatNumber(locale, fuelRatio * 100)}%</strong>
+          </div>
+          <Bar value={tel.fuel} max={tel.fuelCapacity} className={fuelRatio < 0.2 ? 'low' : ''} />
         </div>
-        <Bar value={tel.fuel} max={tel.fuelCapacity} className={fuelRatio < 0.2 ? 'low' : ''} />
         <div className="row detail">
           <span className="label">{t('hud.mass')}</span>
           <strong data-testid="mass" data-value={tel.mass.toFixed(1)}>
             {formatNumber(locale, tel.mass / 1000, 2)} {t('unit.mass')}
           </strong>
         </div>
-        <div className="row">
-          <span className="label">{t('hud.hold')}</span>
-          <strong data-testid="hold" data-value={tel.holdMass.toFixed(1)}>
-            {formatNumber(locale, tel.holdMass / 1000, 2)} / {formatNumber(locale, tel.holdMaxMass / 1000, 1)} {t('unit.mass')}
-          </strong>
+        <div className="stat">
+          <div className="row">
+            <span className="label">{t('hud.hold')}</span>
+            <strong data-testid="hold" data-value={tel.holdMass.toFixed(1)}>
+              {formatNumber(locale, tel.holdMass / 1000, 2)} / {formatNumber(locale, tel.holdMaxMass / 1000, 1)} {t('unit.mass')}
+            </strong>
+          </div>
+          <Bar value={tel.holdMass} max={tel.holdMaxMass} className="hold" />
         </div>
-        <Bar value={tel.holdMass} max={tel.holdMaxMass} className="hold" />
         {tel.hold.map((item) => (
           <div key={item.resource} className="row dim hold-item detail">
             <span>
@@ -283,7 +293,7 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
       {tel.abilities.length > 0 && <Verbs abilities={tel.abilities} jammed={tel.jammed} t={t} locale={locale} />}
 
       <section className="mining-status">
-        <span>
+        <span className="scan-state">
           <kbd>{t('hud.key.scan')}</kbd> {t('hud.scanner')}: <strong>{tel.scanCooldown > 0 ? `${formatNumber(locale, tel.scanCooldown, 1)} s` : t('hud.scanReady')}</strong>
         </span>
         {tel.miningTarget && (
@@ -312,6 +322,8 @@ export function FlightHud({ hud, t, locale }: FlightHudProps) {
       <footer className="hud-bottom">
         {hud.device === 'gamepad' ? (
           <span data-testid="pad-hints">{t('hud.padHints')}</span>
+        ) : hud.device === 'touch' ? (
+          <span data-testid="touch-hints">{t('hud.touchHints')}</span>
         ) : (
           <>
             <span>{hud.steering ? t('hud.steering.on') : t('hud.steering.off')} <kbd>V</kbd></span>
